@@ -26,7 +26,6 @@ var _pending_snapshot: CarSnapshot
 
 
 func _ready() -> void:
-	custom_integrator = true
 	var network := get_tree().root.get_node_or_null("/root/NetworkController")
 	if network and network.has_method("register_car"):
 		network.register_car(self)
@@ -99,12 +98,9 @@ func _physics_process(delta: float) -> void:
 		center_of_mass_mode = RigidBody3D.CENTER_OF_MASS_MODE_CUSTOM
 		center_of_mass = Vector3.DOWN*0.5
 
-
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	if _pending_snapshot:
 		state.transform = _pending_snapshot.transform
 		state.linear_velocity = _pending_snapshot.linear_velocity
 		state.angular_velocity = _pending_snapshot.angular_velocity
 		_pending_snapshot = null
-
-	state.integrate_forces()
