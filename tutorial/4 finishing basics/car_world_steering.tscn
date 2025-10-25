@@ -1,0 +1,608 @@
+[gd_scene load_steps=28 format=3 uid="uid://d1s7t2830ax65"]
+
+[ext_resource type="PackedScene" uid="uid://cmpcr4wp2d8gk" path="res://scenes/environment_and_light.tscn" id="1_xmp6s"]
+[ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://assets/prototype/prototype-materials/black_square.tres" id="2_2r6vf"]
+[ext_resource type="Script" uid="uid://br67vbbvr1vby" path="res://scenes/camera_3d.gd" id="3_m8duc"]
+[ext_resource type="Script" uid="uid://brdaxyox38y8u" path="res://scenes/camera_ortho.gd" id="4_jgdmd"]
+[ext_resource type="Script" uid="uid://rvn3sxkelivl" path="res://tutorial/4 finishing basics/raycast_car.gd" id="5_xmp6s"]
+[ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://assets/prototype/prototype-materials/green_square.tres" id="6_ojx5s"]
+[ext_resource type="Script" uid="uid://bdfe0puohbq2o" path="res://tutorial/4 finishing basics/raycast_wheel.gd" id="7_2r6vf"]
+[ext_resource type="Curve" uid="uid://d3nv4w51hbb4y" path="res://tutorial/4 finishing basics/car_tire_BACK.tres" id="8_iiwpk"]
+[ext_resource type="PackedScene" uid="uid://cbund3287huk5" path="res://assets/car/nissan35/wheel_nissan.glb" id="9_m8duc"]
+[ext_resource type="PackedScene" uid="uid://cukaeucupjo2e" path="res://scenes/debug_ui_controller.tscn" id="9_qm2o8"]
+[ext_resource type="PackedScene" uid="uid://vae1yu2flf4a" path="res://assets/car/nissan35/nissan_skyliner35.glb" id="10_jgdmd"]
+[ext_resource type="Script" uid="uid://socgkim3vuae" path="res://tutorial/4 finishing basics/car_follow_camera.gd" id="10_ojx5s"]
+[ext_resource type="Curve" uid="uid://s7soqbgm8k37" path="res://tutorial/4 finishing basics/car_tire_FRONT.tres" id="10_qm2o8"]
+[ext_resource type="PackedScene" uid="uid://ck1tr3pyqpyd3" path="res://scenes/objects/traffic_barrier.tscn" id="11_jgdmd"]
+[ext_resource type="Material" uid="uid://db8vaei0l3gbe" path="res://assets/prototype/prototype-materials/blue_square.tres" id="11_wxlo2"]
+[ext_resource type="PackedScene" uid="uid://cj2v1b4qbls12" path="res://scenes/objects/traffic_cone.tscn" id="12_wxlo2"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_qm2o8"]
+friction = 0.0
+
+[sub_resource type="Curve" id="Curve_xmp6s"]
+_data = [Vector2(0, 0.3), 0.0, 0.0, 0, 0, Vector2(0.3, 0.9), 0.0, 0.0, 0, 0, Vector2(0.6, 0.8), 0.0, 0.0, 0, 0, Vector2(1, 0.1), 0.0, 0.0, 0, 0]
+point_count = 4
+metadata/_snap_enabled = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_64tcs"]
+size = Vector3(2, 0.5, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_a57fx"]
+size = Vector3(0.65, 0.4, 1.8)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_2r6vf"]
+points = PackedVector3Array(1.01653, 1.04161, 0.224878, 0.667473, 1.23939, -0.682207, 0.527968, 1.33442, -0.117252, 0.575332, 1.27437, 0.112073, 1.00499, 1.02907, 0.313544, 0.975139, 0.778465, 1.42674, 0.986881, 0.437534, 1.84175, 0.985687, 0.1405, 1.86961, 1.00499, 0.1405, -0.937991, 1.01434, 0.64436, -1.77544, 0.99504, 0.803911, -1.38921, 0.884591, 0.936449, -1.56144, 0.675433, 1.09383, -2.13243, 0.472644, 1.31199, -0.682671, 0, 1.3501, -0.675708, 0, 1.36904, -0.103789, 0, 1.305, 0.218843, 0.575332, 0.850583, 1.72384, 0.693742, 0.829719, 1.71549, 0.801604, 0.621567, 2.03208, 0.953447, 0.6323, 1.75959, 0.803992, 0.532445, 2.10032, 0.80439, 0.23915, 2.2122, 0.982105, 0.264475, 1.87425, 0.801604, 0.1405, 2.21499, 0, 0.137003, 2.36214, -1.00519, 0.1405, -0.937991, 0.98907, 0.166911, -1.82465, 0.98907, 0.353839, -1.8604, 0.88678, 0.418118, -2.16539, 0.860113, 0.630732, -2.15146, 0.816331, 0.933555, -2.05862, 0.754439, 0.931866, -2.13057, 0.444385, 1.1241, -2.26844, -0.472843, 1.31199, -0.682671, -0.528167, 1.33442, -0.117252, 0, 1.1317, -2.31115, -0.444584, 1.1241, -2.26844, -0.575531, 0.850583, 1.72384, 0, 0.881818, 1.75402, -0.575531, 1.27437, 0.112073, 0.406374, 0.719734, 2.19363, 0.490754, 0.518335, 2.27766, 0.450156, 0.505913, 2.3004, 0.495729, 0.219251, 2.36307, 0.502893, 0.1405, 2.364, -0.503092, 0.1405, 2.364, -0.801803, 0.1405, 2.21499, -0.985886, 0.1405, 1.86961, -1.01454, 0.64436, -1.77544, -0.989269, 0.166911, -1.82465, -1.01653, 1.04161, 0.224878, 0.814739, 0.185483, -2.11479, 0.78031, 0.602633, -2.20531, 0.712648, 0.300414, -2.27448, 0.726379, 0.333819, -2.27448, 0.78449, 0.864572, -2.13057, 0.441002, 0.597085, -2.35108, 0.416126, 0.797279, -2.32926, 0.395628, 0.847568, -2.32786, -0.667672, 1.23939, -0.682207, -0.675632, 1.09383, -2.13243, 0, 0.692961, -2.3715, -0.395827, 0.847568, -2.32786, -0.416325, 0.797279, -2.32926, -0.441201, 0.597085, -2.35108, -0.726578, 0.333819, -2.27448, -0.780509, 0.602633, -2.20531, -0.860312, 0.630732, -2.15146, -0.754638, 0.931866, -2.13057, -0.693941, 0.829719, 1.71549, -0.406573, 0.719734, 2.19363, 0, 0.729261, 2.21684, -1.00519, 1.02907, 0.313544, -0.975338, 0.778465, 1.42674, -0.450355, 0.505913, 2.3004, 0, 0.221663, 2.36493, -0.495928, 0.219251, 2.36307, -0.804589, 0.23915, 2.2122, -0.982304, 0.264475, 1.87425, -0.98708, 0.437534, 1.84175, -0.995239, 0.803911, -1.38921, -0.81653, 0.933555, -2.05862, -0.886979, 0.418118, -2.16539, -0.989269, 0.353839, -1.8604, -0.814938, 0.185483, -2.11479, -0.88479, 0.936449, -1.56144, 0.462296, 0.218286, -2.26427, 0.679214, 0.286665, -2.27448, 0.568566, 0.286665, -2.30373, 0.6018, 0.300414, -2.30373, 0.615731, 0.333819, -2.30373, 0.370553, 0.417997, -2.365, 0.281994, 0.506516, -2.36547, 0, 0.500607, -2.37754, -0.370752, 0.417997, -2.365, -0.282193, 0.506516, -2.36547, -0.61593, 0.333819, -2.30373, -0.712847, 0.300414, -2.27448, -0.784689, 0.864572, -2.13057, -0.801803, 0.621567, 2.03208, -0.490953, 0.518335, 2.27766, -0.804191, 0.532445, 2.10032, -0.953646, 0.6323, 1.75959, -0.679413, 0.286665, -2.27448, -0.462495, 0.218286, -2.26427, 0, 0.226487, -2.28005, 0, 0.413294, -2.36964, -0.568765, 0.286665, -2.30373, -0.601999, 0.300414, -2.30373)
+
+[sub_resource type="Gradient" id="Gradient_y3ehv"]
+colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 0.388235)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_vxjfv"]
+gradient = SubResource("Gradient_y3ehv")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_7w1kq"]
+gravity = Vector3(0, 0, 0)
+color_ramp = SubResource("GradientTexture1D_vxjfv")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o6rug"]
+transparency = 1
+vertex_color_use_as_albedo = true
+
+[sub_resource type="QuadMesh" id="QuadMesh_u7ljy"]
+material = SubResource("StandardMaterial3D_o6rug")
+size = Vector2(0.6, 1)
+orientation = 1
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_iiwpk"]
+
+[node name="TestWorld" type="Node3D"]
+
+[node name="DirectionalLight3D" parent="." instance=ExtResource("1_xmp6s")]
+
+[node name="CSGTerrain" type="Node3D" parent="."]
+metadata/_edit_group_ = true
+metadata/_edit_lock_ = true
+
+[node name="BumpCSGs" type="Node3D" parent="CSGTerrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -4)
+
+[node name="bumps" type="CSGBox3D" parent="CSGTerrain/BumpCSGs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.00447989)
+use_collision = true
+size = Vector3(5.89551, 0.4375, 0.371216)
+
+[node name="bumps2" type="CSGBox3D" parent="CSGTerrain/BumpCSGs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.56961)
+use_collision = true
+size = Vector3(5.89551, 0.4375, 0.136719)
+
+[node name="Ground" type="CSGBox3D" parent="CSGTerrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, -94.2223)
+material_override = ExtResource("2_2r6vf")
+use_collision = true
+size = Vector3(200, 0.5, 388.445)
+
+[node name="HiddenOrthoPlane" type="CSGBox3D" parent="CSGTerrain"]
+transform = Transform3D(1, 1.49012e-08, 2.23517e-08, 0, 1, 0, 0, 0, 1, 5.916, -0.251, -117.901)
+material_override = ExtResource("2_2r6vf")
+size = Vector3(2.273, 0.5, 335.801)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.229197, 0.348107, -0.909005, 0, 0.933864, 0.357627, 0.97338, -0.081967, 0.214039, -5.53718, 4.48851, 1.30381)
+script = ExtResource("3_m8duc")
+start_enabled = true
+
+[node name="OrthoCamera" type="Camera3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(-5.96046e-08, 0, -1, 0, 1, 0, 1, 0, -5.96046e-08, -31.0127, 1.46143, -4.43062e-08)
+projection = 1
+size = 5.0
+far = 500.0
+script = ExtResource("4_jgdmd")
+is_active = false
+
+[node name="Car" type="RigidBody3D" parent="." node_paths=PackedStringArray("wheels", "skid_marks")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mass = 50.0
+physics_material_override = SubResource("PhysicsMaterial_qm2o8")
+linear_damp_mode = 1
+script = ExtResource("5_xmp6s")
+wheels = [NodePath("WheelFL"), NodePath("WheelFR"), NodePath("WheelRL"), NodePath("WheelRR")]
+acceleration = 550.0
+max_speed = 60.0
+accel_curve = SubResource("Curve_xmp6s")
+tire_max_turn_degrees = 12
+skid_marks = [NodePath("SkidMarks/GPUParticles3D"), NodePath("SkidMarks/GPUParticles3D2"), NodePath("SkidMarks/GPUParticles3D3"), NodePath("SkidMarks/GPUParticles3D4")]
+show_debug = true
+
+[node name="CarMesh" type="MeshInstance3D" parent="Car"]
+visible = false
+material_override = ExtResource("6_ojx5s")
+mesh = SubResource("BoxMesh_64tcs")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Car/CarMesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.426268, 1.1)
+material_override = ExtResource("6_ojx5s")
+mesh = SubResource("BoxMesh_a57fx")
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="Car"]
+transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, -0.385903, 0)
+shape = SubResource("ConvexPolygonShape3D_2r6vf")
+
+[node name="WheelFL" type="RayCast3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, -0.163, -1.407)
+enabled = false
+script = ExtResource("7_2r6vf")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+is_steer = true
+grip_curve = ExtResource("8_iiwpk")
+show_debug = true
+
+[node name="wheel_nissan2" parent="Car/WheelFL" instance=ExtResource("9_m8duc")]
+transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 0, 0)
+
+[node name="WheelFR" type="RayCast3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, -0.163, -1.407)
+enabled = false
+script = ExtResource("7_2r6vf")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+is_steer = true
+grip_curve = ExtResource("10_qm2o8")
+show_debug = true
+
+[node name="wheel_nissan2" parent="Car/WheelFR" instance=ExtResource("9_m8duc")]
+
+[node name="WheelRL" type="RayCast3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, -0.163, 1.383)
+enabled = false
+script = ExtResource("7_2r6vf")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+is_motor = true
+grip_curve = ExtResource("8_iiwpk")
+show_debug = true
+
+[node name="wheel_nissan2" parent="Car/WheelRL" instance=ExtResource("9_m8duc")]
+transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 0, 0)
+
+[node name="WheelRR" type="RayCast3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, -0.163, 1.383)
+enabled = false
+script = ExtResource("7_2r6vf")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+is_motor = true
+grip_curve = ExtResource("8_iiwpk")
+show_debug = true
+
+[node name="wheel_nissan2" parent="Car/WheelRR" instance=ExtResource("9_m8duc")]
+
+[node name="SkidMarks" type="Node3D" parent="Car"]
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="Car/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16986, -0.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="Car/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16986, -0.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="GPUParticles3D3" type="GPUParticles3D" parent="Car/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16986, -0.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="GPUParticles3D4" type="GPUParticles3D" parent="Car/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16986, -0.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="RemoteTransform3D" type="RemoteTransform3D" parent="Car"]
+remote_path = NodePath("../../SubViewportContainer/SubViewport/TopPivot")
+update_rotation = false
+update_scale = false
+
+[node name="nissan_skyliner35" parent="Car" instance=ExtResource("10_jgdmd")]
+transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, -0.476322, 0)
+
+[node name="CameraPivot" type="Node3D" parent="Car"]
+
+[node name="Camera3D" type="Camera3D" parent="Car/CameraPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.77849, 5.01415)
+top_level = true
+current = true
+script = ExtResource("10_ojx5s")
+min_distance = 6.0
+max_distance = 10.0
+height = 4.0
+
+[node name="Car2" type="RigidBody3D" parent="." node_paths=PackedStringArray("wheels", "skid_marks")]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 2, 6.48076)
+mass = 20.0
+physics_material_override = SubResource("PhysicsMaterial_iiwpk")
+linear_damp_mode = 1
+script = ExtResource("5_xmp6s")
+wheels = [NodePath("WheelFL"), NodePath("WheelFR"), NodePath("WheelRL"), NodePath("WheelRR")]
+max_speed = 60.0
+accel_curve = SubResource("Curve_xmp6s")
+skid_marks = [NodePath("SkidMarks/GPUParticles3D"), NodePath("SkidMarks/GPUParticles3D2"), NodePath("SkidMarks/GPUParticles3D3"), NodePath("SkidMarks/GPUParticles3D4")]
+show_debug = true
+
+[node name="CarMesh" type="MeshInstance3D" parent="Car2"]
+transform = Transform3D(1.00062, 0, 0, 0, 1.00062, 0, 0, 0, 1.00062, -9.37017e-08, 0.000103712, 1.19482)
+visible = false
+material_override = ExtResource("6_ojx5s")
+mesh = SubResource("BoxMesh_64tcs")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Car2/CarMesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.426268, 1.1)
+material_override = ExtResource("6_ojx5s")
+mesh = SubResource("BoxMesh_a57fx")
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="Car2"]
+transform = Transform3D(-1.00062, 0, 1.51089e-07, 0, 1.00062, 0, -1.51089e-07, 0, -1.00062, -9.37017e-08, -0.386037, 1.19482)
+shape = SubResource("ConvexPolygonShape3D_2r6vf")
+
+[node name="WheelFL" type="RayCast3D" parent="Car2"]
+transform = Transform3D(1.00062, 0, 0, 0, 1.00062, 0, 0, 0, 1.00062, -0.850525, -0.162997, -0.213047)
+enabled = false
+script = ExtResource("7_2r6vf")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+grip_curve = ExtResource("8_iiwpk")
+show_debug = true
+
+[node name="wheel_nissan2" parent="Car2/WheelFL" instance=ExtResource("9_m8duc")]
+transform = Transform3D(-1, 0, 1.50996e-07, 0, 1, 0, -1.50996e-07, 0, -1, 0, 0, 0)
+
+[node name="WheelFR" type="RayCast3D" parent="Car2"]
+transform = Transform3D(1.00062, 0, 0, 0, 1.00062, 0, 0, 0, 1.00062, 0.850524, -0.162997, -0.213047)
+enabled = false
+script = ExtResource("7_2r6vf")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+grip_curve = ExtResource("10_qm2o8")
+show_debug = true
+
+[node name="wheel_nissan2" parent="Car2/WheelFR" instance=ExtResource("9_m8duc")]
+
+[node name="WheelRL" type="RayCast3D" parent="Car2"]
+transform = Transform3D(1.00062, 0, 0, 0, 1.00062, 0, 0, 0, 1.00062, -0.850524, -0.162997, 2.57867)
+enabled = false
+script = ExtResource("7_2r6vf")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+grip_curve = ExtResource("8_iiwpk")
+show_debug = true
+
+[node name="wheel_nissan2" parent="Car2/WheelRL" instance=ExtResource("9_m8duc")]
+transform = Transform3D(-1, 0, 1.50996e-07, 0, 1, 0, -1.50996e-07, 0, -1, 0, 0, 0)
+
+[node name="WheelRR" type="RayCast3D" parent="Car2"]
+transform = Transform3D(1.00062, 0, 0, 0, 1.00062, 0, 0, 0, 1.00062, 0.850525, -0.162997, 2.57867)
+enabled = false
+script = ExtResource("7_2r6vf")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+grip_curve = ExtResource("8_iiwpk")
+show_debug = true
+
+[node name="wheel_nissan2" parent="Car2/WheelRR" instance=ExtResource("9_m8duc")]
+
+[node name="SkidMarks" type="Node3D" parent="Car2"]
+transform = Transform3D(1.00062, 0, 0, 0, 1.00062, 0, 0, 0, 1.00062, -9.37017e-08, 0.000103712, 1.19482)
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="Car2/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16986, -0.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="Car2/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16986, -0.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="GPUParticles3D3" type="GPUParticles3D" parent="Car2/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16986, -0.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="GPUParticles3D4" type="GPUParticles3D" parent="Car2/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16986, -0.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="RemoteTransform3D" type="RemoteTransform3D" parent="Car2"]
+transform = Transform3D(1.00062, 0, 0, 0, 1.00062, 0, 0, 0, 1.00062, -9.37017e-08, 0.000103712, 1.19482)
+remote_path = NodePath("../../SubViewportContainer/SubViewport/TopPivot")
+update_rotation = false
+update_scale = false
+
+[node name="nissan_skyliner35" parent="Car2" instance=ExtResource("10_jgdmd")]
+transform = Transform3D(-1.00062, 0, 1.51089e-07, 0, 1.00062, 0, -1.51089e-07, 0, -1.00062, -9.37017e-08, -0.476512, 1.19482)
+
+[node name="UiController" parent="." node_paths=PackedStringArray("car") instance=ExtResource("9_qm2o8")]
+car = NodePath("../Car")
+use_pause_time_inputs = true
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -902.0
+offset_bottom = -448.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
+handle_input_locally = false
+size = Vector2i(250, 200)
+render_target_update_mode = 4
+
+[node name="TopPivot" type="Node3D" parent="SubViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="Camera3D" type="Camera3D" parent="SubViewportContainer/SubViewport/TopPivot"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 9.5, 0)
+
+[node name="RampCSG" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.976402, -0.215962, 0, 0.215962, 0.976402, 0, -0.18679, -41.8704)
+material_override = ExtResource("11_wxlo2")
+use_collision = true
+size = Vector3(6.18188, 1, 8)
+
+[node name="Obstacles" type="Node3D" parent="."]
+
+[node name="traffic_barrier" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.2472, 0.0121825, -26.5761)
+
+[node name="traffic_barrier2" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.550524, 0, 0.834819, 0, 1, 0, -0.834819, 0, -0.550524, -17.8228, 0.0121825, -76.97)
+
+[node name="traffic_barrier5" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.587376, 0, 0.809315, 0, 1, 0, -0.809315, 0, -0.587376, 10.2045, 0.0121825, -88.6269)
+
+[node name="traffic_barrier6" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.998656, 0, -0.0518306, 0, 1, 0, 0.0518306, 0, 0.998656, -4.71284, 0.0121825, -108.476)
+
+[node name="traffic_barrier3" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.200582, 0, -0.979677, 0, 1, 0, 0.979677, 0, -0.200582, 16.3963, 0.0121825, -54.9012)
+
+[node name="traffic_barrier41" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.200582, 0, -0.979677, 0, 1, 0, 0.979677, 0, -0.200582, 18.0152, 0.0121825, -60.5052)
+
+[node name="traffic_barrier42" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.366046, 0, -0.930597, 0, 1, 0, 0.930597, 0, 0.366046, 18.6777, 0.0121825, -64.3775)
+
+[node name="traffic_barrier43" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.366046, 0, -0.930597, 0, 1, 0, 0.930597, 0, 0.366046, 16.9791, 0.0121825, -69.9579)
+
+[node name="traffic_barrier4" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.275906, 0, -0.961185, 0, 1, 0, 0.961185, 0, -0.275906, -19.6385, 0.0121825, -91.4104)
+
+[node name="traffic_barrier7" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.275906, 0, -0.961185, 0, 1, 0, 0.961185, 0, -0.275906, -18.7174, 0.0121825, -123.766)
+
+[node name="traffic_barrier14" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.275906, 0, -0.961185, 0, 1, 0, 0.961185, 0, -0.275906, -20.4405, 0.0121825, -118.194)
+
+[node name="traffic_barrier15" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.275906, 0, -0.961185, 0, 1, 0, 0.961185, 0, -0.275906, -22.2209, 0.0121825, -113.446)
+
+[node name="traffic_barrier16" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.275906, 0, -0.961185, 0, 1, 0, 0.961185, 0, -0.275906, -23.6056, 0.0121825, -107.957)
+
+[node name="traffic_barrier17" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.0274158, 0, -0.999624, 0, 1, 0, 0.999624, 0, -0.0274158, -25.4354, 0.0121825, -101.577)
+
+[node name="traffic_barrier18" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.145202, 0, -0.989402, 0, 1, 0, 0.989402, 0, 0.145202, -26.1079, 0.0121825, -89.6231)
+
+[node name="traffic_barrier19" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.145202, 0, -0.989402, 0, 1, 0, 0.989402, 0, 0.145202, -25.771, 0.0121825, -84.5639)
+
+[node name="traffic_barrier20" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.145202, 0, -0.989402, 0, 1, 0, 0.989402, 0, 0.145202, -24.7678, 0.0121825, -78.9921)
+
+[node name="traffic_barrier21" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.387419, 0, -0.921904, 0, 1, 0, 0.921904, 0, 0.387419, -23.8027, 0.0121825, -72.4258)
+
+[node name="traffic_barrier22" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.145202, 0, -0.989402, 0, 1, 0, 0.989402, 0, 0.145202, 13.7165, 0.0121825, -83.8576)
+
+[node name="traffic_barrier23" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.145202, 0, -0.989402, 0, 1, 0, 0.989402, 0, 0.145202, 14.0533, 0.0121825, -78.7984)
+
+[node name="traffic_barrier24" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.145202, 0, -0.989402, 0, 1, 0, 0.989402, 0, 0.145202, 15.0565, 0.0121825, -73.2266)
+
+[node name="traffic_barrier25" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.10149, 0, -0.994836, 0, 1, 0, 0.994836, 0, 0.10149, -22.4148, 0.0121825, -67.301)
+
+[node name="traffic_barrier8" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.650111, 0, -0.759839, 0, 1, 0, 0.759839, 0, -0.650111, -16.0112, 0.0121825, -129.038)
+
+[node name="traffic_barrier9" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.650111, 0, -0.759839, 0, 1, 0, 0.759839, 0, -0.650111, -12.0481, 0.0121825, -133.199)
+
+[node name="traffic_barrier10" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.964035, 0, -0.265775, 0, 1, 0, 0.265775, 0, -0.964035, -7.54957, 0.0121825, -136.685)
+
+[node name="traffic_barrier11" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.997764, 0, -0.0668311, 0, 1, 0, 0.0668311, 0, -0.997764, -1.91965, 0.0121825, -138.089)
+
+[node name="traffic_barrier12" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.997764, 0, -0.0668311, 0, 1, 0, 0.0668311, 0, -0.997764, 5.1341, 0.0121825, -138.484)
+
+[node name="traffic_barrier13" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.997764, 0, -0.0668311, 0, 1, 0, 0.0668311, 0, -0.997764, 11.5431, 0.0121825, -138.281)
+
+[node name="traffic_barrier26" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.996311, 0, 0.0858169, 0, 1, 0, -0.0858169, 0, -0.996311, 16.4753, 0.0121825, -137.7)
+
+[node name="traffic_barrier27" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.870725, 0, 0.49177, 0, 1, 0, -0.49177, 0, -0.870725, 22.1695, 0.0121825, -136.059)
+
+[node name="traffic_barrier28" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.870725, 0, 0.49177, 0, 1, 0, -0.49177, 0, -0.870725, 27.0157, 0.0121825, -132.971)
+
+[node name="traffic_barrier29" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.446291, 0, 0.894888, 0, 1, 0, -0.894888, 0, -0.446291, 31.302, 0.0121825, -129.227)
+
+[node name="traffic_barrier30" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.257554, 0, 0.966264, 0, 1, 0, -0.966264, 0, -0.257554, 33.7627, 0.0121825, -123.972)
+
+[node name="traffic_barrier31" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.257554, 0, 0.966264, 0, 1, 0, -0.966264, 0, -0.257554, 35.5071, 0.0121825, -117.126)
+
+[node name="traffic_barrier32" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.257554, 0, 0.966264, 0, 1, 0, -0.966264, 0, -0.257554, 36.5416, 0.0121825, -110.798)
+
+[node name="traffic_barrier33" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.252441, 0, 0.967612, 0, 1, 0, -0.967612, 0, -0.252441, 37.9404, 0.0121825, -105.364)
+
+[node name="traffic_barrier34" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.0530505, 0, 0.998592, 0, 1, 0, -0.998592, 0, -0.0530505, 39.2662, 0.0121825, -99.7151)
+
+[node name="traffic_barrier35" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.0530505, 0, 0.998592, 0, 1, 0, -0.998592, 0, -0.0530505, 39.5634, 0.0121825, -92.6566)
+
+[node name="traffic_barrier36" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.0530505, 0, 0.998592, 0, 1, 0, -0.998592, 0, -0.0530505, 39.2726, 0.0121825, -86.251)
+
+[node name="traffic_barrier37" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(-0.073534, 0, 0.997293, 0, 1, 0, -0.997293, 0, -0.073534, 39.6497, 0.0121825, -79.9983)
+
+[node name="traffic_barrier38" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.128173, 0, 0.991752, 0, 1, 0, -0.991752, 0, 0.128173, 39.9336, 0.0121825, -74.2029)
+
+[node name="traffic_barrier39" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.128173, 0, 0.991752, 0, 1, 0, -0.991752, 0, 0.128173, 38.9511, 0.0121825, -67.2068)
+
+[node name="traffic_barrier40" parent="Obstacles" instance=ExtResource("11_jgdmd")]
+transform = Transform3D(0.128173, 0, 0.991752, 0, 1, 0, -0.991752, 0, 0.128173, 37.5082, 0.0121825, -60.9591)
+
+[node name="traffic_cone" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.5829, 0.0103449, -95.6672)
+
+[node name="traffic_cone2" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.2249, 0.0103449, -97.8888)
+
+[node name="traffic_cone3" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.2522, 0.0103449, -100.879)
+
+[node name="traffic_cone4" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.53113, 0.0103449, -104.404)
+
+[node name="traffic_cone9" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(0.0177666, 0, 0.999842, 0, 1, 0, -0.999842, 0, 0.0177666, -5.54115, 0.0103449, -45.8944)
+
+[node name="traffic_cone10" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(0.0177666, 0, 0.999842, 0, 1, 0, -0.999842, 0, 0.0177666, -7.73828, 0.0103449, -47.2917)
+
+[node name="traffic_cone11" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(0.0177666, 0, 0.999842, 0, 1, 0, -0.999842, 0, 0.0177666, -10.6931, 0.0103449, -49.3172)
+
+[node name="traffic_cone12" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(0.0177666, 0, 0.999842, 0, 1, 0, -0.999842, 0, 0.0177666, -14.169, 0.0103449, -52.1005)
+
+[node name="traffic_cone13" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(0.0177666, 0, 0.999842, 0, 1, 0, -0.999842, 0, 0.0177666, -11.8924, 0.0103449, -52.7438)
+
+[node name="traffic_cone14" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(0.0177666, 0, 0.999842, 0, 1, 0, -0.999842, 0, 0.0177666, -14.0895, 0.0103449, -54.141)
+
+[node name="traffic_cone15" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(0.0177666, 0, 0.999842, 0, 1, 0, -0.999842, 0, 0.0177666, -17.0443, 0.0103449, -56.1666)
+
+[node name="traffic_cone16" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(0.0177666, 0, 0.999842, 0, 1, 0, -0.999842, 0, 0.0177666, -20.5202, 0.0103449, -58.9498)
+
+[node name="traffic_cone17" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(0.947439, 0, -0.319935, 0, 1, 0, 0.319935, 0, 0.947439, 7.67349, 0.0103449, -44.5591)
+
+[node name="traffic_cone18" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(0.947439, 0, -0.319935, 0, 1, 0, 0.319935, 0, 0.947439, 9.67089, 0.0103449, -46.2295)
+
+[node name="traffic_cone19" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(0.947439, 0, -0.319935, 0, 1, 0, 0.319935, 0, 0.947439, 12.4966, 0.0103449, -48.4315)
+
+[node name="traffic_cone20" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(0.947439, 0, -0.319935, 0, 1, 0, 0.319935, 0, 0.947439, 16.2024, 0.0103449, -50.9005)
+
+[node name="traffic_cone5" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.270943, 0.0103449, -106.275)
+
+[node name="traffic_cone6" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8505, 0.0103439, -103.389)
+
+[node name="traffic_cone7" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.59572, 0.0103439, -99.6644)
+
+[node name="traffic_cone8" parent="Obstacles" instance=ExtResource("12_wxlo2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.9575, 0.0103439, -94.5393)
+
+[editable path="DirectionalLight3D"]
+[editable path="Car/nissan_skyliner35"]
+[editable path="Car2/nissan_skyliner35"]

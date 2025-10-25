@@ -1,0 +1,465 @@
+[gd_scene load_steps=28 format=3 uid="uid://cc8rgjg6422d2"]
+
+[ext_resource type="PackedScene" uid="uid://cmpcr4wp2d8gk" path="res://scenes/environment_and_light.tscn" id="1_qih03"]
+[ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://assets/prototype/prototype-materials/black_square.tres" id="2_hipxf"]
+[ext_resource type="Material" uid="uid://db8vaei0l3gbe" path="res://assets/prototype/prototype-materials/blue_square.tres" id="3_8hd6w"]
+[ext_resource type="Script" uid="uid://br67vbbvr1vby" path="res://scenes/camera_3d.gd" id="3_56dnm"]
+[ext_resource type="Script" uid="uid://brdaxyox38y8u" path="res://scenes/camera_ortho.gd" id="4_w2emd"]
+[ext_resource type="Script" uid="uid://bjyv8ph1yqcax" path="res://scenes/car_finals/car_final_3/raycast_car_final3.gd" id="5_chc4v"]
+[ext_resource type="Script" uid="uid://c22p8gkw4iejv" path="res://scenes/follow_camera.gd" id="6_krgom"]
+[ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://assets/prototype/prototype-materials/green_square.tres" id="6_qqwtq"]
+[ext_resource type="PackedScene" uid="uid://vae1yu2flf4a" path="res://assets/car/nissan35/nissan_skyliner35.glb" id="7_chc4v"]
+[ext_resource type="Script" uid="uid://dpq6iwnuo1o16" path="res://scenes/car_finals/car_final_3/raycast_wheel_final3.gd" id="8_7c0j4"]
+[ext_resource type="Shader" uid="uid://bkgvq2wi323o" path="res://scenes/car_finals/car_final_3/car_color_shift.gdshader" id="8_hni56"]
+[ext_resource type="PackedScene" uid="uid://cbund3287huk5" path="res://assets/car/nissan35/wheel_nissan.glb" id="9_7c0j4"]
+[ext_resource type="Texture2D" uid="uid://c8vahgx1lv0go" path="res://assets/car/nissan35/ImphenziaPalette01-256-Gradient.png" id="9_8hd6w"]
+[ext_resource type="PackedScene" uid="uid://cukaeucupjo2e" path="res://scenes/debug_ui_controller.tscn" id="9_b0l50"]
+[ext_resource type="PackedScene" uid="uid://ck1tr3pyqpyd3" path="res://scenes/objects/traffic_barrier.tscn" id="14_qkxqv"]
+[ext_resource type="PackedScene" uid="uid://cj2v1b4qbls12" path="res://scenes/objects/traffic_cone.tscn" id="15_krgom"]
+
+[sub_resource type="Curve" id="Curve_y3ehv"]
+_data = [Vector2(0, 0.3), 0.0, 0.0, 0, 0, Vector2(0.3, 0.9), 0.0, 0.0, 0, 0, Vector2(0.6, 0.8), 0.0, 0.0, 0, 0, Vector2(1, 0.1), 0.0, 0.0, 0, 0]
+point_count = 4
+metadata/_snap_enabled = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_64tcs"]
+size = Vector3(2, 0.5, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_a57fx"]
+size = Vector3(0.65, 0.4, 1.8)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xlmin"]
+resource_name = "AtrlasMaterial"
+render_priority = 0
+shader = ExtResource("8_hni56")
+shader_parameter/albedo = Color(1, 1, 1, 1)
+shader_parameter/texture_albedo = ExtResource("9_8hd6w")
+shader_parameter/albedo_texture_size = Vector2i(256, 256)
+shader_parameter/point_size = 1.0
+shader_parameter/roughness = 0.5
+shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/uv1_scale = Vector3(1, 1, 1)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_hni56"]
+points = PackedVector3Array(-0.961916, 0.842081, -1.44871, 0.985348, 0.140798, 1.82359, 1.0536, 0.0993619, -1.88791, 0.752373, 1.15308, -2.18925, -1.05414, 0.0993619, -1.88791, -0.828221, 0.70163, 2.1012, 0.519669, 1.29181, 0.0580498, -0.985338, 0.141133, 1.82256, -0.752915, 1.15308, -2.18925, -1.05414, 1.07792, 0.218644, 1.0536, 1.07792, 0.218644, 0.376051, 0.851947, 2.1012, 0.433098, 0.341949, -2.31776, -0.520178, 1.29177, 0.0580457, 0.563054, 0.1405, 2.24767, 1.0536, 0.551063, 1.87484, 0.133445, 1.30806, -0.876254, -0.602304, 0.927356, 1.79939, -1.05414, 0.551063, 1.87484, -0.433613, 0.341975, -2.31761, -0.572596, 0.345642, 2.28367, 0.752373, 0.927356, 1.64895, 0.0713696, 0.847052, -2.31054, 0.504425, 0.41479, 2.30089, 0.957015, 0.773345, -1.71547, -0.704525, 0.1405, 2.17662, -0.472092, 1.31213, -0.680224, 0.0630419, 1.28013, 0.247651, -0.497031, 0.206974, -2.20607, 0.827678, 0.70163, 2.1012, 0.532706, 1.30566, -0.472635, -0.866909, 0.414228, -2.1727)
+
+[sub_resource type="Curve" id="Curve_u7ljy"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.2, 0.95), 0.0, 0.0, 0, 0, Vector2(0.35, 0.65), 0.0, 0.0, 0, 0, Vector2(0.75, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+metadata/_snap_enabled = true
+metadata/_snap_count = 20
+
+[sub_resource type="Gradient" id="Gradient_y3ehv"]
+colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 0.388235)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_vxjfv"]
+gradient = SubResource("Gradient_y3ehv")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_7w1kq"]
+gravity = Vector3(0, 0, 0)
+color_ramp = SubResource("GradientTexture1D_vxjfv")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o6rug"]
+transparency = 1
+vertex_color_use_as_albedo = true
+
+[sub_resource type="QuadMesh" id="QuadMesh_u7ljy"]
+material = SubResource("StandardMaterial3D_o6rug")
+size = Vector2(0.6, 1)
+orientation = 1
+
+[node name="TestWorld" type="Node3D"]
+
+[node name="DirectionalLight3D" parent="." instance=ExtResource("1_qih03")]
+
+[node name="CSGTerrain" type="Node3D" parent="."]
+metadata/_edit_lock_ = true
+metadata/_edit_group_ = true
+
+[node name="Ground" type="CSGBox3D" parent="CSGTerrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, -94.2223)
+material_override = ExtResource("2_hipxf")
+use_collision = true
+size = Vector3(200, 0.5, 388.445)
+
+[node name="HiddenOrthoPlane" type="CSGBox3D" parent="CSGTerrain"]
+transform = Transform3D(1, 1.49012e-08, 2.23517e-08, 0, 1, 0, 0, 0, 1, 5.916, -0.251, -117.901)
+material_override = ExtResource("2_hipxf")
+size = Vector3(2.273, 0.5, 335.801)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="CSGTerrain"]
+transform = Transform3D(1, 0, 0, 0, 0.976402, -0.215962, 0, 0.215962, 0.976402, 0, 0.398655, -10.8704)
+material_override = ExtResource("3_8hd6w")
+use_collision = true
+size = Vector3(6.18188, 1, 8)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.229197, 0.348107, -0.909005, 0, 0.933864, 0.357627, 0.97338, -0.081967, 0.214039, -5.53718, 4.48851, 1.30381)
+script = ExtResource("3_56dnm")
+is_active = false
+start_enabled = true
+
+[node name="OrthoCamera" type="Camera3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(-5.96046e-08, 0, -1, 0, 1, 0, 1, 0, -5.96046e-08, -31.0127, 1.46143, -4.43062e-08)
+projection = 1
+size = 5.0
+far = 500.0
+script = ExtResource("4_w2emd")
+is_active = false
+
+[node name="Car" type="RigidBody3D" parent="." node_paths=PackedStringArray("wheels", "skid_marks")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mass = 50.0
+script = ExtResource("5_chc4v")
+wheels = [NodePath("WheelFL"), NodePath("WheelFR"), NodePath("WheelRL"), NodePath("WheelRR")]
+acceleration = 800.0
+max_speed = 60.0
+accel_curve = SubResource("Curve_y3ehv")
+skid_marks = [NodePath("SkidMarks/GPUParticles3D"), NodePath("SkidMarks/GPUParticles3D2"), NodePath("SkidMarks/GPUParticles3D3"), NodePath("SkidMarks/GPUParticles3D4")]
+
+[node name="CarMesh" type="MeshInstance3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.0796461, 0)
+visible = false
+material_override = ExtResource("6_qqwtq")
+mesh = SubResource("BoxMesh_64tcs")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Car/CarMesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.426268, 1.1)
+material_override = ExtResource("6_qqwtq")
+mesh = SubResource("BoxMesh_a57fx")
+
+[node name="nissan_skyliner35" parent="Car" instance=ExtResource("7_chc4v")]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, -0.5, 0)
+
+[node name="NissanSkyline35" parent="Car/nissan_skyliner35" index="0"]
+material_override = SubResource("ShaderMaterial_xlmin")
+instance_shader_parameters/uv_shift = Vector2(0, 0)
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="Car"]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, -0.318572, 0)
+shape = SubResource("ConvexPolygonShape3D_hni56")
+debug_color = Color(0, 0.857143, 1, 0.42)
+
+[node name="WheelFL" type="RayCast3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.837, -0.139691, -1.38535)
+enabled = false
+target_position = Vector3(0, -0.5, 0)
+script = ExtResource("8_7c0j4")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+grip_curve = SubResource("Curve_u7ljy")
+
+[node name="wheel_nissan2" parent="Car/WheelFL" instance=ExtResource("9_7c0j4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="WheelFR" type="RayCast3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.837, -0.14, -1.38535)
+enabled = false
+target_position = Vector3(0, -0.5, 0)
+script = ExtResource("8_7c0j4")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+grip_curve = SubResource("Curve_u7ljy")
+
+[node name="wheel_nissan2" parent="Car/WheelFR" instance=ExtResource("9_7c0j4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="WheelRL" type="RayCast3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.837, -0.14, 1.38948)
+enabled = false
+target_position = Vector3(0, -0.5, 0)
+script = ExtResource("8_7c0j4")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+is_motor = true
+grip_curve = SubResource("Curve_u7ljy")
+
+[node name="wheel_nissan3" parent="Car/WheelRL" instance=ExtResource("9_7c0j4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="WheelRR" type="RayCast3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.837, -0.14, 1.38948)
+enabled = false
+target_position = Vector3(0, -0.5, 0)
+script = ExtResource("8_7c0j4")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+is_motor = true
+grip_curve = SubResource("Curve_u7ljy")
+
+[node name="wheel_nissan2" parent="Car/WheelRR" instance=ExtResource("9_7c0j4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="RemoteTransform3D" type="RemoteTransform3D" parent="Car"]
+remote_path = NodePath("../../SubViewportContainer/SubViewport/TopPivot")
+update_rotation = false
+update_scale = false
+
+[node name="SkidMarks" type="Node3D" parent="Car"]
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="Car/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.83014, -5.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+visibility_aabb = AABB(-20, -20, -20, 40, 40, 40)
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="Car/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.83014, -5.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+visibility_aabb = AABB(-20, -20, -20, 40, 40, 40)
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="GPUParticles3D3" type="GPUParticles3D" parent="Car/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.83014, -5.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+visibility_aabb = AABB(-20, -20, -20, 40, 40, 40)
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="GPUParticles3D4" type="GPUParticles3D" parent="Car/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.83014, -5.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+visibility_aabb = AABB(-20, -20, -20, 40, 40, 40)
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="Pivot" type="Node3D" parent="Car"]
+
+[node name="FollowCamera" type="Camera3D" parent="Car/Pivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.22381, 4.41207)
+top_level = true
+current = true
+script = ExtResource("6_krgom")
+
+[node name="PinJoint3D" type="Generic6DOFJoint3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 3)
+node_a = NodePath("../Car")
+node_b = NodePath("../Car2")
+angular_limit_x/upper_angle = 0.785398
+angular_limit_x/lower_angle = -0.785398
+angular_limit_y/upper_angle = 1.22173
+angular_limit_y/lower_angle = -1.22173
+
+[node name="Car2" type="RigidBody3D" parent="." node_paths=PackedStringArray("wheels", "skid_marks")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 6)
+mass = 50.0
+script = ExtResource("5_chc4v")
+wheels = [NodePath("WheelFL"), NodePath("WheelFR"), NodePath("WheelRL"), NodePath("WheelRR")]
+acceleration = 0.0
+max_speed = 60.0
+accel_curve = SubResource("Curve_y3ehv")
+skid_marks = [NodePath("SkidMarks/GPUParticles3D"), NodePath("SkidMarks/GPUParticles3D2"), NodePath("SkidMarks/GPUParticles3D3"), NodePath("SkidMarks/GPUParticles3D4")]
+
+[node name="CarMesh" type="MeshInstance3D" parent="Car2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.0796461, 0)
+visible = false
+material_override = ExtResource("6_qqwtq")
+mesh = SubResource("BoxMesh_64tcs")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Car2/CarMesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.426268, 1.1)
+material_override = ExtResource("6_qqwtq")
+mesh = SubResource("BoxMesh_a57fx")
+
+[node name="nissan_skyliner35" parent="Car2" instance=ExtResource("7_chc4v")]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, -0.5, 0)
+
+[node name="NissanSkyline35" parent="Car2/nissan_skyliner35" index="0"]
+material_override = SubResource("ShaderMaterial_xlmin")
+instance_shader_parameters/uv_shift = Vector2(0, 0)
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="Car2"]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, -0.318572, 0)
+shape = SubResource("ConvexPolygonShape3D_hni56")
+debug_color = Color(0, 0.857143, 1, 0.42)
+
+[node name="WheelFL" type="RayCast3D" parent="Car2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.837, -0.139691, -1.38535)
+enabled = false
+target_position = Vector3(0, -0.5, 0)
+script = ExtResource("8_7c0j4")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+grip_curve = SubResource("Curve_u7ljy")
+
+[node name="wheel_nissan2" parent="Car2/WheelFL" instance=ExtResource("9_7c0j4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="WheelFR" type="RayCast3D" parent="Car2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.837, -0.14, -1.38535)
+enabled = false
+target_position = Vector3(0, -0.5, 0)
+script = ExtResource("8_7c0j4")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+grip_curve = SubResource("Curve_u7ljy")
+
+[node name="wheel_nissan2" parent="Car2/WheelFR" instance=ExtResource("9_7c0j4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="WheelRL" type="RayCast3D" parent="Car2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.837, -0.14, 1.38948)
+enabled = false
+target_position = Vector3(0, -0.5, 0)
+script = ExtResource("8_7c0j4")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+is_motor = true
+grip_curve = SubResource("Curve_u7ljy")
+
+[node name="wheel_nissan3" parent="Car2/WheelRL" instance=ExtResource("9_7c0j4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="WheelRR" type="RayCast3D" parent="Car2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.837, -0.14, 1.38948)
+enabled = false
+target_position = Vector3(0, -0.5, 0)
+script = ExtResource("8_7c0j4")
+spring_strength = 5000.0
+spring_damping = 120.0
+rest_dist = 0.1
+over_extend = 0.05
+wheel_radius = 0.33
+is_motor = true
+grip_curve = SubResource("Curve_u7ljy")
+
+[node name="wheel_nissan2" parent="Car2/WheelRR" instance=ExtResource("9_7c0j4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="RemoteTransform3D" type="RemoteTransform3D" parent="Car2"]
+remote_path = NodePath("../../SubViewportContainer/SubViewport/TopPivot")
+update_rotation = false
+update_scale = false
+
+[node name="SkidMarks" type="Node3D" parent="Car2"]
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="Car2/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.83014, -5.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+visibility_aabb = AABB(-20, -20, -20, 40, 40, 40)
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="Car2/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.83014, -5.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+visibility_aabb = AABB(-20, -20, -20, 40, 40, 40)
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="GPUParticles3D3" type="GPUParticles3D" parent="Car2/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.83014, -5.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+visibility_aabb = AABB(-20, -20, -20, 40, 40, 40)
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="GPUParticles3D4" type="GPUParticles3D" parent="Car2/SkidMarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.83014, -5.85232, 0.224953)
+emitting = false
+amount = 150
+lifetime = 1.5
+fixed_fps = 60
+visibility_aabb = AABB(-20, -20, -20, 40, 40, 40)
+process_material = SubResource("ParticleProcessMaterial_7w1kq")
+draw_pass_1 = SubResource("QuadMesh_u7ljy")
+
+[node name="UiController" parent="." node_paths=PackedStringArray("car") instance=ExtResource("9_b0l50")]
+car = NodePath("../Car")
+use_pause_time_inputs = true
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -902.0
+offset_bottom = -448.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
+handle_input_locally = false
+size = Vector2i(250, 200)
+render_target_update_mode = 0
+
+[node name="TopPivot" type="Node3D" parent="SubViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="Camera3D" type="Camera3D" parent="SubViewportContainer/SubViewport/TopPivot"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 9.5, 0)
+
+[node name="Extra_objects" type="Node3D" parent="."]
+
+[node name="traffic_cone" parent="Extra_objects" instance=ExtResource("15_krgom")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.011219, 0.0103444, -13.4291)
+
+[node name="traffic_cone2" parent="Extra_objects" instance=ExtResource("15_krgom")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.011219, 0.0103444, -32.4291)
+
+[node name="traffic_cone3" parent="Extra_objects" instance=ExtResource("15_krgom")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.011219, 0.0103444, -55.4291)
+
+[node name="traffic_cone4" parent="Extra_objects" instance=ExtResource("15_krgom")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.011219, 0.0103444, -81.4291)
+
+[node name="traffic_barrier" parent="Extra_objects" instance=ExtResource("14_qkxqv")]
+transform = Transform3D(0.567025, 0, 0.823701, 0, 1, 0, -0.823701, 0, 0.567025, -11.0408, 0.0121806, -21.6183)
+
+[node name="traffic_barrier2" parent="Extra_objects" instance=ExtResource("14_qkxqv")]
+transform = Transform3D(0.315218, 0, -0.949019, 0, 1, 0, 0.949019, 0, 0.315218, 14.685, 0.0121806, -37.0827)
+
+[editable path="DirectionalLight3D"]
+[editable path="Car/nissan_skyliner35"]
+[editable path="Car2/nissan_skyliner35"]

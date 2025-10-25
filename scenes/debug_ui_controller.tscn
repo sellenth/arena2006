@@ -1,0 +1,96 @@
+[gd_scene load_steps=3 format=3 uid="uid://cukaeucupjo2e"]
+
+[ext_resource type="Script" uid="uid://y5i44nbpgnhn" path="res://scenes/experimentation/1 car_suspension/susp_ui_controller.gd" id="1_a5fxc"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a5fxc"]
+bg_color = Color(0.853973, 1, 0.660156, 1)
+
+[node name="UiController" type="Node"]
+script = ExtResource("1_a5fxc")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="BOTTOM" type="VBoxContainer" parent="CanvasLayer"]
+visible = false
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -40.0
+offset_right = 67.0
+grow_vertical = 0
+
+[node name="OffsetLabel" type="Label" parent="CanvasLayer/BOTTOM"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Offset: "
+
+[node name="TOP" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 143.0
+offset_bottom = 103.0
+
+[node name="AllForcesCB" type="CheckBox" parent="CanvasLayer/TOP"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+button_pressed = true
+button_mask = 0
+text = "All forces (C)
+"
+alignment = 1
+
+[node name="PullForcesCB" type="CheckBox" parent="CanvasLayer/TOP"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+button_pressed = true
+button_mask = 0
+text = "Pull forces (V)"
+alignment = 1
+
+[node name="HandBreakCB" type="CheckBox" parent="CanvasLayer/TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+button_mask = 0
+text = "Handbreak (space)"
+
+[node name="SlippingCB" type="CheckBox" parent="CanvasLayer/TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+button_mask = 0
+text = "Is slipping
+"
+
+[node name="TimeScaleLabel" type="Label" parent="CanvasLayer/TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RIGHT_TOP" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 954.0
+offset_top = 10.0
+offset_right = 1144.0
+offset_bottom = 111.0
+
+[node name="SpeedLabel" type="Label" parent="CanvasLayer/RIGHT_TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Speed"
+
+[node name="MotorRatio" type="ProgressBar" parent="CanvasLayer/RIGHT_TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 12
+theme_override_styles/fill = SubResource("StyleBoxFlat_a5fxc")
+max_value = 1.0
+
+[node name="AccelLabel" type="Label" parent="CanvasLayer/RIGHT_TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "AccelForce"

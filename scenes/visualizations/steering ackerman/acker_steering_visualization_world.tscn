@@ -1,0 +1,111 @@
+[gd_scene load_steps=13 format=3 uid="uid://csu2178uay4jm"]
+
+[ext_resource type="Script" uid="uid://bvy68ug65t1tq" path="res://scenes/visualizations/steering ackerman/acker_steer_ui_controller.gd" id="1_imft6"]
+[ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://assets/prototype/prototype-materials/green_square.tres" id="2_ios3r"]
+[ext_resource type="Texture2D" uid="uid://d3jbv52hcriy6" path="res://assets/prototype/prototype-materials/textures/grey-checker.png" id="4_kk44i"]
+[ext_resource type="Material" uid="uid://cint6pc6codcy" path="res://assets/prototype/prototype-materials/white_square.tres" id="5_d7kfn"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_qiwiv"]
+sky_top_color = Color(0.956587, 0.984375, 0.842102, 1)
+sky_horizon_color = Color(0.407843, 0.407843, 0.407843, 1)
+sky_curve = 1.28613
+ground_bottom_color = Color(0.367188, 0.367188, 0.367188, 1)
+ground_horizon_color = Color(0.407843, 0.407843, 0.407843, 1)
+
+[sub_resource type="Sky" id="Sky_gy3sr"]
+sky_material = SubResource("ProceduralSkyMaterial_qiwiv")
+
+[sub_resource type="Environment" id="Environment_rrc7p"]
+background_mode = 2
+sky = SubResource("Sky_gy3sr")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_i78qp"]
+no_depth_test = true
+albedo_texture = ExtResource("4_kk44i")
+uv1_triplanar = true
+uv1_triplanar_sharpness = 150.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4b7fq"]
+next_pass = SubResource("StandardMaterial3D_i78qp")
+albedo_texture = ExtResource("4_kk44i")
+uv1_triplanar = true
+uv1_triplanar_sharpness = 150.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_qmoew"]
+top_radius = 0.4
+bottom_radius = 0.4
+height = 0.15
+
+[sub_resource type="BoxMesh" id="BoxMesh_hvhl3"]
+size = Vector3(2, 0.5, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_5a537"]
+size = Vector3(0.65, 0.4, 1.8)
+
+[node name="Node3D" type="Node3D"]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, 0.75, -0.433013, 0, 13.3866, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="DirectionalLight3D"]
+environment = SubResource("Environment_rrc7p")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 4.48528, 5.975, 7.21529)
+projection = 1
+size = 24.0
+far = 100.0
+
+[node name="UIController" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.13519, 0, 1.87244)
+script = ExtResource("1_imft6")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.23955, -1.38943, 4.87619)
+material_override = ExtResource("5_d7kfn")
+size = Vector3(52.1426, 1, 33.8613)
+
+[node name="WLeftPivot" type="Node3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, -0.5, 7.43205)
+
+[node name="WLeftReal" type="MeshInstance3D" parent="WLeftPivot"]
+unique_name_in_owner = true
+transform = Transform3D(-3.34849e-08, -0.766044, -0.642788, 1, -4.37114e-08, 0, -2.80971e-08, -0.642788, 0.766044, -6.69027, 0, -7.09168)
+material_override = SubResource("StandardMaterial3D_4b7fq")
+mesh = SubResource("CylinderMesh_qmoew")
+skeleton = NodePath("")
+
+[node name="WRightPivot" type="Node3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.1, -0.5, 7.43205)
+
+[node name="WLeft" type="MeshInstance3D" parent="WRightPivot"]
+unique_name_in_owner = true
+transform = Transform3D(-3.34849e-08, -0.766044, -0.642788, 1, -4.37114e-08, 0, -2.80971e-08, -0.642788, 0.766044, -8.8, 0, -7.1)
+material_override = SubResource("StandardMaterial3D_4b7fq")
+mesh = SubResource("CylinderMesh_qmoew")
+skeleton = NodePath("")
+
+[node name="CarMesh" type="MeshInstance3D" parent="WRightPivot"]
+transform = Transform3D(0.926022, 0, -0.377469, 0, 1, 0, 0.377469, 0, 0.926022, -8.64659, 0.5, -5.51211)
+material_override = ExtResource("2_ios3r")
+mesh = SubResource("BoxMesh_hvhl3")
+skeleton = NodePath("../..")
+metadata/_edit_group_ = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="WRightPivot/CarMesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.426268, 1.1)
+material_override = ExtResource("2_ios3r")
+mesh = SubResource("BoxMesh_5a537")
+
+[node name="WRight" type="MeshInstance3D" parent="WRightPivot"]
+unique_name_in_owner = true
+transform = Transform3D(-3.34849e-08, -0.766044, -0.642788, 1, -4.37114e-08, 0, -2.80971e-08, -0.642788, 0.766044, -7.3, 0, -6.6)
+material_override = SubResource("StandardMaterial3D_4b7fq")
+mesh = SubResource("CylinderMesh_qmoew")
+skeleton = NodePath("")
