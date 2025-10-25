@@ -120,6 +120,12 @@ func _handle_server_packet(packet: PackedByteArray) -> void:
 	var result := _deserialize_input(packet)
 	if result:
 		if result.tick >= _server_input.tick:
+			print("SERVER input tick=%s throttle=%s steer=%s handbrake=%s" % [
+				result.tick,
+				"%.2f" % result.throttle,
+				"%.2f" % result.steer,
+				result.handbrake
+			])
 			_server_input.copy_from(result)
 
 
@@ -148,6 +154,14 @@ func _collect_local_input() -> CarInputState:
 	state.steer = clampf(left - right, -1.0, 1.0)
 	state.handbrake = Input.is_action_pressed("handbreak")
 	state.brake = Input.is_action_pressed("brake")
+	if absf(state.throttle) > 0.1 or absf(state.steer) > 0.1 or state.handbrake or state.brake:
+		print("CLIENT input tick=%s throttle=%s steer=%s hb=%s br=%s" % [
+			_tick + 1,
+			"%.2f" % state.throttle,
+			"%.2f" % state.steer,
+			state.handbrake,
+			state.brake
+		])
 	return state
 
 
@@ -161,6 +175,7 @@ func _poll_client_packets() -> void:
 			continue
 		var snapshot := _deserialize_snapshot(packet)
 		if snapshot and _car:
+			print("CLIENT snapshot tick=%s" % snapshot.tick)
 			_car.queue_snapshot(snapshot)
 
 
