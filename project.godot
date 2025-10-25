@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 DebugDraw="*res://addons/debugdraw/autoload/DebugDraw.tscn"
+NetworkController="*res://network/network_controller.gd"
 
 [display]
 
@@ -147,6 +148,10 @@ brake={
 [input_devices]
 
 pen_tablet/driver.windows="dummy"
+
+[physics]
+
+common/physics_fps=60
 
 [rendering]
 
