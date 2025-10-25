@@ -1,0 +1,207 @@
+[gd_scene load_steps=20 format=3 uid="uid://cp5xcimk742ys"]
+
+[ext_resource type="PackedScene" uid="uid://cmpcr4wp2d8gk" path="res://scenes/environment_and_light.tscn" id="1_muqyt"]
+[ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://assets/prototype/prototype-materials/black_square.tres" id="2_r61m0"]
+[ext_resource type="Material" uid="uid://xyoosb4c2hv" path="res://assets/prototype/prototype-materials/black_checker.tres" id="3_1oeyv"]
+[ext_resource type="Script" uid="uid://br67vbbvr1vby" path="res://scenes/camera_3d.gd" id="4_grh43"]
+[ext_resource type="PackedScene" uid="uid://d2ui4f51xd0yq" path="res://assets/environment/hills.glb" id="4_jba5p"]
+[ext_resource type="PackedScene" uid="uid://2px1ud3mfgmk" path="res://assets/environment/pine_tree_1.glb" id="5_25s88"]
+[ext_resource type="Script" uid="uid://brdaxyox38y8u" path="res://scenes/camera_ortho.gd" id="5_ir1ql"]
+[ext_resource type="Script" uid="uid://vdt2ws355f17" path="res://scenes/car_finals/car_final_2/raycast_car_final_2.gd" id="6_eflid"]
+[ext_resource type="PackedScene" uid="uid://j8uwpryyopvq" path="res://assets/environment/pine_tree_2.glb" id="6_o3urj"]
+[ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://assets/prototype/prototype-materials/green_square.tres" id="7_ymwy4"]
+[ext_resource type="PackedScene" uid="uid://bwhfgrku5pwuk" path="res://assets/car/mustang67/mustang67.glb" id="8_7lpbc"]
+[ext_resource type="Script" uid="uid://cjcsfwc2cvokt" path="res://scenes/car_finals/car_final_2/raycast_wheel_final_2.gd" id="8_kibwu"]
+[ext_resource type="PackedScene" uid="uid://cukaeucupjo2e" path="res://scenes/debug_ui_controller.tscn" id="9_uf8ad"]
+[ext_resource type="PackedScene" uid="uid://bhdyaitlv747v" path="res://assets/car/mustang67/wheel_mustang66.glb" id="10_pr6jn"]
+[ext_resource type="PackedScene" uid="uid://cwogulupb7ye1" path="res://assets/environment/bush.glb" id="15_25s88"]
+
+[sub_resource type="Curve" id="Curve_7lpbc"]
+_data = [Vector2(0, 0.3), 0.0, 0.0, 0, 0, Vector2(0.3, 0.9), 0.0, 0.0, 0, 0, Vector2(0.6, 0.8), 0.0, 0.0, 0, 0, Vector2(1, 0.1), 0.0, 0.0, 0, 0]
+point_count = 4
+metadata/_snap_enabled = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_64tcs"]
+size = Vector3(2, 0.5, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_a57fx"]
+size = Vector3(0.65, 0.4, 1.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hkhk0"]
+size = Vector3(2, 0.39209, 4.28906)
+
+[node name="TestWorld" type="Node3D"]
+
+[node name="DirectionalLight3D" parent="." instance=ExtResource("1_muqyt")]
+
+[node name="CSGTerrain" type="Node3D" parent="."]
+
+[node name="Ground" type="CSGBox3D" parent="CSGTerrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, -94.2223)
+material_override = ExtResource("2_r61m0")
+use_collision = true
+size = Vector3(200, 0.5, 388.445)
+
+[node name="HiddenOrthoPlane" type="CSGBox3D" parent="CSGTerrain"]
+transform = Transform3D(1, 1.49012e-08, 2.23517e-08, 0, 1, 0, 0, 0, 1, 5.916, -0.26, -117.901)
+material_override = ExtResource("2_r61m0")
+size = Vector3(2.273, 0.5, 335.801)
+
+[node name="Ramp" type="CSGPolygon3D" parent="CSGTerrain"]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 9.93867, 0, -24.5334)
+use_collision = true
+polygon = PackedVector2Array(-6, -1, -6, -0.1, -2, 2, 3, -0.1, 3, -1)
+depth = 8.0
+material = ExtResource("3_1oeyv")
+
+[node name="Ramp2" type="CSGPolygon3D" parent="CSGTerrain"]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 24.9387, -0.163278, -25.0232)
+use_collision = true
+polygon = PackedVector2Array(-9.58958, 4.01076, -10.9691, 14.9796, -5.37684, 17.5104, 0.0929508, 16.7349, -3.94816, 15.1429, -6.39732, 10.6936, -6.31568, 8.16282, -5.44355, 5.33397, -2, 2, 3, -0.1, 3, -1)
+depth = 8.0
+material = ExtResource("3_1oeyv")
+
+[node name="hills" parent="CSGTerrain" instance=ExtResource("4_jba5p")]
+transform = Transform3D(1.49038, 0, 0, 0, 1.49038, 0, 0, 0, 4.34231, -5.57019, -0.699799, -0.264164)
+
+[node name="pine_tree_1" parent="CSGTerrain" instance=ExtResource("5_25s88")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.5533, 0.0223532, -19.6699)
+
+[node name="pine_tree_2" parent="CSGTerrain" instance=ExtResource("6_o3urj")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.2649, 0.0187771, -34.224)
+
+[node name="pine_tree_3" parent="CSGTerrain" instance=ExtResource("5_25s88")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.1807, 3.73688, -125.62)
+
+[node name="pine_tree_4" parent="CSGTerrain" instance=ExtResource("6_o3urj")]
+transform = Transform3D(0.178518, 0.0681315, 0.981575, 0.0174504, 0.997224, -0.0723914, -0.983782, 0.030052, 0.176833, -13.5865, -0.914489, -60.9799)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.229197, 0.348107, -0.909005, 0, 0.933864, 0.357627, 0.97338, -0.081967, 0.214039, -5.53718, 4.48851, 1.30381)
+script = ExtResource("4_grh43")
+start_enabled = true
+
+[node name="OrthoCamera" type="Camera3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(-5.96046e-08, 0, -1, 0, 1, 0, 1, 0, -5.96046e-08, -31.0127, 1.46143, -4.43062e-08)
+projection = 1
+size = 5.0
+far = 500.0
+script = ExtResource("5_ir1ql")
+is_active = false
+
+[node name="FollowPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="FollowCam" type="Camera3D" parent="FollowPivot"]
+transform = Transform3D(0.53142, 0.304914, -0.790329, 0.0180189, 0.928693, 0.370412, 0.846917, -0.211085, 0.488032, -6.33168, 3.28983, 1.31288)
+
+[node name="Car" type="RigidBody3D" parent="." node_paths=PackedStringArray("wheels")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mass = 50.0
+script = ExtResource("6_eflid")
+wheels = [NodePath("WheelFL"), NodePath("WheelRL"), NodePath("WheelFR"), NodePath("WheelRR")]
+acceleration = 800.0
+max_speed = 50.0
+accel_curve = SubResource("Curve_7lpbc")
+
+[node name="CarMesh" type="MeshInstance3D" parent="Car"]
+visible = false
+material_override = ExtResource("7_ymwy4")
+mesh = SubResource("BoxMesh_64tcs")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Car/CarMesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.426268, 1.1)
+material_override = ExtResource("7_ymwy4")
+mesh = SubResource("BoxMesh_a57fx")
+
+[node name="mustang67" parent="Car" instance=ExtResource("8_7lpbc")]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, -0.6, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0539551, 0)
+shape = SubResource("BoxShape3D_hkhk0")
+
+[node name="WheelFL" type="RayCast3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, -0.0838296, -1.5)
+enabled = false
+script = ExtResource("8_kibwu")
+spring_strength = 3500.0
+spring_damping = 85.0
+rest_dist = 0.25
+wheel_radius = 0.325
+metadata/_edit_group_ = true
+
+[node name="wheel_mustang66" parent="Car/WheelFL" instance=ExtResource("10_pr6jn")]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 0, 0)
+
+[node name="WheelFR" type="RayCast3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, -0.0838296, -1.5)
+enabled = false
+script = ExtResource("8_kibwu")
+spring_strength = 3500.0
+spring_damping = 85.0
+rest_dist = 0.25
+wheel_radius = 0.325
+metadata/_edit_group_ = true
+
+[node name="wheel_mustang66" parent="Car/WheelFR" instance=ExtResource("10_pr6jn")]
+
+[node name="WheelRL" type="RayCast3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, -0.0838296, 1.25)
+enabled = false
+script = ExtResource("8_kibwu")
+spring_strength = 3500.0
+spring_damping = 85.0
+rest_dist = 0.25
+wheel_radius = 0.325
+is_motor = true
+metadata/_edit_group_ = true
+
+[node name="wheel_mustang66" parent="Car/WheelRL" instance=ExtResource("10_pr6jn")]
+transform = Transform3D(-1, -3.55271e-15, -8.74228e-08, -3.55271e-15, 1, -4.23516e-22, 8.74228e-08, 0, -1, 7.10543e-16, 0, 0)
+
+[node name="WheelRR" type="RayCast3D" parent="Car"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, -0.0838296, 1.25)
+enabled = false
+script = ExtResource("8_kibwu")
+spring_strength = 3500.0
+spring_damping = 85.0
+rest_dist = 0.25
+wheel_radius = 0.325
+is_motor = true
+metadata/_edit_group_ = true
+
+[node name="wheel_mustang66" parent="Car/WheelRR" instance=ExtResource("10_pr6jn")]
+
+[node name="RemoteTransform3D" type="RemoteTransform3D" parent="Car"]
+remote_path = NodePath("../../FollowPivot")
+update_rotation = false
+update_scale = false
+
+[node name="UiController" parent="." node_paths=PackedStringArray("car") instance=ExtResource("9_uf8ad")]
+car = NodePath("../Car")
+use_pause_time_inputs = true
+
+[node name="bush" parent="." instance=ExtResource("15_25s88")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.7588, 1.41453, -60.6107)
+
+[node name="pine_tree_1" parent="." instance=ExtResource("5_25s88")]
+transform = Transform3D(0.729422, 0, 0.684063, 0, 1, 0, -0.684063, 0, 0.729422, -22.2753, 1.94332, -74.6417)
+
+[node name="pine_tree_2" parent="." instance=ExtResource("6_o3urj")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.2237, 2.4874, -89.6712)
+
+[node name="pine_tree_3" parent="." instance=ExtResource("5_25s88")]
+transform = Transform3D(-0.678711, 0, -0.734405, 0, 1, 0, 0.734405, 0, -0.678711, 17.0787, 1.83499, -97.2327)
+
+[node name="pine_tree_4" parent="." instance=ExtResource("6_o3urj")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.9125, 2.85603, -76.407)
+
+[node name="pine_tree_5" parent="." instance=ExtResource("5_25s88")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.4773, 4.50582, -130.078)
+
+[node name="pine_tree_6" parent="." instance=ExtResource("6_o3urj")]
+transform = Transform3D(1, 0, 0, 0, 0.996964, -0.0778675, 0, 0.0778675, 0.996964, -39.4726, 7.02101, -123.533)
+
+[editable path="DirectionalLight3D"]

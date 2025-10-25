@@ -1,0 +1,80 @@
+[gd_scene load_steps=12 format=3 uid="uid://dyqflamowljck"]
+
+[ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://assets/prototype/prototype-materials/black_square.tres" id="1_1lwx6"]
+[ext_resource type="Material" uid="uid://xyoosb4c2hv" path="res://assets/prototype/prototype-materials/black_checker.tres" id="1_dxppu"]
+[ext_resource type="Script" uid="uid://drlbfa47xlxak" path="res://scenes/experimentation/1 car_suspension/basic_suspension.gd" id="2_dsnr4"]
+[ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://assets/prototype/prototype-materials/green_square.tres" id="2_gy3sr"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_dxppu"]
+sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+ground_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+
+[sub_resource type="Sky" id="Sky_dsnr4"]
+sky_material = SubResource("ProceduralSkyMaterial_dxppu")
+
+[sub_resource type="Environment" id="Environment_1lwx6"]
+background_mode = 2
+sky = SubResource("Sky_dsnr4")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_gy3sr"]
+size = Vector3(0.65, 0.445, 1.81)
+
+[sub_resource type="BoxMesh" id="BoxMesh_dxppu"]
+size = Vector3(2, 0.5, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gy3sr"]
+size = Vector3(2.0293, 0.461182, 4.01929)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_dsnr4"]
+top_radius = 0.4
+bottom_radius = 0.4
+height = 0.15
+
+[node name="TestWorld" type="Node3D"]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, 0.75, -0.433013, 0, 13.3866, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="DirectionalLight3D"]
+environment = SubResource("Environment_1lwx6")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+material_override = ExtResource("1_1lwx6")
+use_collision = true
+size = Vector3(50, 0.5, 50)
+
+[node name="RigidBody3D" type="RigidBody3D" parent="." node_paths=PackedStringArray("wheel1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.31004, 0)
+gravity_scale = 0.0
+script = ExtResource("2_dsnr4")
+wheel1 = NodePath("Wheel")
+
+[node name="CarBody" type="MeshInstance3D" parent="RigidBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.432125, 1.01902)
+material_override = ExtResource("2_gy3sr")
+mesh = SubResource("BoxMesh_gy3sr")
+
+[node name="CarTop" type="MeshInstance3D" parent="RigidBody3D/CarBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.432125, -1.01902)
+material_override = ExtResource("2_gy3sr")
+mesh = SubResource("BoxMesh_dxppu")
+skeleton = NodePath("../..")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RigidBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0141602, -0.00646973, 0.017334)
+shape = SubResource("BoxShape3D_gy3sr")
+
+[node name="Wheel" type="RayCast3D" parent="RigidBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
+
+[node name="WheelMesh" type="MeshInstance3D" parent="RigidBody3D/Wheel"]
+transform = Transform3D(-4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 0, 1, -0.201184, 0, 0)
+material_override = ExtResource("1_dxppu")
+mesh = SubResource("CylinderMesh_dsnr4")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.235956, 0.548985, -0.801836, 0, 0.825134, 0.564937, 0.971764, -0.1333, 0.194695, -6.36937, 5.72199, 2.41643)
