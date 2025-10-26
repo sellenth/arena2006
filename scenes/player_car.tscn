@@ -45,15 +45,17 @@ material = SubResource("9")
 size = Vector2(0.6, 1)
 orientation = 1
 
-[node name="Car" type="RigidBody3D"]
+[node name="Car" type="RigidBody3D" node_paths=PackedStringArray("wheels", "skid_marks")]
 mass = 50.0
 physics_material_override = SubResource("1")
 linear_damp_mode = 1
 script = ExtResource("1")
+wheels = [NodePath("Car#WheelFL"), NodePath("Car#WheelFR"), NodePath("Car#WheelRL"), NodePath("Car#WheelRR")]
 acceleration = 550.0
 max_speed = 60.0
 accel_curve = SubResource("2")
 tire_max_turn_degrees = 12
+skid_marks = [NodePath("Car_SkidMarks#GPUParticles3D"), NodePath("Car_SkidMarks#GPUParticles3D2"), NodePath("Car_SkidMarks#GPUParticles3D3"), NodePath("Car_SkidMarks#GPUParticles3D4")]
 show_debug = true
 
 [node name="Car#CarMesh" type="MeshInstance3D" parent="."]

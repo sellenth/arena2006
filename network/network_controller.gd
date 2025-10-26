@@ -72,9 +72,9 @@ func _ready() -> void:
 
 
 func register_car(car) -> void:
+	_car = car
 	if role == Role.CLIENT:
-		_car = car
-		_car.set_input_state(_client_input)
+		_apply_client_input_to_car()
 
 
 func _determine_role() -> Role:
@@ -111,6 +111,7 @@ func _start_client() -> void:
 		_client_id = 0
 		_remote_player_snapshots.clear()
 		print("Client connecting to 127.0.0.1:%s" % DEFAULT_PORT)
+		_apply_client_input_to_car()
 
 
 func _physics_process(_delta: float) -> void:
@@ -348,6 +349,11 @@ func _remove_peer(peer_id: int, notify_clients: bool) -> void:
 func _apply_local_snapshot(snapshot: CarSnapshot) -> void:
 	if _car:
 		_car.queue_snapshot(snapshot)
+
+
+func _apply_client_input_to_car() -> void:
+	if _car:
+		_car.set_input_state(_client_input)
 
 
 func _serialize_input(state: CarInputState) -> PackedByteArray:
