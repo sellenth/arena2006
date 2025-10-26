@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://b723duilvfyq4"
 path.s3tc="res://.godot/imported/ImphenziaPalette01-256-Gradient.png-527e79406b42ab2d1fd148e03e8f0ad4.s3tc.ctex"
+path.etc2="res://.godot/imported/ImphenziaPalette01-256-Gradient.png-527e79406b42ab2d1fd148e03e8f0ad4.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/car/mustang67/ImphenziaPalette01-256-Gradient.png"
-dest_files=["res://.godot/imported/ImphenziaPalette01-256-Gradient.png-527e79406b42ab2d1fd148e03e8f0ad4.s3tc.ctex"]
+dest_files=["res://.godot/imported/ImphenziaPalette01-256-Gradient.png-527e79406b42ab2d1fd148e03e8f0ad4.s3tc.ctex", "res://.godot/imported/ImphenziaPalette01-256-Gradient.png-527e79406b42ab2d1fd148e03e8f0ad4.etc2.ctex"]
 
 [params]
 
