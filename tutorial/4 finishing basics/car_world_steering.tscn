@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://d1s7t2830ax65"]
+[gd_scene load_steps=28 format=3 uid="uid://d1s7t2830ax65"]
 
 [ext_resource type="PackedScene" uid="uid://cmpcr4wp2d8gk" path="res://scenes/environment_and_light.tscn" id="1_xmp6s"]
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://assets/prototype/prototype-materials/black_square.tres" id="2_2r6vf"]
@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://ck1tr3pyqpyd3" path="res://scenes/objects/traffic_barrier.tscn" id="11_jgdmd"]
 [ext_resource type="Material" uid="uid://db8vaei0l3gbe" path="res://assets/prototype/prototype-materials/blue_square.tres" id="11_wxlo2"]
 [ext_resource type="PackedScene" uid="uid://cj2v1b4qbls12" path="res://scenes/objects/traffic_cone.tscn" id="12_wxlo2"]
+[ext_resource type="Script" uid="uid://da27ahbmo5qjk" path="res://scenes/remote_player_labels.gd" id="13_rplbl"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_qm2o8"]
 friction = 0.0
@@ -98,6 +99,9 @@ size = 5.0
 far = 500.0
 script = ExtResource("4_jgdmd")
 is_active = false
+
+[node name="RemotePlayerLabels" type="Node3D" parent="."]
+script = ExtResource("13_rplbl")
 
 [node name="Car" type="RigidBody3D" parent="." node_paths=PackedStringArray("wheels", "skid_marks")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.01043, 2, -27.1393)
