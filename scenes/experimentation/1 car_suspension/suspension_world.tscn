@@ -175,7 +175,7 @@ text = "Wheel"
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(0.229197, 0.348107, -0.909006, 0, 0.933864, 0.357626, 0.973381, -0.0819669, 0.214039, -5.53718, 4.48851, 1.30381)
 script = ExtResource("5_dig08")
-start_enabled = true
+start_enabled = false
 
 [node name="OrthoCamera" type="Camera3D" parent="."]
 unique_name_in_owner = true
