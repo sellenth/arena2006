@@ -155,4 +155,5 @@ common/physics_fps=60
 
 [rendering]
 
+textures/vram_compression/import_etc2_astc=true
 anti_aliasing/quality/msaa_3d=2

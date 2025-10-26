@@ -23,6 +23,11 @@ var is_slipping := false
 var _input_state := CarInputState.new()
 var _brake_pressed := false
 var _pending_snapshot: CarSnapshot
+# Lightweight reconciliation constants that soften server snaps.
+const SNAP_BLEND := 0.35
+const SNAP_POS_EPS := 0.05
+const SNAP_VEL_EPS := 0.1
+const SNAP_ANG_EPS := deg_to_rad(2.0)
 
 
 func _ready() -> void:
@@ -100,7 +105,23 @@ func _physics_process(delta: float) -> void:
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	if _pending_snapshot:
-		state.transform = _pending_snapshot.transform
-		state.linear_velocity = _pending_snapshot.linear_velocity
-		state.angular_velocity = _pending_snapshot.angular_velocity
-		_pending_snapshot = null
+		var target := _pending_snapshot
+		var current_transform := state.transform
+		var blended_origin := current_transform.origin.lerp(target.transform.origin, SNAP_BLEND)
+		var current_quat := current_transform.basis.get_rotation_quaternion()
+		var target_quat := target.transform.basis.get_rotation_quaternion()
+		var blended_quat := current_quat.slerp(target_quat, SNAP_BLEND)
+		state.transform = Transform3D(Basis(blended_quat), blended_origin)
+
+		var blended_linear := state.linear_velocity.lerp(target.linear_velocity, SNAP_BLEND)
+		state.linear_velocity = blended_linear
+		var blended_angular := state.angular_velocity.lerp(target.angular_velocity, SNAP_BLEND)
+		state.angular_velocity = blended_angular
+
+		var pos_error := blended_origin.distance_to(target.transform.origin)
+		var ang_error := blended_quat.angle_to(target_quat)
+		var lin_error := blended_linear.distance_to(target.linear_velocity)
+		var ang_vel_error := blended_angular.distance_to(target.angular_velocity)
+		if pos_error <= SNAP_POS_EPS and ang_error <= SNAP_ANG_EPS \
+			and lin_error <= SNAP_VEL_EPS and ang_vel_error <= SNAP_VEL_EPS:
+			_pending_snapshot = null
