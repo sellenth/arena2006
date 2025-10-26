@@ -1,11 +1,9 @@
 extends Node
 
 const DEFAULT_PORT := 45000
-const PACKET_INPUT := 1
-const PACKET_SNAPSHOT := 2
-const PACKET_PLAYER_STATE := 3
-const PACKET_WELCOME := 4
-const PACKET_REMOVE_PLAYER := 5
+const PACKET_PLAYER_STATE := 1
+const PACKET_WELCOME := 2
+const PACKET_REMOVE_PLAYER := 3
 
 const PEER_TIMEOUT_MSEC := 5000
 const SNAPSHOT_PAYLOAD_BYTES := 4 + 12 + 16 + 12 + 12
@@ -19,7 +17,6 @@ signal player_disconnected(player_id: int)
 class PeerInfo:
 	var id := 0
 	var peer: PacketPeerUDP
-	var input_state := CarInputState.new()
 	var last_snapshot: CarSnapshot
 	var last_seen_msec := 0
 
@@ -46,8 +43,6 @@ var _tick := 0
 var _udp_server: UDPServer
 var _peers := {}
 var _next_peer_id := 1
-var _controller_peer_id := 0
-var _server_input := CarInputState.new()
 
 # Client side state
 var _client_peer: PacketPeerUDP
@@ -73,13 +68,8 @@ func _ready() -> void:
 
 func register_car(car) -> void:
 	_car = car
-	match role:
-		Role.SERVER:
-			_car.set_input_state(_server_input)
-		Role.CLIENT:
-			_car.set_input_state(_client_input)
-		_:
-			pass
+	if role == Role.CLIENT:
+		_car.set_input_state(_client_input)
 
 
 func _determine_role() -> Role:
@@ -101,7 +91,6 @@ func _start_server() -> void:
 	else:
 		_peers.clear()
 		_next_peer_id = 1
-		_controller_peer_id = 0
 		print("Server listening on UDP %s" % DEFAULT_PORT)
 
 
@@ -146,16 +135,6 @@ func _process_server() -> void:
 				_handle_server_packet(peer_id, packet)
 
 	_tick += 1
-	if _car and _peers.size() > 0:
-		var controller_state := _get_controller_input_state()
-		if controller_state:
-			_car.set_input_state(controller_state)
-		var snapshot: CarSnapshot = _car.capture_snapshot(_tick)
-		var packet := _serialize_snapshot(snapshot)
-		for peer_info in _peers.values():
-			if peer_info:
-				peer_info.peer.put_packet(packet)
-
 	_check_peer_timeouts()
 
 
@@ -168,13 +147,6 @@ func _handle_server_packet(peer_id: int, packet: PackedByteArray) -> void:
 	peer_info.touch()
 	var packet_type := packet[0]
 	match packet_type:
-		PACKET_INPUT:
-			var result := _deserialize_input(packet)
-			if result:
-				if result.tick >= peer_info.input_state.tick:
-					peer_info.input_state.copy_from(result)
-					if peer_id == _controller_peer_id:
-						_server_input.copy_from(result)
 		PACKET_PLAYER_STATE:
 			var state: PlayerStateData = _deserialize_player_state(packet)
 			if state and state.snapshot:
@@ -195,8 +167,9 @@ func _process_client() -> void:
 		_car.set_input_state(_client_input)
 
 	if _client_peer:
-		_client_peer.put_packet(_serialize_input(local_input))
-		if _client_id != 0 and _car:
+		if _client_id == 0:
+			_send_registration_ping()
+		if _car:
 			var snapshot: CarSnapshot = _car.capture_snapshot(_tick)
 			var state_packet := _serialize_player_state(_client_id, snapshot)
 			_client_peer.put_packet(state_packet)
@@ -234,10 +207,6 @@ func _poll_client_packets() -> void:
 			continue
 		var packet_type := packet[0]
 		match packet_type:
-			PACKET_SNAPSHOT:
-				var snapshot := _deserialize_snapshot(packet)
-				if snapshot and _car:
-					_car.queue_snapshot(snapshot)
 			PACKET_WELCOME:
 				var new_id := _deserialize_welcome(packet)
 				if new_id != 0:
@@ -264,8 +233,6 @@ func _register_peer(new_peer: PacketPeerUDP) -> void:
 	_next_peer_id += 1
 	var info := PeerInfo.new(peer_id, new_peer)
 	_peers[peer_id] = info
-	if _controller_peer_id == 0:
-		_controller_peer_id = peer_id
 	print("Client connected from %s:%s assigned id=%s" % [
 		new_peer.get_packet_ip(),
 		new_peer.get_packet_port(),
@@ -297,13 +264,6 @@ func _broadcast_player_state(source_peer_id: int, snapshot: CarSnapshot) -> void
 			info.peer.put_packet(packet)
 
 
-func _get_controller_input_state() -> CarInputState:
-	if _controller_peer_id != 0 and _peers.has(_controller_peer_id):
-		_server_input.copy_from(_peers[_controller_peer_id].input_state)
-		return _server_input
-	return null
-
-
 func _check_peer_timeouts() -> void:
 	if _peers.is_empty():
 		return
@@ -322,8 +282,6 @@ func _remove_peer(peer_id: int, notify_clients: bool) -> void:
 	if not info:
 		return
 	_peers.erase(peer_id)
-	if _controller_peer_id == peer_id:
-		_controller_peer_id = _select_next_controller()
 	if notify_clients and _peers.size() > 0:
 		var packet := _serialize_remove_player(peer_id)
 		for other in _peers.values():
@@ -332,62 +290,10 @@ func _remove_peer(peer_id: int, notify_clients: bool) -> void:
 	print("Client %s removed" % peer_id)
 
 
-func _select_next_controller() -> int:
-	for peer_id in _peers.keys():
-		return peer_id
-	return 0
-
-
-func _serialize_input(state: CarInputState) -> PackedByteArray:
-	var buffer := StreamPeerBuffer.new()
-	buffer.big_endian = false
-	buffer.put_u8(PACKET_INPUT)
-	buffer.put_u32(state.tick)
-	buffer.put_float(state.throttle)
-	buffer.put_float(state.steer)
-	buffer.put_u8(1 if state.handbrake else 0)
-	buffer.put_u8(1 if state.brake else 0)
-	return buffer.data_array
-
-
-func _deserialize_input(packet: PackedByteArray) -> CarInputState:
-	var buffer := StreamPeerBuffer.new()
-	buffer.big_endian = false
-	buffer.data_array = packet
-	if buffer.get_available_bytes() < 1:
-		return null
-	var packet_type := buffer.get_u8()
-	if packet_type != PACKET_INPUT:
-		return null
-	if buffer.get_available_bytes() < 4 + 4 + 4 + 1 + 1:
-		return null
-	var state := CarInputState.new()
-	state.tick = buffer.get_u32()
-	state.throttle = buffer.get_float()
-	state.steer = buffer.get_float()
-	state.handbrake = buffer.get_u8() == 1
-	state.brake = buffer.get_u8() == 1
-	return state
-
-
-func _serialize_snapshot(snapshot: CarSnapshot) -> PackedByteArray:
-	var buffer := StreamPeerBuffer.new()
-	buffer.big_endian = false
-	buffer.put_u8(PACKET_SNAPSHOT)
-	_write_snapshot_payload(buffer, snapshot)
-	return buffer.data_array
-
-
-func _deserialize_snapshot(packet: PackedByteArray) -> CarSnapshot:
-	var buffer := StreamPeerBuffer.new()
-	buffer.big_endian = false
-	buffer.data_array = packet
-	if buffer.get_available_bytes() < 1:
-		return null
-	var packet_type := buffer.get_u8()
-	if packet_type != PACKET_SNAPSHOT:
-		return null
-	return _read_snapshot_payload(buffer)
+func _send_registration_ping() -> void:
+	var snapshot := CarSnapshot.new()
+	snapshot.tick = _tick
+	_client_peer.put_packet(_serialize_player_state(0, snapshot))
 
 
 func _serialize_player_state(player_id: int, snapshot: CarSnapshot) -> PackedByteArray:
