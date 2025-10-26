@@ -79,7 +79,7 @@ func _physics_process(delta: float) -> void:
 		# Skid marks
 		skid_marks[id].global_position = wheel.get_collision_point() + Vector3.UP * 0.01
 		skid_marks[id].look_at(skid_marks[id].global_position + global_basis.z)
-
+  
 		if not hand_break and wheel.grip_factor < 0.2:
 			is_slipping = false
 			skid_marks[id].emitting = false
