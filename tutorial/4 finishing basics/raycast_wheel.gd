@@ -18,11 +18,30 @@ class_name RaycastWheel
 @export_category("Debug")
 @export var show_debug := false
 
-@onready var wheel: Node3D = get_child(0)
+@onready var wheel: Node3D = _ensure_wheel_node()
 
 var engine_force := 0.0
 var grip_factor  := 0.0
 var is_braking   := false
+
+
+func _ensure_wheel_node() -> Node3D:
+	if get_child_count() == 0:
+		return _create_wheel_placeholder("WheelPlaceholder")
+
+	var first_child := get_child(0)
+	if first_child is Node3D:
+		return first_child
+
+	push_warning("RaycastWheel expects a Node3D visual child; creating placeholder so gameplay can continue.")
+	return _create_wheel_placeholder("WheelPlaceholderInvalid")
+
+
+func _create_wheel_placeholder(placeholder_name: String) -> Node3D:
+	var placeholder := Node3D.new()
+	placeholder.name = placeholder_name
+	add_child(placeholder, false)
+	return placeholder
 
 
 func _ready() -> void:

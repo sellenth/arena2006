@@ -44,7 +44,7 @@ material = ExtResource("3_qiji4")
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(0.229197, 0.348107, -0.909005, 0, 0.933864, 0.357627, 0.97338, -0.081967, 0.214039, -5.53718, 4.48851, 1.30381)
 script = ExtResource("4_8kt35")
-start_enabled = true
+start_enabled = false
 
 [node name="OrthoCamera" type="Camera3D" parent="."]
 unique_name_in_owner = true
