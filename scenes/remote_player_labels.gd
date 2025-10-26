@@ -2,12 +2,18 @@ extends Node3D
 
 const CarSnapshot := preload("res://network/car_snapshot.gd")
 
+@export var remote_car_scene: PackedScene = preload("res://scenes/remote_car_proxy.tscn")
 @export var label_color := Color(0.95, 0.86, 0.3)
 @export var label_height := 2.5
 @export var label_pixel_size := 0.01
+@export var placeholder_color := Color(0.2, 0.6, 0.9)
+
+class RemotePlayerView:
+	var root: Node3D
+	var label: Label3D
 
 var _network: Node
-var _labels: Dictionary[int, Label3D] = {}
+var _views: Dictionary[int, RemotePlayerView] = {}
 
 
 func _ready() -> void:
@@ -23,20 +29,49 @@ func _ready() -> void:
 func _on_player_state_updated(player_id: int, snapshot: CarSnapshot) -> void:
 	if not snapshot:
 		return
-	var label: Label3D = _labels.get(player_id, null)
-	if not label:
-		label = _create_label(player_id)
-		_labels[player_id] = label
-		add_child(label)
-	label.global_position = snapshot.transform.origin + Vector3.UP * label_height
+	var view: RemotePlayerView = _views.get(player_id, null)
+	if not view:
+		view = _create_view(player_id)
+		_views[player_id] = view
+	view.root.global_transform = snapshot.transform
 
 
 func _on_player_disconnected(player_id: int) -> void:
-	var label: Label3D = _labels.get(player_id, null)
-	if not label:
+	var view: RemotePlayerView = _views.get(player_id, null)
+	if not view:
 		return
-	_labels.erase(player_id)
-	label.queue_free()
+	_views.erase(player_id)
+	if is_instance_valid(view.root):
+		view.root.queue_free()
+
+
+func _create_view(player_id: int) -> RemotePlayerView:
+	var view := RemotePlayerView.new()
+	view.root = _instantiate_remote_car()
+	view.root.name = "RemotePlayer_%s" % player_id
+	add_child(view.root)
+	view.label = _create_label(player_id)
+	view.label.position = Vector3(0, label_height, 0)
+	view.root.add_child(view.label)
+	return view
+
+
+func _instantiate_remote_car() -> Node3D:
+	if remote_car_scene:
+		var inst := remote_car_scene.instantiate()
+		if inst is Node3D:
+			return inst
+	var placeholder := Node3D.new()
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(2, 0.5, 4)
+	mesh.mesh = box
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = placeholder_color
+	mesh.material_override = mat
+	mesh.position = Vector3(0, 0.25, 0)
+	placeholder.add_child(mesh)
+	return placeholder
 
 
 func _create_label(player_id: int) -> Label3D:

@@ -293,6 +293,10 @@ func _remove_peer(peer_id: int, notify_clients: bool) -> void:
 func _send_registration_ping() -> void:
 	var snapshot := CarSnapshot.new()
 	snapshot.tick = _tick
+	if _car:
+		snapshot.transform = _car.global_transform
+		snapshot.linear_velocity = _car.linear_velocity
+		snapshot.angular_velocity = _car.angular_velocity
 	_client_peer.put_packet(_serialize_player_state(0, snapshot))
 
 
