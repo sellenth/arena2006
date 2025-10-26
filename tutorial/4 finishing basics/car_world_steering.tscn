@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3 uid="uid://d1s7t2830ax65"]
+[gd_scene load_steps=29 format=3 uid="uid://d1s7t2830ax65"]
 
 [ext_resource type="PackedScene" uid="uid://cmpcr4wp2d8gk" path="res://scenes/environment_and_light.tscn" id="1_xmp6s"]
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://assets/prototype/prototype-materials/black_square.tres" id="2_2r6vf"]
@@ -53,6 +53,13 @@ vertex_color_use_as_albedo = true
 material = SubResource("StandardMaterial3D_o6rug")
 size = Vector2(0.6, 1)
 orientation = 1
+
+[sub_resource type="Curve3D" id="Curve3D_qm2o8"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -13.1711, -1.30335, 14.5162, 0, 0, 0, 0, 0, 0, -62.5066, 7.16259, -45.2326, 0, 0, 0, 0, 0, 0, -0.683891, 10.2336, -136.096),
+"tilts": PackedFloat32Array(0, 0, 0)
+}
+point_count = 3
 
 [node name="TestWorld" type="Node3D"]
 
@@ -469,6 +476,25 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.59572, 0.0103439, -99.6644)
 
 [node name="traffic_cone8" parent="Obstacles" instance=ExtResource("12_wxlo2")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.9575, 0.0103439, -94.5393)
+
+[node name="Path3D" type="Path3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -55.8006)
+curve = SubResource("Curve3D_qm2o8")
+
+[node name="CSGPolygon3D" type="CSGPolygon3D" parent="Path3D"]
+use_collision = true
+polygon = PackedVector2Array(-5, 0, -5, 1, 5, 1, 5, 0)
+mode = 2
+path_node = NodePath("..")
+path_interval_type = 0
+path_interval = 54.5
+path_simplify_angle = 0.0
+path_rotation = 2
+path_rotation_accurate = false
+path_local = true
+path_continuous_u = true
+path_u_distance = 1.0
+path_joined = false
 
 [editable path="DirectionalLight3D"]
 [editable path="Car/nissan_skyliner35"]
