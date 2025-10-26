@@ -246,9 +246,8 @@ min_distance = 6.0
 max_distance = 10.0
 height = 4.0
 
-[node name="UiController" parent="." node_paths=PackedStringArray("car") instance=ExtResource("9_qm2o8")]
-car = NodePath("../Car")
-use_pause_time_inputs = true
+[node name="UiController" parent="." instance=ExtResource("9_qm2o8")]
+script = null
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="."]
 anchors_preset = 15
