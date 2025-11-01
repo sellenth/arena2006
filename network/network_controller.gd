@@ -104,6 +104,7 @@ func _start_server() -> void:
 
 func _start_client() -> void:
 	_client_peer = PacketPeerUDP.new()
+	#var err = _client_peer.connect_to_host("129.212.182.9", DEFAULT_PORT)
 	var err = _client_peer.connect_to_host("127.0.0.1", DEFAULT_PORT)
 	if err != OK:
 		push_error("Failed to start UDP client (err %s)" % err)

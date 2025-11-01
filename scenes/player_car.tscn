@@ -42,7 +42,7 @@ vertex_color_use_as_albedo = true
 
 [sub_resource type="QuadMesh" id="10"]
 material = SubResource("9")
-size = Vector2(0.6, 1)
+size = Vector2(0.1, 0.2)
 orientation = 1
 
 [node name="Car" type="RigidBody3D" node_paths=PackedStringArray("wheels", "skid_marks")]
@@ -140,9 +140,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.830446, 0.306062, 1.40277)
 
 [node name="Car_SkidMarks#GPUParticles3D" type="GPUParticles3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16986, -0.85232, 0.224953)
-emitting = false
 amount = 150
-lifetime = 1.5
+lifetime = 2.5
 fixed_fps = 60
 process_material = SubResource("8")
 draw_pass_1 = SubResource("10")
