@@ -1,18 +1,18 @@
-[gd_scene load_steps=24 format=3 uid="uid://d1s7t2830ax65"]
+[gd_scene load_steps=24 format=3 uid="uid://pgudwlq5efn0"]
 
-[ext_resource type="PackedScene" uid="uid://cmpcr4wp2d8gk" path="res://src/entities/world/environment_and_light.tscn" id="1_xmp6s"]
-[ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/resources/materials/prototype/prototype-materials/black_square.tres" id="2_2r6vf"]
-[ext_resource type="Script" uid="uid://dw4dmwb4754jj" path="res://src/entities/vehicle/car/RaycastCar.cs" id="5_xmp6s"]
-[ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://src/resources/materials/prototype/prototype-materials/green_square.tres" id="6_ojx5s"]
-[ext_resource type="Script" uid="uid://blkjol6xn0n1a" path="res://src/entities/vehicle/car/RaycastWheel.cs" id="7_2r6vf"]
-[ext_resource type="Curve" uid="uid://d3nv4w51hbb4y" path="res://src/entities/vehicle/car/car_tire_BACK.tres" id="8_iiwpk"]
-[ext_resource type="PackedScene" uid="uid://cbund3287huk5" path="res://src/entities/vehicle/models/nissan35/wheel_nissan.glb" id="9_m8duc"]
-[ext_resource type="PackedScene" uid="uid://cukaeucupjo2e" path="res://src/entities/ui/debug_ui_controller.tscn" id="9_qm2o8"]
-[ext_resource type="PackedScene" uid="uid://vae1yu2flf4a" path="res://src/entities/vehicle/models/nissan35/nissan_skyliner35.glb" id="10_jgdmd"]
-[ext_resource type="Script" uid="uid://cjn2pu6fplhnj" path="res://src/entities/camera/CarFollowCamera.cs" id="10_ojx5s"]
-[ext_resource type="Curve" uid="uid://s7soqbgm8k37" path="res://src/entities/vehicle/car/car_tire_FRONT.tres" id="10_qm2o8"]
-[ext_resource type="Script" uid="uid://o8jx8ewyc6fx" path="res://src/entities/ui/RemotePlayerLabels.cs" id="13_rplbl"]
-[ext_resource type="Script" uid="uid://db8dybniui1jv" path="res://src/systems/network/RemotePlayerManager.cs" id="14_rpm"]
+[ext_resource type="PackedScene" uid="uid://cmpcr4wp2d8gk" path="res://src/entities/root/environment_and_light.tscn" id="1_p4qn7"]
+[ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/resources/materials/prototype/prototype-materials/black_square.tres" id="2_n38sr"]
+[ext_resource type="Script" uid="uid://o8jx8ewyc6fx" path="res://src/entities/ui/RemotePlayerLabels.cs" id="3_bey8s"]
+[ext_resource type="Script" uid="uid://db8dybniui1jv" path="res://src/systems/network/RemotePlayerManager.cs" id="4_3h70o"]
+[ext_resource type="Script" uid="uid://dw4dmwb4754jj" path="res://src/entities/vehicle/car/RaycastCar.cs" id="5_4x4ig"]
+[ext_resource type="Curve" uid="uid://d3nv4w51hbb4y" path="res://src/entities/vehicle/car/car_tire_BACK.tres" id="6_rb7o0"]
+[ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://src/resources/materials/prototype/prototype-materials/green_square.tres" id="7_2va3a"]
+[ext_resource type="Script" uid="uid://blkjol6xn0n1a" path="res://src/entities/vehicle/car/RaycastWheel.cs" id="8_t1b10"]
+[ext_resource type="Curve" uid="uid://s7soqbgm8k37" path="res://src/entities/vehicle/car/car_tire_FRONT.tres" id="9_yj5ft"]
+[ext_resource type="PackedScene" uid="uid://cbund3287huk5" path="res://src/entities/vehicle/models/nissan35/wheel_nissan.glb" id="10_o2akg"]
+[ext_resource type="PackedScene" uid="uid://vae1yu2flf4a" path="res://src/entities/vehicle/models/nissan35/nissan_skyliner35.glb" id="11_g2nl3"]
+[ext_resource type="Script" uid="uid://cjn2pu6fplhnj" path="res://src/entities/camera/CarFollowCamera.cs" id="12_hcuti"]
+[ext_resource type="PackedScene" uid="uid://cukaeucupjo2e" path="res://src/entities/ui/debug_ui_controller.tscn" id="13_ceusv"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_qm2o8"]
 friction = 0.0
@@ -53,9 +53,9 @@ _data = {
 }
 point_count = 2
 
-[node name="TestWorld" type="Node3D"]
+[node name="GameRoot" type="Node3D"]
 
-[node name="DirectionalLight3D" parent="." instance=ExtResource("1_xmp6s")]
+[node name="DirectionalLight3D" parent="." instance=ExtResource("1_p4qn7")]
 
 [node name="CSGTerrain" type="Node3D" parent="."]
 metadata/_edit_group_ = true
@@ -63,34 +63,34 @@ metadata/_edit_lock_ = true
 
 [node name="Ground" type="CSGBox3D" parent="CSGTerrain"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, -94.2223)
-material_override = ExtResource("2_2r6vf")
+material_override = ExtResource("2_n38sr")
 use_collision = true
 size = Vector3(200, 0.5, 388.445)
 
 [node name="RemotePlayerLabels" type="Node3D" parent="."]
-script = ExtResource("13_rplbl")
+script = ExtResource("3_bey8s")
 
 [node name="RemotePlayers" type="Node3D" parent="."]
-script = ExtResource("14_rpm")
+script = ExtResource("4_3h70o")
 
 [node name="Car" type="RigidBody3D" parent="." node_paths=PackedStringArray("Wheels", "SkidMarks")]
 transform = Transform3D(0.98743, 0, 0.158055, 0, 1, 0, -0.158055, 0, 0.98743, -2.01043, 2, -27.1393)
 mass = 500.0
 physics_material_override = SubResource("PhysicsMaterial_qm2o8")
 linear_damp_mode = 1
-script = ExtResource("5_xmp6s")
+script = ExtResource("5_4x4ig")
 Wheels = []
-AccelCurve = ExtResource("8_iiwpk")
+AccelCurve = ExtResource("6_rb7o0")
 SkidMarks = []
 
 [node name="CarMesh" type="MeshInstance3D" parent="Car"]
 visible = false
-material_override = ExtResource("6_ojx5s")
+material_override = ExtResource("7_2va3a")
 mesh = SubResource("BoxMesh_64tcs")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Car/CarMesh"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.426268, 1.1)
-material_override = ExtResource("6_ojx5s")
+material_override = ExtResource("7_2va3a")
 mesh = SubResource("BoxMesh_a57fx")
 
 [node name="CollisionShape3D2" type="CollisionShape3D" parent="Car"]
@@ -100,36 +100,36 @@ shape = SubResource("ConvexPolygonShape3D_2r6vf")
 [node name="WheelFL" type="RayCast3D" parent="Car"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, 0.342654, -1.407)
 enabled = false
-script = ExtResource("7_2r6vf")
-GripCurve = ExtResource("10_qm2o8")
+script = ExtResource("8_t1b10")
+GripCurve = ExtResource("9_yj5ft")
 
-[node name="wheel_nissan2" parent="Car/WheelFL" instance=ExtResource("9_m8duc")]
+[node name="wheel_nissan2" parent="Car/WheelFL" instance=ExtResource("10_o2akg")]
 transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 0, 0)
 
 [node name="WheelFR" type="RayCast3D" parent="Car"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, 0.342654, -1.407)
 enabled = false
-script = ExtResource("7_2r6vf")
-GripCurve = ExtResource("10_qm2o8")
+script = ExtResource("8_t1b10")
+GripCurve = ExtResource("9_yj5ft")
 
-[node name="wheel_nissan2" parent="Car/WheelFR" instance=ExtResource("9_m8duc")]
+[node name="wheel_nissan2" parent="Car/WheelFR" instance=ExtResource("10_o2akg")]
 
 [node name="WheelRL" type="RayCast3D" parent="Car"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, 0.342654, 1.383)
 enabled = false
-script = ExtResource("7_2r6vf")
-GripCurve = ExtResource("8_iiwpk")
+script = ExtResource("8_t1b10")
+GripCurve = ExtResource("6_rb7o0")
 
-[node name="wheel_nissan2" parent="Car/WheelRL" instance=ExtResource("9_m8duc")]
+[node name="wheel_nissan2" parent="Car/WheelRL" instance=ExtResource("10_o2akg")]
 transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 0, 0)
 
 [node name="WheelRR" type="RayCast3D" parent="Car"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, 0.342654, 1.383)
 enabled = false
-script = ExtResource("7_2r6vf")
-GripCurve = ExtResource("8_iiwpk")
+script = ExtResource("8_t1b10")
+GripCurve = ExtResource("6_rb7o0")
 
-[node name="wheel_nissan2" parent="Car/WheelRR" instance=ExtResource("9_m8duc")]
+[node name="wheel_nissan2" parent="Car/WheelRR" instance=ExtResource("10_o2akg")]
 
 [node name="SkidMarks" type="Node3D" parent="Car"]
 
@@ -169,7 +169,7 @@ fixed_fps = 60
 process_material = SubResource("ParticleProcessMaterial_7w1kq")
 draw_pass_1 = SubResource("QuadMesh_u7ljy")
 
-[node name="nissan_skyliner35" parent="Car" instance=ExtResource("10_jgdmd")]
+[node name="nissan_skyliner35" parent="Car" instance=ExtResource("11_g2nl3")]
 transform = Transform3D(-1, 0, 8.9407e-08, 0, 1, 0, -8.9407e-08, 0, -1, 0, 0.0348735, 0)
 
 [node name="CameraPivot" type="Node3D" parent="Car"]
@@ -178,9 +178,9 @@ transform = Transform3D(-1, 0, 8.9407e-08, 0, 1, 0, -8.9407e-08, 0, -1, 0, 0.034
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.77849, 5.01415)
 top_level = true
 current = true
-script = ExtResource("10_ojx5s")
+script = ExtResource("12_hcuti")
 
-[node name="UiController" parent="." instance=ExtResource("9_qm2o8")]
+[node name="UiController" parent="." instance=ExtResource("13_ceusv")]
 
 [node name="Path3D" type="Path3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.545612, -55.8006)
