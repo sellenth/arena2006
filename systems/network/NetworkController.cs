@@ -249,9 +249,10 @@ public partial class NetworkController : Node
 		state.Steer = Mathf.Clamp(left - right, -1.0f, 1.0f);
 		state.Handbrake = Input.IsActionPressed("handbreak");
 		state.Brake = Input.IsActionPressed("brake");
-		if (Mathf.Abs(state.Throttle) > 0.1f || Mathf.Abs(state.Steer) > 0.1f || state.Handbrake || state.Brake)
+		state.Respawn = Input.IsKeyPressed(Key.R);
+		if (Mathf.Abs(state.Throttle) > 0.1f || Mathf.Abs(state.Steer) > 0.1f || state.Handbrake || state.Brake || state.Respawn)
 		{
-			GD.Print($"CLIENT input tick={_tick + 1} throttle={state.Throttle:F2} steer={state.Steer:F2} hb={state.Handbrake} br={state.Brake}");
+			GD.Print($"CLIENT input tick={_tick + 1} throttle={state.Throttle:F2} steer={state.Steer:F2} hb={state.Handbrake} br={state.Brake} respawn={state.Respawn}");
 		}
 		return state;
 	}
@@ -437,6 +438,7 @@ public partial class NetworkController : Node
 		buffer.PutFloat(state.Steer);
 		buffer.PutU8((byte)(state.Handbrake ? 1 : 0));
 		buffer.PutU8((byte)(state.Brake ? 1 : 0));
+		buffer.PutU8((byte)(state.Respawn ? 1 : 0));
 		return buffer.DataArray;
 	}
 
@@ -448,14 +450,15 @@ public partial class NetworkController : Node
 		if (buffer.GetAvailableBytes() < 1) return null;
 		var packetType = buffer.GetU8();
 		if (packetType != PacketInput) return null;
-		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1) return null;
+		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1) return null;
 		var state = new CarInputState
 		{
 			Tick = (int)buffer.GetU32(),
 			Throttle = buffer.GetFloat(),
 			Steer = buffer.GetFloat(),
 			Handbrake = buffer.GetU8() == 1,
-			Brake = buffer.GetU8() == 1
+			Brake = buffer.GetU8() == 1,
+			Respawn = buffer.GetU8() == 1
 		};
 		return state;
 	}

@@ -28,9 +28,14 @@ public partial class RaycastCar : RigidBody3D
 	private const float SnapVelEps = 0.1f;
 	private static readonly float SnapAngEps = Mathf.DegToRad(2.0f);
 
+	private Transform3D _spawnTransform;
+	private bool _isNetworked = false;
+
 	public override void _Ready()
 	{
 		TotalWheels = Wheels.Count;
+		
+		_spawnTransform = GlobalTransform;
 		
 		if (Name.ToString().StartsWith("RemotePlayer_"))
 		{
@@ -43,11 +48,32 @@ public partial class RaycastCar : RigidBody3D
 		{
 			GD.Print("RaycastCar: Registering with NetworkController");
 			network.RegisterCar(this);
+			_isNetworked = true;
 		}
 		else
 		{
 			GD.Print("RaycastCar: NetworkController not found");
+			_isNetworked = false;
 		}
+	}
+
+	public override void _Input(InputEvent @event)
+	{
+		if (!_isNetworked && @event is InputEventKey keyEvent && keyEvent.Pressed && !keyEvent.Echo)
+		{
+			if (keyEvent.Keycode == Key.R)
+			{
+				Respawn();
+			}
+		}
+	}
+
+	public void Respawn()
+	{
+		GlobalTransform = _spawnTransform;
+		LinearVelocity = Vector3.Zero;
+		AngularVelocity = Vector3.Zero;
+		_pendingSnapshot = null;
 	}
 
 	public Vector3 GetPointVelocity(Vector3 point)
@@ -63,6 +89,8 @@ public partial class RaycastCar : RigidBody3D
 		_brakePressed = _inputState.Brake;
 		if (_inputState.Handbrake)
 			IsSlipping = true;
+		if (_inputState.Respawn)
+			Respawn();
 	}
 
 	public CarSnapshot CaptureSnapshot(int tick)
