@@ -94,7 +94,7 @@ public partial class RemotePlayerManager : Node3D
 		{
 			var nodeName = child.Name.ToString();
 
-			if (child is Camera3D || child is RemoteTransform3D)
+			if (child is Camera3D)
 			{
 				childrenToRemove.Add(child);
 			}

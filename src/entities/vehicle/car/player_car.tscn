@@ -172,11 +172,6 @@ fixed_fps = 60
 process_material = SubResource("8")
 draw_pass_1 = SubResource("10")
 
-[node name="Car#RemoteTransform3D" type="RemoteTransform3D" parent="."]
-remote_path = NodePath("../../SubViewportContainer/SubViewport/TopPivot")
-update_rotation = false
-update_scale = false
-
 [node name="Car#nissan_skyliner35" parent="." instance=ExtResource("4")]
 transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 0, 0)
 
