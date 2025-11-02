@@ -13,6 +13,7 @@ NC='\033[0m' # No Color
 GODOT_BIN=""
 PROJECT_ROOT=""
 TEST_TIMEOUT=30
+GODOT_HEADLESS_ARGS=""
 
 # Initialize test utilities
 init_test_utils() {
@@ -41,6 +42,16 @@ init_test_utils() {
         exit 1
     fi
     
+    # Detect proper headless flags if not already computed
+    if [ -z "$GODOT_HEADLESS_ARGS" ]; then
+        local help_text="$($GODOT_BIN --help 2>/dev/null)"
+        if echo "$help_text" | grep -q -- '--headless'; then
+            GODOT_HEADLESS_ARGS="--headless"
+        else
+            GODOT_HEADLESS_ARGS="--no-window"
+        fi
+    fi
+    
     # Create logs directory if it doesn't exist
     mkdir -p "$PROJECT_ROOT/tests/logs"
     
@@ -61,7 +72,11 @@ init_test_utils() {
         
         # Import project with editor
         print_info "Importing project with Godot editor..."
-        $GODOT_BIN --path "$PROJECT_ROOT" --editor --quit-after 10 > "$PROJECT_ROOT/tests/logs/import.log" 2>&1 &
+        if [ "$VISUAL_MODE" = "--visual" ]; then
+            $GODOT_BIN --path "$PROJECT_ROOT" --editor --quit-after 10 > "$PROJECT_ROOT/tests/logs/import.log" 2>&1 &
+        else
+            $GODOT_BIN --path "$PROJECT_ROOT" ${=GODOT_HEADLESS_ARGS} --editor --quit-after 10 > "$PROJECT_ROOT/tests/logs/import.log" 2>&1 &
+        fi
         local import_pid=$!
         
         # Wait for import to complete
@@ -100,20 +115,21 @@ start_godot_instance() {
     local log_file=$2
     local visual=$3
     
-    local args="--path $PROJECT_ROOT --headless"
+    local -a args
+    args=(--path "$PROJECT_ROOT")
     
     # Add headless flag unless visual mode is requested
-    if [ "$visual" = "--visual" ]; then
-        args="--path $PROJECT_ROOT"
+    if [ "$visual" != "--visual" ]; then
+        args+=(${=GODOT_HEADLESS_ARGS})
     fi
     
     # Specify the main scene explicitly
-    args="$args res://src/entities/root/game_root.tscn -- --$mode"
+    args+=("res://src/entities/root/game_root.tscn" -- "--$mode")
     
     print_info "Starting $mode instance (log: $log_file)"
     
     # Start Godot in background and redirect output to log file
-    $GODOT_BIN $args > "$log_file" 2>&1 &
+    $GODOT_BIN "${args[@]}" > "$log_file" 2>&1 &
     local pid=$!
     
     echo $pid
@@ -238,4 +254,3 @@ display_log() {
         echo ""
     fi
 }
-
