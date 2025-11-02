@@ -48,10 +48,10 @@ orientation = 1
 [sub_resource type="Curve3D" id="Curve3D_qm2o8"]
 bake_interval = 0.01
 _data = {
-"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -13.1711, -1.30335, 14.5162, 0, 0, 0, 0, 0, 0, -16.1633, 7.16259, -66.9307, 0, 0, 0, 0, 0, 0, -0.683891, 10.2336, -136.096),
-"tilts": PackedFloat32Array(0, 0.4, 1.59)
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -13.1711, -1.30335, 14.5162, 0, 0, 0, 0, 0, 0, -0.683891, 10.2336, -342.718),
+"tilts": PackedFloat32Array(0, 4.4)
 }
-point_count = 3
+point_count = 2
 
 [node name="TestWorld" type="Node3D"]
 
@@ -187,7 +187,7 @@ script = ExtResource("10_ojx5s")
 [node name="UiController" parent="." instance=ExtResource("9_qm2o8")]
 
 [node name="Path3D" type="Path3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -55.8006)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.545612, -55.8006)
 curve = SubResource("Curve3D_qm2o8")
 
 [node name="CSGPolygon3D" type="CSGPolygon3D" parent="Path3D"]

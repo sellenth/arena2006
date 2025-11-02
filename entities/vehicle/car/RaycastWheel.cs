@@ -89,8 +89,9 @@ public partial class RaycastWheel : RayCast3D
 		}
 
 		var steeringXVel = GlobalBasis.X.Dot(tireVel);
-		GripFactor = Mathf.Abs(steeringXVel / tireVel.Length());
-		var xTraction = GripCurve.SampleBaked(GripFactor);
+		var tireSpeed = tireVel.Length();
+		GripFactor = tireSpeed > 0.001f ? Mathf.Abs(steeringXVel / tireSpeed) : 0.0f;
+		var xTraction = GripCurve.SampleBaked(Mathf.Clamp(GripFactor, 0.0f, 1.0f));
 
 		if (!car.HandBreak && GripFactor < 0.2f)
 			car.IsSlipping = false;
