@@ -142,6 +142,14 @@ public partial class NetworkController : Node
 		}
 	}
 
+	public override void _UnhandledInput(InputEvent @event)
+	{
+		if (@event.IsActionPressed("quit") || Input.IsKeyPressed(Key.Escape))
+		{
+			GetTree().Quit();
+		}
+	}
+
 	public override void _PhysicsProcess(double delta)
 	{
 		switch (_role)
