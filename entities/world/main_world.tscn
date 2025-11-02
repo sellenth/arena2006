@@ -2,7 +2,6 @@
 
 [ext_resource type="PackedScene" uid="uid://cmpcr4wp2d8gk" path="res://entities/world/environment_and_light.tscn" id="1_xmp6s"]
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://resources/materials/prototype/prototype-materials/black_square.tres" id="2_2r6vf"]
-[ext_resource type="Script" uid="uid://dniknvywfk5qj" path="res://entities/camera/Camera3D.cs" id="3_m8duc"]
 [ext_resource type="Script" uid="uid://dw4dmwb4754jj" path="res://entities/vehicle/car/RaycastCar.cs" id="5_xmp6s"]
 [ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://resources/materials/prototype/prototype-materials/green_square.tres" id="6_ojx5s"]
 [ext_resource type="Script" uid="uid://blkjol6xn0n1a" path="res://entities/vehicle/car/RaycastWheel.cs" id="7_2r6vf"]
@@ -13,6 +12,7 @@
 [ext_resource type="Script" uid="uid://cjn2pu6fplhnj" path="res://entities/camera/CarFollowCamera.cs" id="10_ojx5s"]
 [ext_resource type="Curve" uid="uid://s7soqbgm8k37" path="res://entities/vehicle/car/car_tire_FRONT.tres" id="10_qm2o8"]
 [ext_resource type="Script" uid="uid://o8jx8ewyc6fx" path="res://entities/ui/RemotePlayerLabels.cs" id="13_rplbl"]
+[ext_resource type="Script" uid="uid://db8dybniui1jv" path="res://systems/network/RemotePlayerManager.cs" id="14_rpm"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_qm2o8"]
 friction = 0.0
@@ -67,12 +67,11 @@ material_override = ExtResource("2_2r6vf")
 use_collision = true
 size = Vector3(200, 0.5, 388.445)
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(0.229197, 0.348107, -0.909005, 0, 0.933864, 0.357627, 0.97338, -0.081967, 0.214039, -5.53718, 4.48851, 1.30381)
-script = ExtResource("3_m8duc")
-
 [node name="RemotePlayerLabels" type="Node3D" parent="."]
 script = ExtResource("13_rplbl")
+
+[node name="RemotePlayers" type="Node3D" parent="."]
+script = ExtResource("14_rpm")
 
 [node name="Car" type="RigidBody3D" parent="." node_paths=PackedStringArray("Wheels", "SkidMarks")]
 transform = Transform3D(0.98743, 0, 0.158055, 0, 1, 0, -0.158055, 0, 0.98743, -2.01043, 2, -27.1393)

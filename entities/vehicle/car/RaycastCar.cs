@@ -31,6 +31,13 @@ public partial class RaycastCar : RigidBody3D
 	public override void _Ready()
 	{
 		TotalWheels = Wheels.Count;
+		
+		if (Name.ToString().StartsWith("RemotePlayer_"))
+		{
+			GD.Print($"RaycastCar: Skipping registration for remote player: {Name}");
+			return;
+		}
+		
 		var network = GetTree().Root.GetNodeOrNull<NetworkController>("/root/NetworkController");
 		if (network != null)
 		{
