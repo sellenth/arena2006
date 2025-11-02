@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Raycast Car"
+config/name="arena2006"
 run/main_scene="uid://d1s7t2830ax65"
 config/features=PackedStringArray("4.4", "C#", "Forward Plus")
 config/icon="res://icon.svg"
@@ -27,11 +27,11 @@ window/size/window_height_override=720
 
 [dotnet]
 
-project/assembly_name="Raycast Car"
+project/assembly_name="Arena2006"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/debugdraw/plugin.cfg")
+enabled=PackedStringArray()
 
 [file_customization]
 

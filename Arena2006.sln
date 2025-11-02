@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Raycast Car", "Raycast Car.csproj", "{B5B4E5B6-7C8D-4E9F-A1B2-3C4D5E6F7A8B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arena2006", "Arena2006.csproj", "{B5B4E5B6-7C8D-4E9F-A1B2-3C4D5E6F7A8B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
