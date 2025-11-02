@@ -75,7 +75,7 @@ script = ExtResource("14_rpm")
 
 [node name="Car" type="RigidBody3D" parent="." node_paths=PackedStringArray("Wheels", "SkidMarks")]
 transform = Transform3D(0.98743, 0, 0.158055, 0, 1, 0, -0.158055, 0, 0.98743, -2.01043, 2, -27.1393)
-mass = 50.0
+mass = 500.0
 physics_material_override = SubResource("PhysicsMaterial_qm2o8")
 linear_damp_mode = 1
 script = ExtResource("5_xmp6s")
@@ -168,10 +168,6 @@ lifetime = 1.5
 fixed_fps = 60
 process_material = SubResource("ParticleProcessMaterial_7w1kq")
 draw_pass_1 = SubResource("QuadMesh_u7ljy")
-
-[node name="RemoteTransform3D" type="RemoteTransform3D" parent="Car"]
-update_rotation = false
-update_scale = false
 
 [node name="nissan_skyliner35" parent="Car" instance=ExtResource("10_jgdmd")]
 transform = Transform3D(-1, 0, 8.9407e-08, 0, 1, 0, -8.9407e-08, 0, -1, 0, 0.0348735, 0)

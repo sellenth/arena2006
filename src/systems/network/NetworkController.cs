@@ -353,11 +353,11 @@ public partial class NetworkController : Node
 
 	private void CleanupServerOnlyNodes(Node car)
 	{
-		// Remove camera and remote transform nodes from server cars
+		// Remove camera nodes from server cars
 		// These are only needed for client-side player cars
 		foreach (var child in car.GetChildren())
 		{
-			if (child is Camera3D || child is RemoteTransform3D)
+			if (child is Camera3D)
 			{
 				child.QueueFree();
 			}
