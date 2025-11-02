@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://d2ui4f51xd0yq"
-path="res://.godot/imported/hills.glb-a94ef5f732a28b11ae42328e795d068a.scn"
+path="res://.godot/imported/hills.glb-59e4fd2e87f83975afb5d9e6e64d299f.scn"
 
 [deps]
 
-source_file="res://src/entities/world/environment/hills.glb"
-dest_files=["res://.godot/imported/hills.glb-a94ef5f732a28b11ae42328e795d068a.scn"]
+source_file="res://src/entities/root/environment/hills.glb"
+dest_files=["res://.godot/imported/hills.glb-59e4fd2e87f83975afb5d9e6e64d299f.scn"]
 
 [params]
 

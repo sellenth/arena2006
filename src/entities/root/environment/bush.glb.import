@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://2px1ud3mfgmk"
-path="res://.godot/imported/pine_tree_1.glb-cf01dc907eaccb1e464406ed57ff43ec.scn"
+uid="uid://cwogulupb7ye1"
+path="res://.godot/imported/bush.glb-d1a3f6b5c9def4060ba5c6fe9858a324.scn"
 
 [deps]
 
-source_file="res://src/entities/world/environment/pine_tree_1.glb"
-dest_files=["res://.godot/imported/pine_tree_1.glb-cf01dc907eaccb1e464406ed57ff43ec.scn"]
+source_file="res://src/entities/root/environment/bush.glb"
+dest_files=["res://.godot/imported/bush.glb-d1a3f6b5c9def4060ba5c6fe9858a324.scn"]
 
 [params]
 
