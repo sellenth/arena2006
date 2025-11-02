@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3 uid="uid://cint6pc6codcy"]
+
+[ext_resource type="Texture2D" uid="uid://v0j1twff2t7p" path="res://src/resources/materials/prototype/prototype-materials/textures/light_08.png" id="1_37gij"]
+
+[resource]
+albedo_texture = ExtResource("1_37gij")
+uv1_triplanar = true
+uv1_triplanar_sharpness = 150.0
