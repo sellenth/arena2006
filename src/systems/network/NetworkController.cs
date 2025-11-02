@@ -94,15 +94,35 @@ public partial class NetworkController : Node
 
 	private Role DetermineRole()
 	{
+		// Get command line args - check both system args and user args (passed after --)
 		var args = OS.GetCmdlineArgs();
+		var userArgs = OS.GetCmdlineUserArgs();
+		
 		var parsedRole = Role.Client;
+		
+		// Check system args - they may come as a single string, so split if needed
 		foreach (var arg in args)
+		{
+			// Split the arg if it contains spaces (single string with multiple args)
+			var splitArgs = arg.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+			foreach (var splitArg in splitArgs)
+			{
+				if (splitArg == "--server")
+					return Role.Server;
+				else if (splitArg == "--client")
+					parsedRole = Role.Client;
+			}
+		}
+		
+		// Check user args (passed after -- separator)
+		foreach (var arg in userArgs)
 		{
 			if (arg == "--server")
 				return Role.Server;
 			else if (arg == "--client")
 				parsedRole = Role.Client;
 		}
+		
 		return parsedRole;
 	}
 
@@ -122,6 +142,7 @@ public partial class NetworkController : Node
 			if (_serverCarParent == null)
 				_serverCarParent = GetTree().CurrentScene as Node3D;
 			GD.Print($"Server listening on UDP {DefaultPort}");
+			GD.Print("TEST_EVENT: SERVER_STARTED");
 		}
 	}
 
@@ -283,6 +304,7 @@ public partial class NetworkController : Node
 					{
 						_clientId = newId;
 						GD.Print($"CLIENT received welcome, assigned ID: {_clientId}");
+						GD.Print($"TEST_EVENT: CLIENT_RECEIVED_WELCOME id={_clientId}");
 					}
 					break;
 				case PacketPlayerState:
@@ -323,6 +345,7 @@ public partial class NetworkController : Node
 		if (_role == Role.Server)
 			info.Car = SpawnServerCar(peerId);
 		GD.Print($"Client connected from {newPeer.GetPacketIP()}:{newPeer.GetPacketPort()} assigned id={peerId}");
+		GD.Print($"TEST_EVENT: CLIENT_CONNECTED id={peerId}");
 		newPeer.PutPacket(SerializeWelcome(peerId));
 		SendExistingPlayerStates(peerId);
 	}
@@ -350,6 +373,7 @@ public partial class NetworkController : Node
 		_serverCarParent.AddChild(car);
 		car.GlobalTransform = new Transform3D(Basis.Identity, GetSpawnPosition(peerId));
 		CleanupServerOnlyNodes(car);
+		GD.Print($"TEST_EVENT: SERVER_CAR_SPAWNED player_id={peerId}");
 		return car;
 	}
 
