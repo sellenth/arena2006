@@ -352,12 +352,19 @@ public partial class NetworkController : Node
 
 	private void CleanupServerOnlyNodes(Node car)
 	{
-		var remote = car.GetNodeOrNull("Car#RemoteTransform3D");
-		remote?.QueueFree();
-		var cam = car.GetNodeOrNull("Car_CameraPivot#Camera3D");
-		cam?.QueueFree();
-		var pivot = car.GetNodeOrNull("Car#CameraPivot");
-		pivot?.QueueFree();
+		// Remove camera and remote transform nodes from server cars
+		// These are only needed for client-side player cars
+		foreach (var child in car.GetChildren())
+		{
+			if (child is Camera3D || child is RemoteTransform3D)
+			{
+				child.QueueFree();
+			}
+			else if (child.Name.ToString().Contains("CameraPivot") || child.Name.ToString().Contains("Camera"))
+			{
+				CleanupServerOnlyNodes(child);
+			}
+		}
 	}
 
 	private void SendSnapshotToAll(int playerId, CarSnapshot snapshot)
