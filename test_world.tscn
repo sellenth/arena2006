@@ -2,7 +2,7 @@
 
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://assets/prototype/prototype-materials/black_square.tres" id="1_1lwx6"]
 [ext_resource type="Material" uid="uid://xyoosb4c2hv" path="res://assets/prototype/prototype-materials/black_checker.tres" id="1_dxppu"]
-[ext_resource type="Script" uid="uid://drlbfa47xlxak" path="res://scenes/experimentation/1 car_suspension/basic_suspension.gd" id="2_dsnr4"]
+[ext_resource type="Script" uid="uid://b7w83j7t6mcbx" path="res://scenes/experimentation/1 car_suspension/BasicSuspension.cs" id="2_dsnr4"]
 [ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://assets/prototype/prototype-materials/green_square.tres" id="2_gy3sr"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_dxppu"]
@@ -47,11 +47,11 @@ material_override = ExtResource("1_1lwx6")
 use_collision = true
 size = Vector3(50, 0.5, 50)
 
-[node name="RigidBody3D" type="RigidBody3D" parent="." node_paths=PackedStringArray("wheel1")]
+[node name="RigidBody3D" type="RigidBody3D" parent="." node_paths=PackedStringArray("Wheels")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.31004, 0)
 gravity_scale = 0.0
 script = ExtResource("2_dsnr4")
-wheel1 = NodePath("Wheel")
+Wheels = []
 
 [node name="CarBody" type="MeshInstance3D" parent="RigidBody3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.432125, 1.01902)

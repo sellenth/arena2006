@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://cukaeucupjo2e"]
 
-[ext_resource type="Script" uid="uid://y5i44nbpgnhn" path="res://scenes/experimentation/1 car_suspension/susp_ui_controller.gd" id="1_a5fxc"]
+[ext_resource type="Script" uid="uid://hpmx3r7jcp1v" path="res://scenes/experimentation/1 car_suspension/SuspUiController.cs" id="1_a5fxc"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a5fxc"]
 bg_color = Color(0.853973, 1, 0.660156, 1)

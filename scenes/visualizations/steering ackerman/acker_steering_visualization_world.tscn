@@ -1,6 +1,6 @@
 [gd_scene load_steps=13 format=3 uid="uid://csu2178uay4jm"]
 
-[ext_resource type="Script" uid="uid://bvy68ug65t1tq" path="res://scenes/visualizations/steering ackerman/acker_steer_ui_controller.gd" id="1_imft6"]
+[ext_resource type="Script" path="res://scenes/visualizations/steering ackerman/AckerSteerUiController.cs" id="1_imft6"]
 [ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://assets/prototype/prototype-materials/green_square.tres" id="2_ios3r"]
 [ext_resource type="Texture2D" uid="uid://d3jbv52hcriy6" path="res://assets/prototype/prototype-materials/textures/grey-checker.png" id="4_kk44i"]
 [ext_resource type="Material" uid="uid://cint6pc6codcy" path="res://assets/prototype/prototype-materials/white_square.tres" id="5_d7kfn"]

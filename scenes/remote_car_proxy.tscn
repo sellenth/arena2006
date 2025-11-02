@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3 uid="uid://d0u5v45m5hsgn"]
 
 [ext_resource type="PackedScene" uid="uid://vae1yu2flf4a" path="res://assets/car/nissan35/nissan_skyliner35.glb" id="1_ux630"]
-[ext_resource type="Script" uid="uid://bdfe0puohbq2o" path="res://tutorial/4 finishing basics/raycast_wheel.gd" id="2_ary20"]
+[ext_resource type="Script" uid="uid://blkjol6xn0n1a" path="res://tutorial/4 finishing basics/RaycastWheel.cs" id="2_ary20"]
 [ext_resource type="PackedScene" uid="uid://cbund3287huk5" path="res://assets/car/nissan35/wheel_nissan.glb" id="2_fsr44"]
 [ext_resource type="Curve" uid="uid://d3nv4w51hbb4y" path="res://tutorial/4 finishing basics/car_tire_BACK.tres" id="3_07lqn"]
 [ext_resource type="Curve" uid="uid://s7soqbgm8k37" path="res://tutorial/4 finishing basics/car_tire_FRONT.tres" id="5_mpcqs"]
@@ -15,14 +15,14 @@ transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, -0.
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, -0.0887806, -1.407)
 enabled = false
 script = ExtResource("2_ary20")
-spring_strength = 5000.0
-spring_damping = 120.0
-rest_dist = 0.1
-over_extend = 0.05
-wheel_radius = 0.33
-is_steer = true
-grip_curve = ExtResource("3_07lqn")
-show_debug = true
+SpringStrength = 5000.0
+SpringDamping = 120.0
+RestDist = 0.1
+OverExtend = 0.05
+WheelRadius = 0.33
+IsSteer = true
+GripCurve = ExtResource("3_07lqn")
+ShowDebug = true
 
 [node name="Car_WheelFL#wheel_nissan2" parent="." instance=ExtResource("2_fsr44")]
 transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, -0.998557, -0.139492, -1.37363)
@@ -31,14 +31,14 @@ transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, -0.998
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, -0.0887806, -1.407)
 enabled = false
 script = ExtResource("2_ary20")
-spring_strength = 5000.0
-spring_damping = 120.0
-rest_dist = 0.1
-over_extend = 0.05
-wheel_radius = 0.33
-is_steer = true
-grip_curve = ExtResource("5_mpcqs")
-show_debug = true
+SpringStrength = 5000.0
+SpringDamping = 120.0
+RestDist = 0.1
+OverExtend = 0.05
+WheelRadius = 0.33
+IsSteer = true
+GripCurve = ExtResource("5_mpcqs")
+ShowDebug = true
 
 [node name="Car_WheelFR#wheel_nissan2" parent="." instance=ExtResource("2_fsr44")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.97415, -0.147158, -1.39576)
@@ -47,14 +47,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.97415, -0.147158, -1.39576)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, -0.0887806, 1.383)
 enabled = false
 script = ExtResource("2_ary20")
-spring_strength = 5000.0
-spring_damping = 120.0
-rest_dist = 0.1
-over_extend = 0.05
-wheel_radius = 0.33
-is_motor = true
-grip_curve = ExtResource("3_07lqn")
-show_debug = true
+SpringStrength = 5000.0
+SpringDamping = 120.0
+RestDist = 0.1
+OverExtend = 0.05
+WheelRadius = 0.33
+IsMotor = true
+GripCurve = ExtResource("3_07lqn")
+ShowDebug = true
 
 [node name="Car_WheelRL#wheel_nissan2" parent="." instance=ExtResource("2_fsr44")]
 transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0.91955, -0.122911, 1.42167)
@@ -63,14 +63,14 @@ transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0.9195
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, -0.0887806, 1.383)
 enabled = false
 script = ExtResource("2_ary20")
-spring_strength = 5000.0
-spring_damping = 120.0
-rest_dist = 0.1
-over_extend = 0.05
-wheel_radius = 0.33
-is_motor = true
-grip_curve = ExtResource("3_07lqn")
-show_debug = true
+SpringStrength = 5000.0
+SpringDamping = 120.0
+RestDist = 0.1
+OverExtend = 0.05
+WheelRadius = 0.33
+IsMotor = true
+GripCurve = ExtResource("3_07lqn")
+ShowDebug = true
 
 [node name="Car_WheelRR#wheel_nissan2" parent="." instance=ExtResource("2_fsr44")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.830446, -0.125373, 1.40277)

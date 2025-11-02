@@ -3,8 +3,8 @@
 [ext_resource type="PackedScene" uid="uid://cmpcr4wp2d8gk" path="res://scenes/environment_and_light.tscn" id="1_lkdyc"]
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://assets/prototype/prototype-materials/black_square.tres" id="2_cghwk"]
 [ext_resource type="Material" uid="uid://xyoosb4c2hv" path="res://assets/prototype/prototype-materials/black_checker.tres" id="3_qiji4"]
-[ext_resource type="Script" uid="uid://br67vbbvr1vby" path="res://scenes/camera_3d.gd" id="4_8kt35"]
-[ext_resource type="Script" uid="uid://brdaxyox38y8u" path="res://scenes/camera_ortho.gd" id="5_jg7g2"]
+[ext_resource type="Script" path="res://scenes/Camera3D.cs" id="4_8kt35"]
+[ext_resource type="Script" path="res://scenes/CameraOrtho.cs" id="5_jg7g2"]
 [ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://assets/prototype/prototype-materials/green_square.tres" id="6_gln4c"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_52n3v"]

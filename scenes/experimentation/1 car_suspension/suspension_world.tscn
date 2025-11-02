@@ -4,8 +4,8 @@
 [ext_resource type="Script" uid="uid://bp0mkq6y0tuvi" path="res://scenes/experimentation/tutorial_mock/tut_suspension/tut_susp.gd" id="2_pmk3c"]
 [ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://assets/prototype/prototype-materials/green_square.tres" id="3_asav2"]
 [ext_resource type="Material" uid="uid://xyoosb4c2hv" path="res://assets/prototype/prototype-materials/black_checker.tres" id="4_0lpmy"]
-[ext_resource type="Script" uid="uid://br67vbbvr1vby" path="res://scenes/camera_3d.gd" id="5_dig08"]
-[ext_resource type="Script" uid="uid://brdaxyox38y8u" path="res://scenes/camera_ortho.gd" id="6_cf0u5"]
+[ext_resource type="Script" path="res://scenes/Camera3D.cs" id="5_dig08"]
+[ext_resource type="Script" path="res://scenes/CameraOrtho.cs" id="6_cf0u5"]
 [ext_resource type="PackedScene" uid="uid://cukaeucupjo2e" path="res://scenes/debug_ui_controller.tscn" id="7_qv05e"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_dxppu"]

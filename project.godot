@@ -12,13 +12,13 @@ config_version=5
 
 config/name="Raycast Car"
 run/main_scene="uid://d1s7t2830ax65"
-config/features=PackedStringArray("4.4", "Forward Plus")
+config/features=PackedStringArray("4.4", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
 DebugDraw="*res://addons/debugdraw/autoload/DebugDraw.tscn"
-NetworkController="*res://network/network_controller.gd"
+NetworkController="*res://network/NetworkController.cs"
 
 [display]
 

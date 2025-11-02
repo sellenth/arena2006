@@ -1,6 +1,6 @@
 [gd_scene load_steps=14 format=3 uid="uid://dltr6euynxx7x"]
 
-[ext_resource type="Script" uid="uid://bck47jjlphysy" path="res://scenes/visualizations/steering/steer_ui_controller.gd" id="1_i78qp"]
+[ext_resource type="Script" path="res://scenes/visualizations/steering/SteerUiController.cs" id="1_i78qp"]
 [ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://assets/prototype/prototype-materials/green_square.tres" id="1_k7h4f"]
 [ext_resource type="Material" uid="uid://xyoosb4c2hv" path="res://assets/prototype/prototype-materials/black_checker.tres" id="3_718g4"]
 [ext_resource type="Texture2D" uid="uid://d3jbv52hcriy6" path="res://assets/prototype/prototype-materials/textures/grey-checker.png" id="3_k7h4f"]

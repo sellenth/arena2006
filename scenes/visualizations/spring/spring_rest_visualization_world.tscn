@@ -1,10 +1,10 @@
 [gd_scene load_steps=12 format=3 uid="uid://c573gs43de5yg"]
 
 [ext_resource type="Material" uid="uid://xyoosb4c2hv" path="res://assets/prototype/prototype-materials/black_checker.tres" id="1_asm31"]
-[ext_resource type="Script" uid="uid://bc3qgyx7xln34" path="res://scenes/visualizations/spring/scaler_pivot.gd" id="1_fd6fd"]
+[ext_resource type="Script" path="res://scenes/visualizations/spring/ScalerPivot.cs" id="1_fd6fd"]
 [ext_resource type="Material" uid="uid://cpmuuamd5vk1q" path="res://assets/prototype/prototype-materials/green.tres" id="2_fd6fd"]
-[ext_resource type="Script" uid="uid://bemlblgccrm0t" path="res://scenes/visualizations/spring/2d_rest_draw.gd" id="2_qiwiv"]
-[ext_resource type="Script" uid="uid://syy8iqr14jie" path="res://scenes/visualizations/spring/controller.gd" id="5_m67vi"]
+[ext_resource type="Script" path="res://scenes/visualizations/spring/RestDraw2D.cs" id="2_qiwiv"]
+[ext_resource type="Script" path="res://scenes/visualizations/spring/Controller.cs" id="5_m67vi"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_qiwiv"]
 sky_top_color = Color(0.956587, 0.984375, 0.842102, 1)
