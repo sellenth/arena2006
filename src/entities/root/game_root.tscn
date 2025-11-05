@@ -1,13 +1,28 @@
-[gd_scene load_steps=10 format=3 uid="uid://pgudwlq5efn0"]
+[gd_scene load_steps=13 format=3 uid="uid://pgudwlq5efn0"]
 
-[ext_resource type="PackedScene" uid="uid://cmpcr4wp2d8gk" path="res://src/entities/root/environment_and_light.tscn" id="1_p4qn7"]
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/materials/black_square.tres" id="2_n38sr"]
 [ext_resource type="Script" uid="uid://db8dybniui1jv" path="res://src/systems/network/RemotePlayerManager.cs" id="4_3h70o"]
 [ext_resource type="PackedScene" uid="uid://ct07rpph3wvww" path="res://src/entities/vehicle/car/player_car.tscn" id="6_awmje"]
 [ext_resource type="PackedScene" uid="uid://c7m8fswqpshy4" path="res://src/systems/ui/pause_menu.tscn" id="7_liv0r"]
+[ext_resource type="VoxelGIData" uid="uid://nckwuio35uo2" path="res://src/entities/root/environment/game_root.VoxelGI_data.res" id="8_k6g81"]
 [ext_resource type="PackedScene" uid="uid://ch2s1v2av6f0p" path="res://src/systems/ui/options_menu.tscn" id="8_njg2t"]
 [ext_resource type="PackedScene" uid="uid://dqsjudt64pb3u" path="res://src/entities/building/building_1/skyscraper_1.tscn" id="14_886vf"]
 [ext_resource type="PackedScene" uid="uid://c68mijg2v2wkf" path="res://src/entities/jump_pad/jump_pad.tscn" id="15_l2d1b"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_liv0r"]
+sky_top_color = Color(0.53064, 0.646875, 0.808594, 1)
+sky_horizon_color = Color(0.611765, 0.694118, 0.827451, 1)
+ground_bottom_color = Color(0.652344, 0.652344, 0.652344, 1)
+ground_horizon_color = Color(0.611389, 0.695429, 0.828125, 1)
+
+[sub_resource type="Sky" id="Sky_njg2t"]
+sky_material = SubResource("ProceduralSkyMaterial_liv0r")
+
+[sub_resource type="Environment" id="Environment_k6g81"]
+background_mode = 2
+sky = SubResource("Sky_njg2t")
+tonemap_mode = 2
+glow_enabled = true
 
 [sub_resource type="Curve3D" id="Curve3D_qm2o8"]
 bake_interval = 0.01
@@ -19,7 +34,12 @@ point_count = 2
 
 [node name="GameRoot" type="Node3D"]
 
-[node name="DirectionalLight3D" parent="." instance=ExtResource("1_p4qn7")]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, 0.75, -0.433013, 0, 20.3866, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="DirectionalLight3D"]
+environment = SubResource("Environment_k6g81")
 
 [node name="CSGTerrain" type="Node3D" parent="."]
 metadata/_edit_group_ = true
@@ -68,4 +88,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.5344, 2.15127, -143.126)
 
 [node name="OptionsMenu" parent="." instance=ExtResource("8_njg2t")]
 
-[editable path="DirectionalLight3D"]
+[node name="VoxelGI" type="VoxelGI" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.4064, 94.8082, -72.8531)
+size = Vector3(143.106, 209.616, 467.826)
+data = ExtResource("8_k6g81")
+
+[node name="CarSpawnPoint" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.5161, 2.74133, -33.7557)

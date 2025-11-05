@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=4 uid="uid://ct07rpph3wvww"]
+[gd_scene load_steps=22 format=4 uid="uid://ct07rpph3wvww"]
 
 [ext_resource type="Script" uid="uid://dw4dmwb4754jj" path="res://src/entities/vehicle/car/RaycastCar.cs" id="1"]
 [ext_resource type="Script" uid="uid://blkjol6xn0n1a" path="res://src/entities/vehicle/car/RaycastWheel.cs" id="2"]
@@ -81,6 +81,9 @@ shadow_mesh = SubResource("ArrayMesh_v0yiv")
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_xwe2w"]
 size = Vector3(4.40165, 1, 0.718574)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_a5xcr"]
+height = 4.0
 
 [node name="Car" type="RigidBody3D" node_paths=PackedStringArray("Wheels", "SkidMarks")]
 mass = 50.0
@@ -229,6 +232,7 @@ skeleton = NodePath("")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(-4.37114e-08, 1, 4.37114e-08, 0, -4.37114e-08, 1, 1, 4.37114e-08, 1.91069e-15, 8.45659e-09, 0.556142, -0.139177)
 shape = SubResource("BoxShape3D_xwe2w")
+disabled = true
 
 [node name="Underglow1" type="SpotLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0.267899, -0.688325)
@@ -245,3 +249,7 @@ light_energy = 6.745
 spot_range = 3.833
 spot_attenuation = 1.93
 spot_angle = 77.45
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.546762, 0)
+shape = SubResource("CapsuleShape3D_a5xcr")
