@@ -1,0 +1,6 @@
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3 uid="uid://cji3te0cxnhia"]
+
+[ext_resource type="Texture2D" uid="uid://g8odkn4h2gk0" path="res://src/entities/vehicle/speedster/colormap.png" id="1_2gj14"]
+
+[resource]
+albedo_texture = ExtResource("1_2gj14")

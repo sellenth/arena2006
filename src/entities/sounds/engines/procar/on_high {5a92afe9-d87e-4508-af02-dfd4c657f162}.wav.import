@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://dh14wrvnjkt5s"
+path="res://.godot/imported/on_high {5a92afe9-d87e-4508-af02-dfd4c657f162}.wav-36d2faca2d89135ef630799c85643e8b.sample"
+
+[deps]
+
+source_file="res://src/entities/sounds/engines/procar/on_high {5a92afe9-d87e-4508-af02-dfd4c657f162}.wav"
+dest_files=["res://.godot/imported/on_high {5a92afe9-d87e-4508-af02-dfd4c657f162}.wav-36d2faca2d89135ef630799c85643e8b.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2
