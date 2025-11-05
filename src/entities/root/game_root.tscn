@@ -1,7 +1,7 @@
 [gd_scene load_steps=8 format=3 uid="uid://pgudwlq5efn0"]
 
 [ext_resource type="PackedScene" uid="uid://cmpcr4wp2d8gk" path="res://src/entities/root/environment_and_light.tscn" id="1_p4qn7"]
-[ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/resources/materials/prototype/prototype-materials/black_square.tres" id="2_n38sr"]
+[ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/materials/black_square.tres" id="2_n38sr"]
 [ext_resource type="Script" uid="uid://db8dybniui1jv" path="res://src/systems/network/RemotePlayerManager.cs" id="4_3h70o"]
 [ext_resource type="PackedScene" uid="uid://ct07rpph3wvww" path="res://src/entities/vehicle/car/player_car.tscn" id="6_awmje"]
 [ext_resource type="PackedScene" uid="uid://dqsjudt64pb3u" path="res://src/entities/building/building_1/skyscraper_1.tscn" id="14_886vf"]

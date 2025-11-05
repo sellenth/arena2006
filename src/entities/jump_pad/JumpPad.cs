@@ -123,7 +123,6 @@ public partial class JumpPad : StaticBody3D
             }
         }
 
-        /*
         _audioPlayer.Stream = JumpSfx;
         _audioPlayer.Bus = AudioSettingsManager.GameAudioBusName;
         _audioPlayer.VolumeDb = JumpSfxVolumeDb;
@@ -132,7 +131,6 @@ public partial class JumpPad : StaticBody3D
         _audioPlayer.PitchScale = JumpSfxPitchScale;
         _audioPlayer.Autoplay = false;
         AddChild(_audioPlayer);
-        */
     }
 
     private void PlayJumpSound(Vector3 position)

@@ -1,11 +1,10 @@
-[gd_scene load_steps=23 format=4 uid="uid://ct07rpph3wvww"]
+[gd_scene load_steps=21 format=4 uid="uid://ct07rpph3wvww"]
 
 [ext_resource type="Script" uid="uid://dw4dmwb4754jj" path="res://src/entities/vehicle/car/RaycastCar.cs" id="1"]
 [ext_resource type="Script" uid="uid://blkjol6xn0n1a" path="res://src/entities/vehicle/car/RaycastWheel.cs" id="2"]
 [ext_resource type="PackedScene" uid="uid://cbund3287huk5" path="res://src/entities/vehicle/models/nissan35/wheel_nissan.glb" id="3"]
 [ext_resource type="PackedScene" uid="uid://vae1yu2flf4a" path="res://src/entities/vehicle/models/nissan35/nissan_skyliner35.glb" id="4"]
 [ext_resource type="Script" uid="uid://cjn2pu6fplhnj" path="res://src/entities/camera/CarFollowCamera.cs" id="5"]
-[ext_resource type="Material" uid="uid://dywl6ja3yf4ba" path="res://src/resources/materials/prototype/prototype-materials/green_square.tres" id="6"]
 [ext_resource type="Curve" uid="uid://d3nv4w51hbb4y" path="res://src/entities/vehicle/car/car_tire_BACK.tres" id="7"]
 [ext_resource type="Curve" uid="uid://s7soqbgm8k37" path="res://src/entities/vehicle/car/car_tire_FRONT.tres" id="8"]
 [ext_resource type="Texture2D" uid="uid://cjaykabx1y8yk" path="res://src/entities/vehicle/speedster/CAR-F1-2048-DIFFUSE.png" id="9_xwe2w"]
@@ -17,9 +16,6 @@ friction = 0.0
 _data = [Vector2(0, 0.3), 0.0, 0.0, 0, 0, Vector2(0.3, 0.9), 0.0, 0.0, 0, 0, Vector2(0.6, 0.8), 0.0, 0.0, 0, 0, Vector2(1, 0.1), 0.0, 0.0, 0, 0]
 point_count = 4
 metadata/_snap_enabled = true
-
-[sub_resource type="BoxMesh" id="3"]
-size = Vector3(2, 0.5, 4)
 
 [sub_resource type="ConvexPolygonShape3D" id="5"]
 points = PackedVector3Array(1.01653, 1.04161, 0.224878, 0.667473, 1.23939, -0.682207, 0.527968, 1.33442, -0.117252, 0.575332, 1.27437, 0.112073, 1.00499, 1.02907, 0.313544, 0.975139, 0.778465, 1.42674, 0.986881, 0.437534, 1.84175, 0.985687, 0.1405, 1.86961, 1.00499, 0.1405, -0.937991, 1.01434, 0.64436, -1.77544, 0.99504, 0.803911, -1.38921, 0.884591, 0.936449, -1.56144, 0.675433, 1.09383, -2.13243, 0.472644, 1.31199, -0.682671, 0, 1.3501, -0.675708, 0, 1.36904, -0.103789, 0, 1.305, 0.218843, 0.575332, 0.850583, 1.72384, 0.693742, 0.829719, 1.71549, 0.801604, 0.621567, 2.03208, 0.953447, 0.6323, 1.75959, 0.803992, 0.532445, 2.10032, 0.80439, 0.23915, 2.2122, 0.982105, 0.264475, 1.87425, 0.801604, 0.1405, 2.21499, 0, 0.137003, 2.36214, -1.00519, 0.1405, -0.937991, 0.98907, 0.166911, -1.82465, 0.98907, 0.353839, -1.8604, 0.88678, 0.418118, -2.16539, 0.860113, 0.630732, -2.15146, 0.816331, 0.933555, -2.05862, 0.754439, 0.931866, -2.13057, 0.444385, 1.1241, -2.26844, -0.472843, 1.31199, -0.682671, -0.528167, 1.33442, -0.117252, 0, 1.1317, -2.31115, -0.444584, 1.1241, -2.26844, -0.575531, 0.850583, 1.72384, 0, 0.881818, 1.75402, -0.575531, 1.27437, 0.112073, 0.406374, 0.719734, 2.19363, 0.490754, 0.518335, 2.27766, 0.450156, 0.505913, 2.3004, 0.495729, 0.219251, 2.36307, 0.502893, 0.1405, 2.364, -0.503092, 0.1405, 2.364, -0.801803, 0.1405, 2.21499, -0.985886, 0.1405, 1.86961, -1.01454, 0.64436, -1.77544, -0.989269, 0.166911, -1.82465, -1.01653, 1.04161, 0.224878, 0.814739, 0.185483, -2.11479, 0.78031, 0.602633, -2.20531, 0.712648, 0.300414, -2.27448, 0.726379, 0.333819, -2.27448, 0.78449, 0.864572, -2.13057, 0.441002, 0.597085, -2.35108, 0.416126, 0.797279, -2.32926, 0.395628, 0.847568, -2.32786, -0.667672, 1.23939, -0.682207, -0.675632, 1.09383, -2.13243, 0, 0.692961, -2.3715, -0.395827, 0.847568, -2.32786, -0.416325, 0.797279, -2.32926, -0.441201, 0.597085, -2.35108, -0.726578, 0.333819, -2.27448, -0.780509, 0.602633, -2.20531, -0.860312, 0.630732, -2.15146, -0.754638, 0.931866, -2.13057, -0.693941, 0.829719, 1.71549, -0.406573, 0.719734, 2.19363, 0, 0.729261, 2.21684, -1.00519, 1.02907, 0.313544, -0.975338, 0.778465, 1.42674, -0.450355, 0.505913, 2.3004, 0, 0.221663, 2.36493, -0.495928, 0.219251, 2.36307, -0.804589, 0.23915, 2.2122, -0.982304, 0.264475, 1.87425, -0.98708, 0.437534, 1.84175, -0.995239, 0.803911, -1.38921, -0.81653, 0.933555, -2.05862, -0.886979, 0.418118, -2.16539, -0.989269, 0.353839, -1.8604, -0.814938, 0.185483, -2.11479, -0.88479, 0.936449, -1.56144, 0.462296, 0.218286, -2.26427, 0.679214, 0.286665, -2.27448, 0.568566, 0.286665, -2.30373, 0.6018, 0.300414, -2.30373, 0.615731, 0.333819, -2.30373, 0.370553, 0.417997, -2.365, 0.281994, 0.506516, -2.36547, 0, 0.500607, -2.37754, -0.370752, 0.417997, -2.365, -0.282193, 0.506516, -2.36547, -0.61593, 0.333819, -2.30373, -0.712847, 0.300414, -2.27448, -0.784689, 0.864572, -2.13057, -0.801803, 0.621567, 2.03208, -0.490953, 0.518335, 2.27766, -0.804191, 0.532445, 2.10032, -0.953646, 0.6323, 1.75959, -0.679413, 0.286665, -2.27448, -0.462495, 0.218286, -2.26427, 0, 0.226487, -2.28005, 0, 0.413294, -2.36964, -0.568765, 0.286665, -2.30373, -0.601999, 0.300414, -2.30373)
@@ -97,12 +93,6 @@ MaxSpeed = 60.0
 AccelCurve = SubResource("2")
 SkidMarks = [NodePath("Car_SkidMarks#GPUParticles3D"), NodePath("Car_SkidMarks#GPUParticles3D2"), NodePath("Car_SkidMarks#GPUParticles3D3"), NodePath("Car_SkidMarks#GPUParticles3D4")]
 ShowDebug = true
-
-[node name="Car#CarMesh" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.00728956, 0)
-visible = false
-material_override = ExtResource("6")
-mesh = SubResource("3")
 
 [node name="Car#CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, -0.00728956, 0)
@@ -239,3 +229,19 @@ skeleton = NodePath("")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(-4.37114e-08, 1, 4.37114e-08, 0, -4.37114e-08, 1, 1, 4.37114e-08, 1.91069e-15, 8.45659e-09, 0.556142, -0.139177)
 shape = SubResource("BoxShape3D_xwe2w")
+
+[node name="Underglow1" type="SpotLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0.267899, -0.688325)
+light_color = Color(0.166667, 0, 1, 1)
+light_energy = 6.745
+spot_range = 3.833
+spot_attenuation = 1.93
+spot_angle = 77.45
+
+[node name="Underglow2" type="SpotLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0.267899, 0.765218)
+light_color = Color(0.166667, 0, 1, 1)
+light_energy = 6.745
+spot_range = 3.833
+spot_attenuation = 1.93
+spot_angle = 77.45

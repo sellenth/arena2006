@@ -1,8 +1,0 @@
-[gd_resource type="StandardMaterial3D" load_steps=2 format=3 uid="uid://xyoosb4c2hv"]
-
-[ext_resource type="Texture2D" uid="uid://d3jbv52hcriy6" path="res://src/resources/materials/prototype/prototype-materials/textures/grey-checker.png" id="1_hxori"]
-
-[resource]
-albedo_texture = ExtResource("1_hxori")
-uv1_triplanar = true
-uv1_triplanar_sharpness = 150.0
