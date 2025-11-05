@@ -403,8 +403,7 @@ public partial class OptionsMenu : CanvasLayer
 		customization.Save();
 		_multiplayerDirty = false;
 
-		var lobby = GetTree().CurrentScene?.GetNodeOrNull<MultiplayerLobby>("MultiplayerLobby");
-		lobby?.UploadLocalCustomization();
+		//TODO: UploadLocalCustomization();
 	}
 
 	private static string GetHatDisplayName(string hatId)

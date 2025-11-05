@@ -15,32 +15,14 @@ public partial class ScoreUI : Control
         BindNodes();
         ClearRows();
         ShowEmptyState();
-        TryBindLobby();
-        SetProcess(_lobby == null);
     }
 
     public override void _Process(double delta)
     {
-        if (_lobby != null)
-        {
-            SetProcess(false);
-            return;
-        }
-
-        TryBindLobby();
-        if (_lobby != null)
-        {
-            SetProcess(false);
-        }
     }
 
     public override void _ExitTree()
     {
-        if (_lobby != null)
-        {
-            _lobby.Disconnect("ScoreboardUpdated", new Callable(this, nameof(OnScoreboardUpdated)));
-            _lobby = null;
-        }
     }
 
     private void BindNodes()
@@ -66,28 +48,15 @@ public partial class ScoreUI : Control
         }
     }
 
-    private void TryBindLobby()
+    private void BindLobby()
     {
         BindNodes();
-        if (_lobby != null)
-        {
-            return;
-        }
-
         var world = GetTree()?.Root?.GetNodeOrNull<Node>("/root/World");
         if (world == null)
         {
             return;
         }
 
-        _lobby = world.GetNodeOrNull<MultiplayerLobby>("MultiplayerLobby");
-        if (_lobby == null)
-        {
-            return;
-        }
-
-        _lobby.Connect("ScoreboardUpdated", new Callable(this, nameof(OnScoreboardUpdated)));
-        ApplyScoreboard(_lobby.GetLatestScoreboard());
     }
 
     private void OnScoreboardUpdated(Godot.Collections.Array scoreboard)
