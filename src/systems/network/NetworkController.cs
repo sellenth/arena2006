@@ -279,10 +279,12 @@ public partial class NetworkController : Node
 		state.Handbrake = Input.IsActionPressed("handbreak");
 		state.Brake = Input.IsActionPressed("brake");
 		state.Respawn = Input.IsKeyPressed(Key.R);
+		
+		/* VERBOSE PRINT
 		if (Mathf.Abs(state.Throttle) > 0.1f || Mathf.Abs(state.Steer) > 0.1f || state.Handbrake || state.Brake || state.Respawn)
 		{
 			GD.Print($"CLIENT input tick={_tick + 1} throttle={state.Throttle:F2} steer={state.Steer:F2} hb={state.Handbrake} br={state.Brake} respawn={state.Respawn}");
-		}
+		}*/
 		return state;
 	}
 
@@ -315,7 +317,9 @@ public partial class NetworkController : Node
 						var remoteSnapshot = remoteState.Snapshot;
 						if (remoteId == _clientId)
 						{
+							/* VERBOSE PRINT
 							GD.Print($"CLIENT received snapshot for self: tick={remoteSnapshot.Tick} pos={remoteSnapshot.Transform.Origin}");
+							*/
 							ApplyLocalSnapshot(remoteSnapshot);
 						}
 						else
@@ -446,7 +450,9 @@ public partial class NetworkController : Node
 	{
 		if (_car != null)
 		{
+			/* VERBOSE PRINT
 			GD.Print($"CLIENT applying snapshot to car: pos={snapshot.Transform.Origin}");
+			*/
 			_car.QueueSnapshot(snapshot);
 		}
 		else
