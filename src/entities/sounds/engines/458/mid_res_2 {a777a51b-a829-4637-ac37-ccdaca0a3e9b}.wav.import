@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://c46wuqsobb3xd"
+path="res://.godot/imported/mid_res_2 {a777a51b-a829-4637-ac37-ccdaca0a3e9b}.wav-9fd4650b1e75324be2cfd5545b9f5172.sample"
+
+[deps]
+
+source_file="res://src/entities/sounds/engines/458/mid_res_2 {a777a51b-a829-4637-ac37-ccdaca0a3e9b}.wav"
+dest_files=["res://.godot/imported/mid_res_2 {a777a51b-a829-4637-ac37-ccdaca0a3e9b}.wav-9fd4650b1e75324be2cfd5545b9f5172.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=2
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://uihc1qu68bwc"
+path="res://.godot/imported/off_lower {05f28dcf-8251-4e6a-bc40-8099139ef81e}.wav-4df29c36e58087570e16255123beaa6a.sample"
+
+[deps]
+
+source_file="res://src/entities/sounds/engines/procar/off_lower {05f28dcf-8251-4e6a-bc40-8099139ef81e}.wav"
+dest_files=["res://.godot/imported/off_lower {05f28dcf-8251-4e6a-bc40-8099139ef81e}.wav-4df29c36e58087570e16255123beaa6a.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

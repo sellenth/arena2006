@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://dybr3sdjridev"
+path="res://.godot/imported/road-bend.obj-4e49c7bb3afe64deee518e905b0fe42f.mesh"
+
+[deps]
+
+files=["res://.godot/imported/road-bend.obj-4e49c7bb3afe64deee518e905b0fe42f.mesh"]
+
+source_file="res://src/entities/road/road-bend.obj"
+dest_files=["res://.godot/imported/road-bend.obj-4e49c7bb3afe64deee518e905b0fe42f.mesh", "res://.godot/imported/road-bend.obj-4e49c7bb3afe64deee518e905b0fe42f.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(10, 10, 10)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

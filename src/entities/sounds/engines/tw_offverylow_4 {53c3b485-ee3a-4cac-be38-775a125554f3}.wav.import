@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://d37b01s43b630"
+path="res://.godot/imported/tw_offverylow_4 {53c3b485-ee3a-4cac-be38-775a125554f3}.wav-1a79507785108aae4a984744a068076a.sample"
+
+[deps]
+
+source_file="res://src/entities/sounds/engines/tw_offverylow_4 {53c3b485-ee3a-4cac-be38-775a125554f3}.wav"
+dest_files=["res://.godot/imported/tw_offverylow_4 {53c3b485-ee3a-4cac-be38-775a125554f3}.wav-1a79507785108aae4a984744a068076a.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2
