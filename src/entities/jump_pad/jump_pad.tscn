@@ -1,6 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://c68mijg2v2wkf"]
+[gd_scene load_steps=7 format=3 uid="uid://c68mijg2v2wkf"]
 
 [ext_resource type="Script" uid="uid://m1u3nnnxihl4" path="res://src/entities/jump_pad/JumpPad.cs" id="1_q2s6u"]
+[ext_resource type="AudioStream" uid="uid://ch0h8168klm38" path="res://src/entities/jump_pad/jump-pad.mp3" id="2_n3k3v"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_visual"]
 albedo_color = Color(0.2, 0.8, 0.9, 1)
@@ -19,6 +20,7 @@ size = Vector3(2.2, 0.405289, 2.03018)
 
 [node name="JumpPad" type="StaticBody3D"]
 script = ExtResource("1_q2s6u")
+JumpSfx = ExtResource("2_n3k3v")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 material_override = SubResource("StandardMaterial3D_visual")
