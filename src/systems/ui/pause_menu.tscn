@@ -1,0 +1,69 @@
+[gd_scene load_steps=3 format=3 uid="uid://c7m8fswqpshy4"]
+
+[ext_resource type="Script" uid="uid://di0ps0pgy36jm" path="res://src/systems/ui/PauseMenu.cs" id="1_pause_menu"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(0.0588235, 0.0588235, 0.0588235, 0.85)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="PauseMenu" type="CanvasLayer"]
+process_mode = 3
+layer = 100
+visible = false
+script = ExtResource("1_pause_menu")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.55)
+
+[node name="Center" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="PanelContainer" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Content" type="VBoxContainer" parent="Center/PanelContainer"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="Center/PanelContainer/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 42
+text = "Paused"
+horizontal_alignment = 1
+
+[node name="Menu" type="VBoxContainer" parent="Center/PanelContainer/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+alignment = 1
+
+[node name="OptionsButton" type="Button" parent="Center/PanelContainer/Content/Menu"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Options"
+
+[node name="ExitButton" type="Button" parent="Center/PanelContainer/Content/Menu"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Exit"
+
+[node name="ResumeButton" type="Button" parent="Center/PanelContainer/Content/Menu"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Resume"
