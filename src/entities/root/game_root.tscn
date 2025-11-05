@@ -60,6 +60,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66.4095, -23.3205, -232.403)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5435, 0, -51.0122)
 
 [node name="Car" parent="." instance=ExtResource("6_awmje")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.5344, 1.90735e-06, -143.126)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.5344, 2.15127, -143.126)
 
 [editable path="DirectionalLight3D"]
