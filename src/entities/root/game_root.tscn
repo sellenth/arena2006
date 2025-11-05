@@ -1,9 +1,11 @@
-[gd_scene load_steps=8 format=3 uid="uid://pgudwlq5efn0"]
+[gd_scene load_steps=10 format=3 uid="uid://pgudwlq5efn0"]
 
 [ext_resource type="PackedScene" uid="uid://cmpcr4wp2d8gk" path="res://src/entities/root/environment_and_light.tscn" id="1_p4qn7"]
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/materials/black_square.tres" id="2_n38sr"]
 [ext_resource type="Script" uid="uid://db8dybniui1jv" path="res://src/systems/network/RemotePlayerManager.cs" id="4_3h70o"]
 [ext_resource type="PackedScene" uid="uid://ct07rpph3wvww" path="res://src/entities/vehicle/car/player_car.tscn" id="6_awmje"]
+[ext_resource type="PackedScene" uid="uid://c7m8fswqpshy4" path="res://src/systems/ui/pause_menu.tscn" id="7_liv0r"]
+[ext_resource type="PackedScene" uid="uid://ch2s1v2av6f0p" path="res://src/systems/ui/options_menu.tscn" id="8_njg2t"]
 [ext_resource type="PackedScene" uid="uid://dqsjudt64pb3u" path="res://src/entities/building/building_1/skyscraper_1.tscn" id="14_886vf"]
 [ext_resource type="PackedScene" uid="uid://c68mijg2v2wkf" path="res://src/entities/jump_pad/jump_pad.tscn" id="15_l2d1b"]
 
@@ -61,5 +63,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5435, 0, -51.0122)
 
 [node name="Car" parent="." instance=ExtResource("6_awmje")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.5344, 2.15127, -143.126)
+
+[node name="PauseMenu" parent="." instance=ExtResource("7_liv0r")]
+
+[node name="OptionsMenu" parent="." instance=ExtResource("8_njg2t")]
 
 [editable path="DirectionalLight3D"]

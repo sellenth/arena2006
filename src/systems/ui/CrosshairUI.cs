@@ -13,13 +13,6 @@ public partial class CrosshairUI : Control
         AnchorsPreset = (int)LayoutPreset.FullRect;
         _viewportSize = GetViewportRect().Size;
 
-        _settings = CrosshairSettingsManager.Instance;
-
-        if (_settings != null)
-        {
-            _settings.Changed += OnSettingsChanged;
-        }
-
         UpdateVisibility();
         QueueRedraw();
     }
@@ -35,8 +28,18 @@ public partial class CrosshairUI : Control
 
     public override void _Process(double delta)
     {
+        // Hide crosshair when mouse is released for UI (menus), show when captured and in Shooter mode
+        bool expectingVisible = (Input.MouseMode == Input.MouseModeEnum.Captured);
+        if (Visible != expectingVisible)
+        {
+            Visible = expectingVisible;
+        }
     }
 
+    private void UpdateVisibility()
+    {
+        Visible = (Input.MouseMode == Input.MouseModeEnum.Captured);
+    }
 
     private void OnSettingsChanged()
     {
