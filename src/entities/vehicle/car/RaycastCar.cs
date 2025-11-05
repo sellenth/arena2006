@@ -35,7 +35,9 @@ public partial class RaycastCar : RigidBody3D
 	{
 		TotalWheels = Wheels.Count;
 		
-		_spawnTransform = GlobalTransform;
+		var spawnPoint = GetNodeOrNull<Marker3D>("/root/GameRoot/CarSpawnPoint");
+		GD.Print($"RaycastCar: Spawn point: {spawnPoint.GlobalPosition}");
+		_spawnTransform = new Transform3D(Basis.Identity, spawnPoint.GlobalPosition);
 		
 		if (Name.ToString().StartsWith("RemotePlayer_"))
 		{

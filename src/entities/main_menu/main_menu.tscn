@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=4 uid="uid://2hhdgn4srmq"]
+[gd_scene load_steps=28 format=4 uid="uid://2hhdgn4srmq"]
 
 [ext_resource type="PackedScene" uid="uid://ct07rpph3wvww" path="res://src/entities/vehicle/car/player_car.tscn" id="2_2hprv"]
 [ext_resource type="PackedScene" uid="uid://dfoglkq8m13q4" path="res://src/entities/building/building_5/skyscraper_5.tscn" id="2_bqqt6"]
@@ -4938,6 +4938,9 @@ _data = {
 &"m swim root": SubResource("Animation_gw2bi")
 }
 
+[sub_resource type="Environment" id="Environment_2hprv"]
+sdfgi_enabled = true
+
 [node name="MainMenu" type="Node3D"]
 
 [node name="Node2D" type="Node2D" parent="."]
@@ -5384,3 +5387,6 @@ spot_angle = 27.5
 
 [node name="Car" parent="." instance=ExtResource("2_2hprv")]
 transform = Transform3D(-1.5, 0, -2.26494e-07, 0, 1.5, 0, 2.26494e-07, 0, -1.5, -0.820413, 0, 0)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_2hprv")
