@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://nvum2tptvuic"
-valid=false
+uid="uid://cdnjgfpi240r"
+path="res://.godot/imported/eyeDeepDarkBlue.png-85e2b7952a86f843fdef6e33d60c96ae.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://src/entities/player_model/quechan/skin_N01_nonips.png"
+source_file="res://src/entities/player/quechan/eyeDeepDarkBlue.png"
+dest_files=["res://.godot/imported/eyeDeepDarkBlue.png-85e2b7952a86f843fdef6e33d60c96ae.ctex"]
 
 [params]
 

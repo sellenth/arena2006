@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dl6x545r7pbrg"
-path="res://.godot/imported/practicing01_complete.blend-d071320b8b68b31bec7bbc04640e0ab7.scn"
+uid="uid://d3kji3ywcqmas"
+path="res://.godot/imported/practicing01_swimanimation.blend-a408585c014623f3e531e9165372b567.scn"
 
 [deps]
 
-source_file="res://src/entities/player_model/quechan/practicing01_complete.blend"
-dest_files=["res://.godot/imported/practicing01_complete.blend-d071320b8b68b31bec7bbc04640e0ab7.scn"]
+source_file="res://src/entities/player/quechan/practicing01_swimanimation.blend"
+dest_files=["res://.godot/imported/practicing01_swimanimation.blend-a408585c014623f3e531e9165372b567.scn"]
 
 [params]
 

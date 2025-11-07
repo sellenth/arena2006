@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c6d6udqtlk0wj"
-path="res://.godot/imported/hair.png-db1eac64237f0fb988d30117e610ffa4.ctex"
+path="res://.godot/imported/hair.png-5e4412a51a1e019854922584827520b3.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://src/entities/player_model/quechan/hair.png"
-dest_files=["res://.godot/imported/hair.png-db1eac64237f0fb988d30117e610ffa4.ctex"]
+source_file="res://src/entities/player/quechan/hair.png"
+dest_files=["res://.godot/imported/hair.png-5e4412a51a1e019854922584827520b3.ctex"]
 
 [params]
 

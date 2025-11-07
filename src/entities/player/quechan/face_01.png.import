@@ -3,8 +3,8 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://clyc2fvsr8om6"
-path.s3tc="res://.godot/imported/face_01.png-84ed5ad7e3a7cfe3064a8db590957517.s3tc.ctex"
-path.etc2="res://.godot/imported/face_01.png-84ed5ad7e3a7cfe3064a8db590957517.etc2.ctex"
+path.s3tc="res://.godot/imported/face_01.png-b0a2b3efd52c33a2939a1893f6ebecb6.s3tc.ctex"
+path.etc2="res://.godot/imported/face_01.png-b0a2b3efd52c33a2939a1893f6ebecb6.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://src/entities/player_model/quechan/face_01.png"
-dest_files=["res://.godot/imported/face_01.png-84ed5ad7e3a7cfe3064a8db590957517.s3tc.ctex", "res://.godot/imported/face_01.png-84ed5ad7e3a7cfe3064a8db590957517.etc2.ctex"]
+source_file="res://src/entities/player/quechan/face_01.png"
+dest_files=["res://.godot/imported/face_01.png-b0a2b3efd52c33a2939a1893f6ebecb6.s3tc.ctex", "res://.godot/imported/face_01.png-b0a2b3efd52c33a2939a1893f6ebecb6.etc2.ctex"]
 
 [params]
 
