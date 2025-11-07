@@ -383,6 +383,11 @@ public partial class NetworkController : Node
 
 	private Vector3 GetSpawnPosition(int peerId)
 	{
+		var spawnPoint = GetTree().Root.GetNodeOrNull<Marker3D>("/root/GameRoot/CarSpawnPoint");
+		if (spawnPoint != null)
+		{
+			return spawnPoint.GlobalPosition;
+		}
 		var offset = peerId * 6.0f;
 		return new Vector3(offset, 2.0f, -20.0f + (peerId % 2) * 5.0f);
 	}
