@@ -375,7 +375,12 @@ public partial class NetworkController : Node
 		car.Name = $"ServerCar_{peerId}";
 		car.ShowDebug = false;
 		_serverCarParent.AddChild(car);
-		car.GlobalTransform = new Transform3D(Basis.Identity, GetSpawnPosition(peerId));
+		var spawnPoint = GetTree().Root.GetNodeOrNull<Marker3D>("/root/GameRoot/CarSpawnPoint");
+		if (spawnPoint != null)
+		{
+			car.GlobalTransform = spawnPoint.GlobalTransform;
+		}
+		//car.GlobalTransform = GetSpawnPosition(peerId);
 		CleanupServerOnlyNodes(car);
 		GD.Print($"TEST_EVENT: SERVER_CAR_SPAWNED player_id={peerId}");
 		return car;
@@ -383,13 +388,9 @@ public partial class NetworkController : Node
 
 	private Vector3 GetSpawnPosition(int peerId)
 	{
-		var spawnPoint = GetTree().Root.GetNodeOrNull<Marker3D>("/root/GameRoot/CarSpawnPoint");
-		if (spawnPoint != null)
-		{
-			return spawnPoint.GlobalPosition;
-		}
-		var offset = peerId * 6.0f;
-		return new Vector3(offset, 2.0f, -20.0f + (peerId % 2) * 5.0f);
+		// TODO: Spawn manager
+		return Vector3.Zero;
+
 	}
 
 	private void CleanupServerOnlyNodes(Node car)

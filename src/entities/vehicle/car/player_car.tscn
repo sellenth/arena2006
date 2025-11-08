@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=4 uid="uid://ct07rpph3wvww"]
+[gd_scene load_steps=21 format=4 uid="uid://ct07rpph3wvww"]
 
 [ext_resource type="Script" uid="uid://dw4dmwb4754jj" path="res://src/entities/vehicle/car/RaycastCar.cs" id="1"]
 [ext_resource type="Script" uid="uid://blkjol6xn0n1a" path="res://src/entities/vehicle/car/RaycastWheel.cs" id="2"]
@@ -79,19 +79,16 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_v0yiv")
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_xwe2w"]
-size = Vector3(4.40165, 1, 0.718574)
-
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_a5xcr"]
 height = 4.0
 
 [node name="Car" type="RigidBody3D" node_paths=PackedStringArray("Wheels", "SkidMarks")]
-mass = 100.0
+mass = 50.0
 physics_material_override = SubResource("1")
 linear_damp_mode = 1
 script = ExtResource("1")
 Wheels = [NodePath("Car#WheelFL"), NodePath("Car#WheelFR"), NodePath("Car#WheelRL"), NodePath("Car#WheelRR")]
-Acceleration = 1100.0
+Acceleration = 550.0
 MaxSpeed = 60.0
 AccelCurve = SubResource("2")
 TireMaxTurnDegrees = 15.0
@@ -209,11 +206,6 @@ Height = 4.0
 transform = Transform3D(-4.37114e-06, 100, 4.37114e-06, 0, -4.37114e-06, 100, 100, 4.37114e-06, 1.91069e-13, 0, -0.00728956, 0)
 mesh = SubResource("ArrayMesh_nxb43")
 skeleton = NodePath("")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(-4.37114e-08, 1, 4.37114e-08, 0, -4.37114e-08, 1, 1, 4.37114e-08, 1.91069e-15, 8.45659e-09, 0.556142, -0.139177)
-shape = SubResource("BoxShape3D_xwe2w")
-disabled = true
 
 [node name="Underglow1" type="SpotLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0.267899, -0.688325)
