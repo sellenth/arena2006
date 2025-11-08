@@ -1,5 +1,7 @@
 using Godot;
 using Godot.Collections;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 public partial class NetworkController : Node
@@ -51,16 +53,19 @@ public partial class NetworkController : Node
 	private int _tick = 0;
 
 	private UdpServer _udpServer;
-	private Dictionary<int, PeerInfo> _peers = new Dictionary<int, PeerInfo>();
+	private Godot.Collections.Dictionary<int, PeerInfo> _peers = new Godot.Collections.Dictionary<int, PeerInfo>();
 	private int _nextPeerId = 1;
 	private Node3D _serverCarParent;
 
 	private PacketPeerUdp _clientPeer;
 	private CarInputState _clientInput = new CarInputState();
 	private int _clientId = 0;
-	private Dictionary<int, CarSnapshot> _remotePlayerSnapshots = new Dictionary<int, CarSnapshot>();
+	private Godot.Collections.Dictionary<int, CarSnapshot> _remotePlayerSnapshots = new Godot.Collections.Dictionary<int, CarSnapshot>();
 
 	private PackedScene _playerCarScene;
+	private bool _respawnPointsCached = false;
+	private bool _hasFallbackSpawn = false;
+	private Transform3D _fallbackSpawnTransform = Transform3D.Identity;
 
 	public override void _Ready()
 	{
@@ -375,22 +380,71 @@ public partial class NetworkController : Node
 		car.Name = $"ServerCar_{peerId}";
 		car.ShowDebug = false;
 		_serverCarParent.AddChild(car);
-		var spawnPoint = GetTree().Root.GetNodeOrNull<Marker3D>("/root/GameRoot/CarSpawnPoint");
-		if (spawnPoint != null)
-		{
-			car.GlobalTransform = spawnPoint.GlobalTransform;
-		}
-		//car.GlobalTransform = GetSpawnPosition(peerId);
+		car.GlobalTransform = GetSpawnTransform(peerId);
 		CleanupServerOnlyNodes(car);
 		GD.Print($"TEST_EVENT: SERVER_CAR_SPAWNED player_id={peerId}");
 		return car;
 	}
 
-	private Vector3 GetSpawnPosition(int peerId)
+	private Transform3D GetSpawnTransform(int peerId)
 	{
-		// TODO: Spawn manager
-		return Vector3.Zero;
+		EnsureRespawnPointsCached();
+		var manager = RespawnManager.Instance;
+		var contextNode = _serverCarParent as Node3D ?? GetTree().CurrentScene as Node3D;
+		var otherPositions = _peers.Values
+			.Where(info => info != null && info.Car != null && info.Id != peerId)
+			.Select(info => info.Car.GlobalTransform.Origin)
+			.ToList();
 
+		var query = RespawnManager.SpawnQuery.Create(contextNode);
+		query.OpponentPositions = otherPositions;
+		query.AllyPositions = System.Array.Empty<Vector3>();
+		if (_hasFallbackSpawn)
+			query.FallbackTransform = _fallbackSpawnTransform;
+
+		if (manager.TryGetBestSpawnTransform(query, out var transform))
+			return transform;
+
+		return _hasFallbackSpawn ? _fallbackSpawnTransform : Transform3D.Identity;
+	}
+
+	private void EnsureRespawnPointsCached()
+	{
+		if (_respawnPointsCached)
+			return;
+
+		_respawnPointsCached = true;
+		var manager = RespawnManager.Instance;
+		var tree = GetTree();
+		if (tree == null)
+			return;
+
+		foreach (var groupName in new[] { "RespawnPoints", "respawn_points", "SpawnPoints" })
+		{
+			var nodes = tree.GetNodesInGroup(groupName);
+			foreach (Node node in nodes)
+			{
+				if (node is Node3D node3D)
+				{
+					manager.RegisterSpawnPoint(node3D, 1.0f, 0.5f, 0.35f);
+					if (!_hasFallbackSpawn)
+					{
+						_fallbackSpawnTransform = node3D.GlobalTransform;
+						_hasFallbackSpawn = true;
+					}
+				}
+			}
+		}
+
+		var root = tree.Root;
+		var carSpawn = root.FindChild("CarSpawnPoint", true, false) as Marker3D;
+		carSpawn ??= root.GetNodeOrNull<Marker3D>("/root/GameRoot/CarSpawnPoint");
+		if (carSpawn != null)
+		{
+			manager.RegisterSpawnPoint(carSpawn, 1.15f, 0.4f, 0.2f);
+			_fallbackSpawnTransform = carSpawn.GlobalTransform;
+			_hasFallbackSpawn = true;
+		}
 	}
 
 	private void CleanupServerOnlyNodes(Node car)
@@ -611,4 +665,3 @@ public partial class NetworkController : Node
 		return snapshot;
 	}
 }
-
