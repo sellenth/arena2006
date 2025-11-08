@@ -3,11 +3,11 @@ using Godot;
 public partial class RaycastWheel : RayCast3D
 {
 	[ExportGroup("Wheel properties")]
-	[Export] public float SpringStrength { get; set; } = 100.0f;
-	[Export] public float SpringDamping { get; set; } = 2.0f;
-	[Export] public float RestDist { get; set; } = 0.5f;
-	[Export] public float OverExtend { get; set; } = 0.0f;
-	[Export] public float WheelRadius { get; set; } = 0.4f;
+	[Export] public float SpringStrength { get; set; } = 10000.0f;
+	[Export] public float SpringDamping { get; set; } = 240.0f;
+	[Export] public float RestDist { get; set; } = 0.1f;
+	[Export] public float OverExtend { get; set; } = 0.05f;
+	[Export] public float WheelRadius { get; set; } = 0.33f;
 	[Export] public float ZTraction { get; set; } = 0.05f;
 	[Export] public float ZBrakeTraction { get; set; } = 0.25f;
 

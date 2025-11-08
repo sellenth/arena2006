@@ -1,6 +1,7 @@
-[gd_scene load_steps=13 format=3 uid="uid://pgudwlq5efn0"]
+[gd_scene load_steps=14 format=3 uid="uid://pgudwlq5efn0"]
 
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/materials/black_square.tres" id="2_n38sr"]
+[ext_resource type="Material" uid="uid://dwgngqcfvi3s4" path="res://src/materials/red_square.tres" id="3_k6g81"]
 [ext_resource type="Script" uid="uid://db8dybniui1jv" path="res://src/systems/network/RemotePlayerManager.cs" id="4_3h70o"]
 [ext_resource type="PackedScene" uid="uid://ct07rpph3wvww" path="res://src/entities/vehicle/car/player_car.tscn" id="6_awmje"]
 [ext_resource type="PackedScene" uid="uid://c7m8fswqpshy4" path="res://src/systems/ui/pause_menu.tscn" id="7_liv0r"]
@@ -25,12 +26,13 @@ tonemap_mode = 2
 glow_enabled = true
 
 [sub_resource type="Curve3D" id="Curve3D_qm2o8"]
+closed = true
 bake_interval = 0.01
 _data = {
-"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -13.1711, -1.30335, 14.5162, 0, 0, 0, 0, 0, 0, -0.683891, 10.2336, -342.718),
-"tilts": PackedFloat32Array(0, 4.4)
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -51.154, 0, -36.803, 0, 0, 0, 0, 0, 0, -127.164, 0, -66.987, 0, 0, 0, 0, 0, 0, -197.889, 0, -71.389, 0, 0, 0, 0, 0, 0, -211.729, 0, -14.274, 0, 0, 0, 0, 0, 0, -69.784, 0, 58.398, 0, 0, 0, 0, 0, 0, 122.756, 0, 109.573, 0, 0, 0, 0, 0, 0, 219.254, 0, 79.488, 0, 0, 0, 0, 0, 0, 153.255, 0, 21.216, 0, 0, 0, 0, 0, 0, 96.962, 0, 1.608, 0, 0, 0, 0, 0, 0, 45.9237, 14.7709, 3.8857),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.32)
 }
-point_count = 2
+point_count = 11
 
 [node name="GameRoot" type="Node3D"]
 
@@ -49,7 +51,7 @@ metadata/_edit_lock_ = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, -94.2223)
 material_override = ExtResource("2_n38sr")
 use_collision = true
-size = Vector3(200, 0.5, 388.445)
+size = Vector3(500, 0.5, 500)
 
 [node name="RemotePlayerLabels" type="Node3D" parent="."]
 
@@ -57,12 +59,13 @@ size = Vector3(200, 0.5, 388.445)
 script = ExtResource("4_3h70o")
 
 [node name="Path3D" type="Path3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.545612, -55.8006)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.394751, -55.8006)
 curve = SubResource("Curve3D_qm2o8")
 
 [node name="CSGPolygon3D" type="CSGPolygon3D" parent="Path3D"]
+material_override = ExtResource("3_k6g81")
 use_collision = true
-polygon = PackedVector2Array(-5, 0, -5, 1, 5, 1, 5, 0)
+polygon = PackedVector2Array(-25, 0, 25, 1, 25, 1, 25, 0)
 mode = 2
 path_node = NodePath("..")
 path_interval_type = 0
@@ -94,4 +97,4 @@ size = Vector3(143.106, 209.616, 467.826)
 data = ExtResource("8_k6g81")
 
 [node name="CarSpawnPoint" type="Marker3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.5161, 2.74133, -33.7557)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -68.2146, 2.74133, -106.007)
