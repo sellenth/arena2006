@@ -9,6 +9,8 @@ public partial class RaycastCar : RigidBody3D
 	[Export] public Curve AccelCurve { get; set; }
 	[Export] public float TireTurnSpeed { get; set; } = 2.0f;
 	[Export] public float TireMaxTurnDegrees { get; set; } = 25;
+	[Export] public float SteerAccelerationRate { get; set; } = 3.0f;
+	[Export] public float SteerDecelerationRate { get; set; } = 5.0f;
 
 	[Export] public Array<GpuParticles3D> SkidMarks { get; set; }
 	[Export] public bool ShowDebug { get; set; } = false;
@@ -16,10 +18,12 @@ public partial class RaycastCar : RigidBody3D
 	public int TotalWheels { get; private set; }
 
 	public float MotorInput { get; set; } = 0.0f;
+	public float SteerInput => _smoothedSteerInput;
 	public bool HandBreak { get; set; } = false;
 	public bool IsSlipping { get; set; } = false;
 
 	private CarInputState _inputState = new CarInputState();
+	private float _smoothedSteerInput = 0.0f;
 	private bool _brakePressed = false;
 	private CarSnapshot _pendingSnapshot;
 
@@ -37,7 +41,7 @@ public partial class RaycastCar : RigidBody3D
 		
 		var spawnPoint = GetNodeOrNull<Marker3D>("/root/GameRoot/CarSpawnPoint");
 		GD.Print($"RaycastCar: Spawn point: {spawnPoint.GlobalPosition}");
-		_spawnTransform = new Transform3D(Basis.Identity, spawnPoint.GlobalPosition);
+		_spawnTransform = spawnPoint.GlobalTransform;
 		
 		if (Name.ToString().StartsWith("RemotePlayer_"))
 		{
@@ -116,7 +120,7 @@ public partial class RaycastCar : RigidBody3D
 	{
 		if (!wheel.IsSteer) return;
 
-		var turnInput = _inputState.Steer * TireTurnSpeed;
+		var turnInput = _smoothedSteerInput * TireTurnSpeed;
 		if (turnInput != 0)
 		{
 			wheel.Rotation = new Vector3(wheel.Rotation.X, 
@@ -134,6 +138,21 @@ public partial class RaycastCar : RigidBody3D
 
 	public override void _PhysicsProcess(double delta)
 	{
+		var rawSteerInput = _inputState.Steer;
+		var deltaFloat = (float)delta;
+		
+		if (Mathf.Abs(rawSteerInput) > 0.01f)
+		{
+			var targetSteer = rawSteerInput;
+			var steerDelta = SteerAccelerationRate * deltaFloat;
+			_smoothedSteerInput = Mathf.MoveToward(_smoothedSteerInput, targetSteer, steerDelta);
+		}
+		else
+		{
+			var steerDelta = 1.0f;
+			_smoothedSteerInput = Mathf.MoveToward(_smoothedSteerInput, 0.0f, steerDelta);
+		}
+		
 		// if (ShowDebug) 
 		// 	DebugDraw.DrawArrowRay(GlobalPosition, LinearVelocity, 2.5f, 0.5f, Colors.Green);
 
