@@ -66,12 +66,15 @@ public partial class NetworkController : Node
 	private bool _respawnPointsCached = false;
 	private bool _hasFallbackSpawn = false;
 	private Transform3D _fallbackSpawnTransform = Transform3D.Identity;
+	private TestInputMode _testInputMode = TestInputMode.None;
+	private int _testInputStartTick = -1;
 
 	public override void _Ready()
 	{
 		_playerCarScene = GD.Load<PackedScene>("res://src/entities/vehicle/car/player_car.tscn");
 		Engine.PhysicsTicksPerSecond = 60;
 		_role = DetermineRole();
+		InitializeTestInputScript();
 
 		switch (_role)
 		{
@@ -274,6 +277,9 @@ public partial class NetworkController : Node
 
 	private CarInputState CollectLocalInput()
 	{
+		if (_testInputMode != TestInputMode.None)
+			return CollectTestInput();
+
 		var state = new CarInputState();
 		var forward = Input.GetActionStrength("accelerate");
 		var backward = Input.GetActionStrength("decelerate");
@@ -445,6 +451,46 @@ public partial class NetworkController : Node
 			_fallbackSpawnTransform = carSpawn.GlobalTransform;
 			_hasFallbackSpawn = true;
 		}
+	}
+
+	private enum TestInputMode
+	{
+		None,
+		DriveRespawn
+	}
+
+	private void InitializeTestInputScript()
+	{
+		var scriptName = System.Environment.GetEnvironmentVariable("ARENA_TEST_INPUT_SCRIPT");
+		if (string.IsNullOrWhiteSpace(scriptName))
+			return;
+
+		if (scriptName.Equals("drive_respawn", System.StringComparison.OrdinalIgnoreCase))
+		{
+			_testInputMode = TestInputMode.DriveRespawn;
+			GD.Print("TEST_EVENT: INPUT_SCRIPT drive_respawn enabled");
+		}
+	}
+
+	private CarInputState CollectTestInput()
+	{
+		var state = new CarInputState();
+		if (_testInputStartTick < 0)
+			_testInputStartTick = _tick;
+
+		var elapsed = _tick - _testInputStartTick;
+		switch (_testInputMode)
+		{
+			case TestInputMode.DriveRespawn:
+				state.Throttle = elapsed < 360 ? 1.0f : 0.0f;
+				state.Steer = 0.0f;
+				state.Handbrake = false;
+				state.Brake = false;
+				state.Respawn = elapsed >= 420 && elapsed < 435;
+				break;
+		}
+
+		return state;
 	}
 
 	private void CleanupServerOnlyNodes(Node car)

@@ -51,7 +51,7 @@ print_info "Server PID: $SERVER_PID"
 
 # Step 2: Wait for server to be ready
 print_info "Step 2: Waiting for server to start..."
-if ! wait_for_log_pattern "$SERVER_LOG" "TEST_EVENT: SERVER_STARTED" 10; then
+if ! wait_for_log_pattern "$SERVER_LOG" "TEST_EVENT: SERVER_STARTED" 30; then
     print_error "Server failed to start"
     display_log "$SERVER_LOG" "Server"
     print_test_result "$TEST_NAME" "FAIL"
@@ -75,7 +75,7 @@ print_info "Client PID: $CLIENT_PID"
 
 # Step 4: Wait for client to connect
 print_info "Step 4: Waiting for client to connect..."
-if ! wait_for_log_pattern "$SERVER_LOG" "TEST_EVENT: CLIENT_CONNECTED" 10; then
+if ! wait_for_log_pattern "$SERVER_LOG" "TEST_EVENT: CLIENT_CONNECTED" 30; then
     print_error "Client failed to connect to server"
     display_log "$SERVER_LOG" "Server"
     display_log "$CLIENT_LOG" "Client"

@@ -1,11 +1,10 @@
-[gd_scene load_steps=15 format=3 uid="uid://pgudwlq5efn0"]
+[gd_scene load_steps=14 format=3 uid="uid://pgudwlq5efn0"]
 
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/materials/black_square.tres" id="2_n38sr"]
 [ext_resource type="Material" uid="uid://dwgngqcfvi3s4" path="res://src/materials/red_square.tres" id="3_k6g81"]
 [ext_resource type="Script" uid="uid://db8dybniui1jv" path="res://src/systems/network/RemotePlayerManager.cs" id="4_3h70o"]
 [ext_resource type="PackedScene" uid="uid://ct07rpph3wvww" path="res://src/entities/vehicle/car/player_car.tscn" id="6_awmje"]
 [ext_resource type="PackedScene" uid="uid://c7m8fswqpshy4" path="res://src/systems/ui/pause_menu.tscn" id="7_liv0r"]
-[ext_resource type="VoxelGIData" uid="uid://nckwuio35uo2" path="res://src/entities/root/environment/game_root.VoxelGI_data.res" id="8_k6g81"]
 [ext_resource type="PackedScene" uid="uid://ch2s1v2av6f0p" path="res://src/systems/ui/options_menu.tscn" id="8_njg2t"]
 [ext_resource type="PackedScene" uid="uid://cukaeucupjo2e" path="res://src/systems/ui/debug_ui_controller.tscn" id="9_73xoc"]
 [ext_resource type="PackedScene" uid="uid://dqsjudt64pb3u" path="res://src/entities/building/building_1/skyscraper_1.tscn" id="14_886vf"]
@@ -23,8 +22,7 @@ sky_material = SubResource("ProceduralSkyMaterial_liv0r")
 [sub_resource type="Environment" id="Environment_k6g81"]
 background_mode = 2
 sky = SubResource("Sky_njg2t")
-tonemap_mode = 2
-glow_enabled = true
+tonemap_mode = 1
 
 [sub_resource type="Curve3D" id="Curve3D_qm2o8"]
 closed = true
@@ -93,11 +91,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.5344, 2.15127, -143.126)
 [node name="OptionsMenu" parent="." instance=ExtResource("8_njg2t")]
 
 [node name="DebugUI" parent="." instance=ExtResource("9_73xoc")]
-
-[node name="VoxelGI" type="VoxelGI" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.4064, 94.8082, -72.8531)
-size = Vector3(143.106, 209.616, 467.826)
-data = ExtResource("8_k6g81")
 
 [node name="CarSpawnPoint" type="Marker3D" parent="."]
 transform = Transform3D(-0.5945142, 0, -0.8040851, 0, 1, 0, 0.8040851, 0, -0.5945142, -68.2146, 1.2100546, -106.007)

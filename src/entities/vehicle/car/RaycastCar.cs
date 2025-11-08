@@ -33,6 +33,8 @@ public partial class RaycastCar : RigidBody3D
 	private static readonly float SnapAngEps = Mathf.DegToRad(2.0f);
 
 	private bool _isNetworked = false;
+	private bool _hasLoggedSpawn = false;
+	private Vector3 _initialSpawnPosition = Vector3.Zero;
 
 	public override void _Ready()
 	{
@@ -79,6 +81,7 @@ public partial class RaycastCar : RigidBody3D
 
 	private void RespawnAtManagedPoint()
 	{
+		var previousPosition = GlobalTransform.Origin;
 		var manager = RespawnManager.Instance;
 		var success = manager.RespawnEntityAtBestPoint(this, this);
 		if (!success)
@@ -86,6 +89,30 @@ public partial class RaycastCar : RigidBody3D
 			var fallback = RespawnManager.RespawnRequest.Create(GlobalTransform);
 			manager.RespawnEntity(this, fallback);
 		}
+
+		var currentPosition = GlobalTransform.Origin;
+
+		var shouldLog = !Name.ToString().StartsWith("ServerCar_") && !Name.ToString().StartsWith("RemotePlayer_");
+
+		if (!shouldLog)
+			return;
+
+		if (!_hasLoggedSpawn)
+		{
+			_hasLoggedSpawn = true;
+			_initialSpawnPosition = currentPosition;
+			GD.Print($"TEST_EVENT: CAR_INITIAL_SPAWN name={Name} pos={FormatVector(currentPosition)}");
+		}
+		else
+		{
+			var distance = previousPosition.DistanceTo(currentPosition);
+			GD.Print($"TEST_EVENT: CAR_RESPAWNED name={Name} prev={FormatVector(previousPosition)} new={FormatVector(currentPosition)} distance={distance:F2}");
+		}
+	}
+
+	private static string FormatVector(Vector3 value)
+	{
+		return $"{value.X:F2},{value.Y:F2},{value.Z:F2}";
 	}
 
 	public Vector3 GetPointVelocity(Vector3 point)

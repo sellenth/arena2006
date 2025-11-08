@@ -25,6 +25,7 @@ The test suite uses shell scripts to orchestrate multiple Godot instances (serve
 tests/
 ├── README.md                    # This file
 ├── test_client_car_spawn.sh     # Example test: verifies client car spawns on server
+├── test_client_car_respawn.sh   # Respawn test: drives, respawns, and validates positions
 ├── lib/
 │   └── test_utils.sh            # Shared test utilities and functions
 ├── configs/                     # Test configuration files (future use)
@@ -38,9 +39,11 @@ tests/
 ```bash
 # Run in headless mode (default)
 ./tests/test_client_car_spawn.sh
+./tests/test_client_car_respawn.sh
 
 # Run with visualization (see the game running)
 ./tests/test_client_car_spawn.sh --visual
+./tests/test_client_car_respawn.sh --visual
 ```
 
 ### Using the Test Runner
@@ -48,9 +51,11 @@ tests/
 ```bash
 # Run a test through the test runner
 ./tests/run_test.sh ./tests/test_client_car_spawn.sh
+./tests/run_test.sh ./tests/test_client_car_respawn.sh
 
 # Run with visualization
 ./tests/run_test.sh ./tests/test_client_car_spawn.sh --visual
+./tests/run_test.sh ./tests/test_client_car_respawn.sh --visual
 ```
 
 ## Writing New Tests
@@ -153,6 +158,9 @@ The following test events are logged by the game for test assertions:
 - `TEST_EVENT: CLIENT_CONNECTED id=X` - Client X connected to server
 - `TEST_EVENT: SERVER_CAR_SPAWNED player_id=X` - Server spawned car for player X
 - `TEST_EVENT: CLIENT_RECEIVED_WELCOME id=X` - Client received welcome with ID X
+- `TEST_EVENT: CAR_INITIAL_SPAWN name=... pos=x,y,z` - Local car completed its managed spawn selection
+- `TEST_EVENT: CAR_RESPAWNED name=... prev=x,y,z new=x,y,z distance=D` - Local car respawned with travel distance logged
+- `TEST_EVENT: INPUT_SCRIPT drive_respawn enabled` - Deterministic input script enabled (used by respawn test)
 
 ## Adding New Test Events
 
@@ -247,4 +255,3 @@ Build the C# project manually:
 ```bash
 dotnet build Arena2006.csproj
 ```
-
