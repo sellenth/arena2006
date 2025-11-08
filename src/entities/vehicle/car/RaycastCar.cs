@@ -32,16 +32,11 @@ public partial class RaycastCar : RigidBody3D
 	private const float SnapVelEps = 0.1f;
 	private static readonly float SnapAngEps = Mathf.DegToRad(2.0f);
 
-	private Transform3D _spawnTransform;
 	private bool _isNetworked = false;
 
 	public override void _Ready()
 	{
 		TotalWheels = Wheels.Count;
-		
-		var spawnPoint = GetNodeOrNull<Marker3D>("/root/GameRoot/CarSpawnPoint");
-		GD.Print($"RaycastCar: Spawn point: {spawnPoint.GlobalPosition}");
-		_spawnTransform = spawnPoint.GlobalTransform;
 		
 		if (Name.ToString().StartsWith("RemotePlayer_"))
 		{
@@ -61,6 +56,8 @@ public partial class RaycastCar : RigidBody3D
 			GD.Print("RaycastCar: NetworkController not found");
 			_isNetworked = false;
 		}
+
+		RespawnAtManagedPoint();
 	}
 
 	public override void _Input(InputEvent @event)
@@ -76,10 +73,19 @@ public partial class RaycastCar : RigidBody3D
 
 	public void Respawn()
 	{
-		GlobalTransform = _spawnTransform;
-		LinearVelocity = Vector3.Zero;
-		AngularVelocity = Vector3.Zero;
+		RespawnAtManagedPoint();
 		_pendingSnapshot = null;
+	}
+
+	private void RespawnAtManagedPoint()
+	{
+		var manager = RespawnManager.Instance;
+		var success = manager.RespawnEntityAtBestPoint(this, this);
+		if (!success)
+		{
+			var fallback = RespawnManager.RespawnRequest.Create(GlobalTransform);
+			manager.RespawnEntity(this, fallback);
+		}
 	}
 
 	public Vector3 GetPointVelocity(Vector3 point)
@@ -233,4 +239,3 @@ public partial class RaycastCar : RigidBody3D
 		return gravityMagnitude * gravityVector;
 	}
 }
-
