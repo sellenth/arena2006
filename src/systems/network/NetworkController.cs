@@ -7,25 +7,33 @@ using System.Linq;
 public partial class NetworkController : Node
 {
 	private const int DefaultPort = 45000;
-	private const byte PacketInput = 1;
+	private const byte PacketCarInput = 1;
 	private const byte PacketPlayerState = 2;
 	private const byte PacketWelcome = 3;
 	private const byte PacketRemovePlayer = 4;
+	private const byte PacketFootInput = 5;
 
 	private const int PeerTimeoutMsec = 5000;
-	private const int SnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
+	private const int CarSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
+	private const int FootSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
 
-	[Signal] public delegate void PlayerStateUpdatedEventHandler(int playerId, CarSnapshot snapshot);
+	[Signal] public delegate void PlayerStateUpdatedEventHandler(int playerId, PlayerStateSnapshot snapshot);
 	[Signal] public delegate void PlayerDisconnectedEventHandler(int playerId);
 
 	private partial class PeerInfo : GodotObject
 	{
 		public int Id { get; set; }
 		public PacketPeerUdp Peer { get; set; }
-		public CarInputState InputState { get; set; } = new CarInputState();
-		public CarSnapshot LastSnapshot { get; set; }
+		public CarInputState CarInputState { get; set; } = new CarInputState();
+		public FootInputState FootInputState { get; set; } = new FootInputState();
+		public CarSnapshot LastCarSnapshot { get; set; }
+		public FootSnapshot LastFootSnapshot { get; set; }
 		public long LastSeenMsec { get; set; }
 		public RaycastCar Car { get; set; }
+		public FootPlayerController Foot { get; set; }
+		public PlayerMode Mode { get; set; } = PlayerMode.Vehicle;
+		public VehicleSeat DriverSeat { get; set; }
+		public Transform3D FootRestTransform { get; set; } = Transform3D.Identity;
 
 		public PeerInfo(int peerId, PacketPeerUdp peerRef)
 		{
@@ -43,26 +51,34 @@ public partial class NetworkController : Node
 	private partial class PlayerStateData : GodotObject
 	{
 		public int PlayerId { get; set; }
-		public CarSnapshot Snapshot { get; set; }
+		public PlayerStateSnapshot Snapshot { get; set; }
 	}
 
 	private enum Role { None, Server, Client }
 
 	private Role _role = Role.None;
 	private RaycastCar _car;
+	private FootPlayerController _foot;
 	private int _tick = 0;
 
 	private UdpServer _udpServer;
 	private Godot.Collections.Dictionary<int, PeerInfo> _peers = new Godot.Collections.Dictionary<int, PeerInfo>();
 	private int _nextPeerId = 1;
 	private Node3D _serverCarParent;
+	private Node3D _serverFootParent;
 
 	private PacketPeerUdp _clientPeer;
 	private CarInputState _clientInput = new CarInputState();
+	private FootInputState _clientFootInput = new FootInputState();
 	private int _clientId = 0;
-	private Godot.Collections.Dictionary<int, CarSnapshot> _remotePlayerSnapshots = new Godot.Collections.Dictionary<int, CarSnapshot>();
+	private Godot.Collections.Dictionary<int, PlayerStateSnapshot> _remotePlayerSnapshots = new Godot.Collections.Dictionary<int, PlayerStateSnapshot>();
+	public PlayerMode CurrentClientMode { get; private set; } = PlayerMode.Vehicle;
+	public event Action<PlayerMode> ClientModeChanged;
+	public bool IsServer => _role == Role.Server;
+	public bool IsClient => _role == Role.Client;
 
 	private PackedScene _playerCarScene;
+	private PackedScene _footPlayerScene;
 	private bool _respawnPointsCached = false;
 	private bool _hasFallbackSpawn = false;
 	private Transform3D _fallbackSpawnTransform = Transform3D.Identity;
@@ -72,6 +88,7 @@ public partial class NetworkController : Node
 	public override void _Ready()
 	{
 		_playerCarScene = GD.Load<PackedScene>("res://src/entities/vehicle/car/player_car.tscn");
+		_footPlayerScene = GD.Load<PackedScene>("res://src/entities/player/foot/foot_player.tscn");
 		Engine.PhysicsTicksPerSecond = 60;
 		_role = DetermineRole();
 		InitializeTestInputScript();
@@ -97,6 +114,18 @@ public partial class NetworkController : Node
 		{
 			GD.Print("NetworkController: Client car registered, applying input");
 			ApplyClientInputToCar();
+		}
+	}
+
+	public void RegisterFoot(FootPlayerController foot)
+	{
+		GD.Print($"NetworkController: RegisterFoot called, role={_role}, foot={foot?.Name ?? "null"}");
+		_foot = foot;
+		if (_role == Role.Client)
+		{
+			foot.ConfigureAuthority(true);
+			foot.SetCameraActive(CurrentClientMode == PlayerMode.Foot);
+			ApplyClientInputToFoot();
 		}
 	}
 
@@ -149,6 +178,9 @@ public partial class NetworkController : Node
 			_serverCarParent = GetTree().CurrentScene.GetNodeOrNull<Node3D>("AuthoritativeCars");
 			if (_serverCarParent == null)
 				_serverCarParent = GetTree().CurrentScene as Node3D;
+			_serverFootParent = GetTree().CurrentScene.GetNodeOrNull<Node3D>("AuthoritativeFootPlayers");
+			if (_serverFootParent == null)
+				_serverFootParent = _serverCarParent;
 			GD.Print($"Server listening on UDP {DefaultPort}");
 			GD.Print("TEST_EVENT: SERVER_STARTED");
 		}
@@ -166,6 +198,7 @@ public partial class NetworkController : Node
 		{
 			_clientId = 0;
 			_remotePlayerSnapshots.Clear();
+			CurrentClientMode = PlayerMode.Vehicle;
 			GD.Print($"Client connecting to 127.0.0.1:{DefaultPort}");
 			ApplyClientInputToCar();
 		}
@@ -217,7 +250,7 @@ public partial class NetworkController : Node
 		}
 
 		_tick++;
-		UpdateServerCars();
+		UpdateServerPlayers();
 		CheckPeerTimeouts();
 	}
 
@@ -228,54 +261,198 @@ public partial class NetworkController : Node
 		var peerInfo = _peers[peerId];
 		peerInfo.Touch();
 		var packetType = packet[0];
-		if (packetType == PacketInput)
+		switch (packetType)
 		{
-			var state = DeserializeInput(packet);
-			if (state != null && state.Tick >= peerInfo.InputState.Tick)
-				peerInfo.InputState.CopyFrom(state);
+			case PacketCarInput:
+				var carState = DeserializeCarInput(packet);
+				if (carState != null && carState.Tick >= peerInfo.CarInputState.Tick)
+					peerInfo.CarInputState.CopyFrom(carState);
+				break;
+			case PacketFootInput:
+				var footState = DeserializeFootInput(packet);
+				if (footState != null && footState.Tick >= peerInfo.FootInputState.Tick)
+					peerInfo.FootInputState.CopyFrom(footState);
+				break;
 		}
 	}
 
-	private void UpdateServerCars()
+	private void UpdateServerPlayers()
 	{
 		foreach (var peerId in _peers.Keys.ToList())
 		{
-			var info = _peers[peerId];
-			if (info == null) continue;
-			if (info.Car == null)
-				info.Car = SpawnServerCar(peerId);
-			if (info.Car != null)
-				info.Car.SetInputState(info.InputState);
+			if (!_peers.TryGetValue(peerId, out var info) || info == null)
+				continue;
+
+			EnsureServerEntities(peerId, info);
+
+			switch (info.Mode)
+			{
+				case PlayerMode.Vehicle:
+					if (info.Car != null)
+					{
+						info.Car.SetInputState(info.CarInputState);
+						if (info.CarInputState.Interact)
+						{
+							TryExitVehicle(info);
+							info.CarInputState.Interact = false;
+						}
+					}
+					if (info.Foot != null)
+					{
+						info.Foot.SetWorldActive(false);
+					}
+					break;
+				case PlayerMode.Foot:
+					if (info.Foot != null)
+					{
+						info.Foot.SetWorldActive(true);
+						info.Foot.ConfigureAuthority(true);
+						info.Foot.SetInputState(info.FootInputState);
+						if (info.FootInputState.Interact)
+						{
+							TryEnterVehicle(info);
+							info.FootInputState.Interact = false;
+						}
+					}
+					break;
+			}
 		}
 
 		foreach (var peerId in _peers.Keys.ToList())
 		{
-			var info = _peers[peerId];
-			if (info == null || info.Car == null) continue;
-			var snapshot = info.Car.CaptureSnapshot(_tick);
-			info.LastSnapshot = snapshot;
+			if (!_peers.TryGetValue(peerId, out var info) || info == null)
+				continue;
+
+			var carSnapshot = info.Car?.CaptureSnapshot(_tick);
+			var footSnapshot = info.Foot?.CaptureSnapshot(_tick);
+			info.LastCarSnapshot = carSnapshot;
+			info.LastFootSnapshot = footSnapshot;
+
+			var snapshot = new PlayerStateSnapshot
+			{
+				Tick = _tick,
+				Mode = info.Mode,
+				CarSnapshot = carSnapshot,
+				FootSnapshot = footSnapshot
+			};
 			SendSnapshotToAll(peerId, snapshot);
 		}
+	}
+
+	private void EnsureServerEntities(int peerId, PeerInfo info)
+	{
+		if (info.Car == null)
+		{
+			info.Car = SpawnServerCar(peerId);
+			info.DriverSeat = FindDriverSeat(info.Car);
+		}
+		if (info.Foot == null)
+		{
+			info.Foot = SpawnServerFoot(peerId, info.Car);
+		}
+	}
+
+	private bool TryEnterVehicle(PeerInfo info)
+	{
+		if (info == null || info.Car == null || info.Foot == null)
+			return false;
+
+		var seat = info.DriverSeat ?? FindDriverSeat(info.Car);
+		if (seat == null)
+			return false;
+
+		var distance = info.Foot.GlobalPosition.DistanceTo(seat.GlobalTransform.Origin);
+		if (distance > seat.InteractionRadius)
+			return false;
+
+		info.FootRestTransform = info.Foot.GlobalTransform;
+		info.Mode = PlayerMode.Vehicle;
+		info.Foot.SetWorldActive(false);
+		return true;
+	}
+
+	private bool TryExitVehicle(PeerInfo info)
+	{
+		if (info == null || info.Car == null || info.Foot == null)
+			return false;
+
+		var exitTransform = GetSeatExitTransform(info);
+		info.Mode = PlayerMode.Foot;
+		info.Foot.TeleportTo(exitTransform);
+		var yaw = info.Car.GlobalTransform.Basis.GetEuler().Y;
+		info.Foot.SetYawPitch(yaw, 0f);
+		info.Foot.SetWorldActive(true);
+		return true;
+	}
+
+	private Transform3D GetSeatExitTransform(PeerInfo info)
+	{
+		var carTransform = info.Car?.GlobalTransform ?? Transform3D.Identity;
+		var seat = info.DriverSeat ?? FindDriverSeat(info.Car);
+		if (seat != null)
+		{
+			var exit = seat.GetExitPosition();
+			return new Transform3D(carTransform.Basis, exit);
+		}
+
+		Debug.Assert(false, "Failed to exit seat");
+
+		var fallback = carTransform.Origin - carTransform.Basis.Z * 3f + Vector3.Up;
+		return new Transform3D(carTransform.Basis, fallback);
+	}
+
+	private VehicleSeat FindDriverSeat(Node node)
+	{
+		if (node == null)
+			return null;
+
+		foreach (var child in node.GetChildren())
+		{
+			if (child is VehicleSeat seat && seat.IsDriverSeat)
+				return seat;
+			if (child is Node childNode)
+			{
+				var nested = FindDriverSeat(childNode);
+				if (nested != null)
+					return nested;
+			}
+		}
+
+		return null;
 	}
 
 	private void ProcessClient()
 	{
 		_tick++;
-		var localInput = CollectLocalInput();
-		localInput.Tick = _tick;
-		_clientInput.CopyFrom(localInput);
-
-		if (_car != null)
-			_car.SetInputState(_clientInput);
+		switch (CurrentClientMode)
+		{
+			case PlayerMode.Vehicle:
+			{
+				var localInput = CollectLocalCarInput();
+				localInput.Tick = _tick;
+				_clientInput.CopyFrom(localInput);
+				_car?.SetInputState(_clientInput);
+				if (_clientPeer != null)
+					_clientPeer.PutPacket(SerializeCarInput(localInput));
+				break;
+			}
+			case PlayerMode.Foot:
+			{
+				var localInput = CollectLocalFootInput();
+				localInput.Tick = _tick;
+				_clientFootInput.CopyFrom(localInput);
+				_foot?.SetInputState(_clientFootInput);
+				if (_clientPeer != null)
+					_clientPeer.PutPacket(SerializeFootInput(localInput));
+				break;
+			}
+		}
 
 		if (_clientPeer != null)
-		{
-			_clientPeer.PutPacket(SerializeInput(localInput));
 			PollClientPackets();
-		}
 	}
 
-	private CarInputState CollectLocalInput()
+	private CarInputState CollectLocalCarInput()
 	{
 		if (_testInputMode != TestInputMode.None)
 			return CollectTestInput();
@@ -290,12 +467,22 @@ public partial class NetworkController : Node
 		state.Handbrake = Input.IsActionPressed("handbreak");
 		state.Brake = Input.IsActionPressed("brake");
 		state.Respawn = Input.IsKeyPressed(Key.R);
+		state.Interact = Input.IsActionJustPressed("interact");
 		
 		/* VERBOSE PRINT
 		if (Mathf.Abs(state.Throttle) > 0.1f || Mathf.Abs(state.Steer) > 0.1f || state.Handbrake || state.Brake || state.Respawn)
 		{
 			GD.Print($"CLIENT input tick={_tick + 1} throttle={state.Throttle:F2} steer={state.Steer:F2} hb={state.Handbrake} br={state.Brake} respawn={state.Respawn}");
 		}*/
+		return state;
+	}
+
+	private FootInputState CollectLocalFootInput()
+	{
+		if (_foot == null)
+			return new FootInputState();
+
+		var state = _foot.CollectClientInputState();
 		return state;
 	}
 
@@ -328,9 +515,6 @@ public partial class NetworkController : Node
 						var remoteSnapshot = remoteState.Snapshot;
 						if (remoteId == _clientId)
 						{
-							/* VERBOSE PRINT
-							GD.Print($"CLIENT received snapshot for self: tick={remoteSnapshot.Tick} pos={remoteSnapshot.Transform.Origin}");
-							*/
 							ApplyLocalSnapshot(remoteSnapshot);
 						}
 						else
@@ -358,7 +542,11 @@ public partial class NetworkController : Node
 		var info = new PeerInfo(peerId, newPeer);
 		_peers[peerId] = info;
 		if (_role == Role.Server)
+		{
 			info.Car = SpawnServerCar(peerId);
+			info.DriverSeat = FindDriverSeat(info.Car);
+			info.Foot = SpawnServerFoot(peerId, info.Car);
+		}
 		GD.Print($"Client connected from {newPeer.GetPacketIP()}:{newPeer.GetPacketPort()} assigned id={peerId}");
 		GD.Print($"TEST_EVENT: CLIENT_CONNECTED id={peerId}");
 		newPeer.PutPacket(SerializeWelcome(peerId));
@@ -373,8 +561,18 @@ public partial class NetworkController : Node
 		{
 			if (peerId == targetPeerId) continue;
 			var other = _peers[peerId];
-			if (other?.LastSnapshot != null)
-				targetInfo.Peer.PutPacket(SerializePlayerState(peerId, other.LastSnapshot));
+			if (other == null)
+				continue;
+			if (other.LastCarSnapshot == null && other.LastFootSnapshot == null)
+				continue;
+			var snapshot = new PlayerStateSnapshot
+			{
+				Tick = _tick,
+				Mode = other.Mode,
+				CarSnapshot = other.LastCarSnapshot,
+				FootSnapshot = other.LastFootSnapshot
+			};
+			targetInfo.Peer.PutPacket(SerializePlayerState(peerId, snapshot));
 		}
 	}
 
@@ -390,6 +588,28 @@ public partial class NetworkController : Node
 		CleanupServerOnlyNodes(car);
 		GD.Print($"TEST_EVENT: SERVER_CAR_SPAWNED player_id={peerId}");
 		return car;
+	}
+
+	private FootPlayerController SpawnServerFoot(int peerId, RaycastCar ownerCar)
+	{
+		if (_serverFootParent == null || _footPlayerScene == null)
+			return null;
+
+		var foot = _footPlayerScene.Instantiate<FootPlayerController>();
+		if (foot == null)
+			return null;
+
+		foot.AutoRegisterWithNetwork = false;
+		foot.Name = $"ServerFoot_{peerId}";
+		foot.SetCameraActive(false);
+		foot.ConfigureAuthority(true);
+		foot.SetWorldActive(false);
+		_serverFootParent.AddChild(foot);
+
+		var transform = ownerCar?.GlobalTransform ?? Transform3D.Identity;
+		transform.Origin += Vector3.Up * 1.2f;
+		foot.TeleportTo(transform);
+		return foot;
 	}
 
 	private Transform3D GetSpawnTransform(int peerId)
@@ -510,7 +730,7 @@ public partial class NetworkController : Node
 		}
 	}
 
-	private void SendSnapshotToAll(int playerId, CarSnapshot snapshot)
+	private void SendSnapshotToAll(int playerId, PlayerStateSnapshot snapshot)
 	{
 		var packet = SerializePlayerState(playerId, snapshot);
 		foreach (var info in _peers.Values)
@@ -541,6 +761,8 @@ public partial class NetworkController : Node
 		_peers.Remove(peerId);
 		if (info.Car != null && GodotObject.IsInstanceValid(info.Car))
 			info.Car.QueueFree();
+		if (info.Foot != null && GodotObject.IsInstanceValid(info.Foot))
+			info.Foot.QueueFree();
 		if (notifyClients && _peers.Count > 0)
 		{
 			var packet = SerializeRemovePlayer(peerId);
@@ -552,19 +774,30 @@ public partial class NetworkController : Node
 		GD.Print($"Client {peerId} removed");
 	}
 
-	private void ApplyLocalSnapshot(CarSnapshot snapshot)
+	private void ApplyLocalSnapshot(PlayerStateSnapshot snapshot)
 	{
-		if (_car != null)
+		if (snapshot == null)
+			return;
+
+		if (snapshot.CarSnapshot != null)
 		{
-			/* VERBOSE PRINT
-			GD.Print($"CLIENT applying snapshot to car: pos={snapshot.Transform.Origin}");
-			*/
-			_car.QueueSnapshot(snapshot);
+			_car?.QueueSnapshot(snapshot.CarSnapshot);
 		}
-		else
+
+		if (snapshot.FootSnapshot != null)
 		{
-			GD.Print("CLIENT: _car is null, cannot apply snapshot");
+			_foot?.QueueSnapshot(snapshot.FootSnapshot);
 		}
+
+		UpdateClientMode(snapshot.Mode);
+	}
+
+	private void UpdateClientMode(PlayerMode newMode)
+	{
+		if (CurrentClientMode == newMode)
+			return;
+		CurrentClientMode = newMode;
+		ClientModeChanged?.Invoke(newMode);
 	}
 
 	private void ApplyClientInputToCar()
@@ -572,29 +805,35 @@ public partial class NetworkController : Node
 		_car?.SetInputState(_clientInput);
 	}
 
-	private byte[] SerializeInput(CarInputState state)
+	private void ApplyClientInputToFoot()
+	{
+		_foot?.SetInputState(_clientFootInput);
+	}
+
+	private byte[] SerializeCarInput(CarInputState state)
 	{
 		var buffer = new StreamPeerBuffer();
 		buffer.BigEndian = false;
-		buffer.PutU8(PacketInput);
+		buffer.PutU8(PacketCarInput);
 		buffer.PutU32((uint)state.Tick);
 		buffer.PutFloat(state.Throttle);
 		buffer.PutFloat(state.Steer);
 		buffer.PutU8((byte)(state.Handbrake ? 1 : 0));
 		buffer.PutU8((byte)(state.Brake ? 1 : 0));
 		buffer.PutU8((byte)(state.Respawn ? 1 : 0));
+		buffer.PutU8((byte)(state.Interact ? 1 : 0));
 		return buffer.DataArray;
 	}
 
-	private CarInputState DeserializeInput(byte[] packet)
+	private CarInputState DeserializeCarInput(byte[] packet)
 	{
 		var buffer = new StreamPeerBuffer();
 		buffer.BigEndian = false;
 		buffer.DataArray = packet;
 		if (buffer.GetAvailableBytes() < 1) return null;
 		var packetType = buffer.GetU8();
-		if (packetType != PacketInput) return null;
-		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1) return null;
+		if (packetType != PacketCarInput) return null;
+		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1 + 1) return null;
 		var state = new CarInputState
 		{
 			Tick = (int)buffer.GetU32(),
@@ -602,18 +841,56 @@ public partial class NetworkController : Node
 			Steer = buffer.GetFloat(),
 			Handbrake = buffer.GetU8() == 1,
 			Brake = buffer.GetU8() == 1,
-			Respawn = buffer.GetU8() == 1
+			Respawn = buffer.GetU8() == 1,
+			Interact = buffer.GetU8() == 1
 		};
 		return state;
 	}
 
-	private byte[] SerializePlayerState(int playerId, CarSnapshot snapshot)
+	private byte[] SerializeFootInput(FootInputState state)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.PutU8(PacketFootInput);
+		buffer.PutU32((uint)state.Tick);
+		buffer.PutFloat(state.MoveInput.X);
+		buffer.PutFloat(state.MoveInput.Y);
+		buffer.PutU8((byte)(state.Jump ? 1 : 0));
+		buffer.PutU8((byte)(state.Interact ? 1 : 0));
+		buffer.PutFloat(state.LookDelta.X);
+		buffer.PutFloat(state.LookDelta.Y);
+		return buffer.DataArray;
+	}
+
+	private FootInputState DeserializeFootInput(byte[] packet)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.DataArray = packet;
+		if (buffer.GetAvailableBytes() < 1) return null;
+		var packetType = buffer.GetU8();
+		if (packetType != PacketFootInput) return null;
+		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 4 + 4) return null;
+		var state = new FootInputState
+		{
+			Tick = (int)buffer.GetU32(),
+			MoveInput = new Vector2(buffer.GetFloat(), buffer.GetFloat()),
+			Jump = buffer.GetU8() == 1,
+			Interact = buffer.GetU8() == 1,
+			LookDelta = new Vector2(buffer.GetFloat(), buffer.GetFloat())
+		};
+		return state;
+	}
+
+	private byte[] SerializePlayerState(int playerId, PlayerStateSnapshot snapshot)
 	{
 		var buffer = new StreamPeerBuffer();
 		buffer.BigEndian = false;
 		buffer.PutU8(PacketPlayerState);
 		buffer.PutU32((uint)playerId);
-		WriteSnapshotPayload(buffer, snapshot);
+		buffer.PutU8((byte)snapshot.Mode);
+		WriteCarSnapshot(buffer, snapshot.CarSnapshot);
+		WriteFootSnapshot(buffer, snapshot.FootSnapshot);
 		return buffer.DataArray;
 	}
 
@@ -625,12 +902,20 @@ public partial class NetworkController : Node
 		if (buffer.GetAvailableBytes() < 1) return null;
 		var packetType = buffer.GetU8();
 		if (packetType != PacketPlayerState) return null;
-		if (buffer.GetAvailableBytes() < 4 + SnapshotPayloadBytes) return null;
+		if (buffer.GetAvailableBytes() < 5) return null;
 		var data = new PlayerStateData
 		{
-			PlayerId = (int)buffer.GetU32(),
-			Snapshot = ReadSnapshotPayload(buffer)
+			PlayerId = (int)buffer.GetU32()
 		};
+		if (buffer.GetAvailableBytes() < 1) return null;
+		var mode = (PlayerMode)buffer.GetU8();
+		var snapshot = new PlayerStateSnapshot
+		{
+			Mode = mode,
+			CarSnapshot = ReadCarSnapshot(buffer),
+			FootSnapshot = ReadFootSnapshot(buffer)
+		};
+		data.Snapshot = snapshot;
 		return data;
 	}
 
@@ -674,8 +959,15 @@ public partial class NetworkController : Node
 		return (int)buffer.GetU32();
 	}
 
-	private void WriteSnapshotPayload(StreamPeerBuffer buffer, CarSnapshot snapshot)
+	private void WriteCarSnapshot(StreamPeerBuffer buffer, CarSnapshot snapshot)
 	{
+		if (snapshot == null)
+		{
+			buffer.PutU8(0);
+			return;
+		}
+
+		buffer.PutU8(1);
 		buffer.PutU32((uint)snapshot.Tick);
 		var origin = snapshot.Transform.Origin;
 		buffer.PutFloat(origin.X);
@@ -696,9 +988,13 @@ public partial class NetworkController : Node
 		buffer.PutFloat(ang.Z);
 	}
 
-	private CarSnapshot ReadSnapshotPayload(StreamPeerBuffer buffer)
+	private CarSnapshot ReadCarSnapshot(StreamPeerBuffer buffer)
 	{
-		if (buffer.GetAvailableBytes() < SnapshotPayloadBytes) return null;
+		if (buffer.GetAvailableBytes() < 1) return null;
+		var hasSnapshot = buffer.GetU8();
+		if (hasSnapshot == 0)
+			return null;
+		if (buffer.GetAvailableBytes() < CarSnapshotPayloadBytes) return null;
 		var snapshot = new CarSnapshot
 		{
 			Tick = (int)buffer.GetU32()
@@ -708,6 +1004,53 @@ public partial class NetworkController : Node
 		snapshot.Transform = new Transform3D(new Basis(rotation), origin);
 		snapshot.LinearVelocity = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
 		snapshot.AngularVelocity = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
+		return snapshot;
+	}
+
+	private void WriteFootSnapshot(StreamPeerBuffer buffer, FootSnapshot snapshot)
+	{
+		if (snapshot == null)
+		{
+			buffer.PutU8(0);
+			return;
+		}
+
+		buffer.PutU8(1);
+		buffer.PutU32((uint)snapshot.Tick);
+		var origin = snapshot.Transform.Origin;
+		buffer.PutFloat(origin.X);
+		buffer.PutFloat(origin.Y);
+		buffer.PutFloat(origin.Z);
+		var rotation = snapshot.Transform.Basis.GetRotationQuaternion();
+		buffer.PutFloat(rotation.X);
+		buffer.PutFloat(rotation.Y);
+		buffer.PutFloat(rotation.Z);
+		buffer.PutFloat(rotation.W);
+		var vel = snapshot.Velocity;
+		buffer.PutFloat(vel.X);
+		buffer.PutFloat(vel.Y);
+		buffer.PutFloat(vel.Z);
+		buffer.PutFloat(snapshot.ViewYaw);
+		buffer.PutFloat(snapshot.ViewPitch);
+	}
+
+	private FootSnapshot ReadFootSnapshot(StreamPeerBuffer buffer)
+	{
+		if (buffer.GetAvailableBytes() < 1) return null;
+		var hasSnapshot = buffer.GetU8();
+		if (hasSnapshot == 0)
+			return null;
+		if (buffer.GetAvailableBytes() < FootSnapshotPayloadBytes) return null;
+		var snapshot = new FootSnapshot
+		{
+			Tick = (int)buffer.GetU32()
+		};
+		var origin = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
+		var rotation = new Quaternion(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
+		snapshot.Transform = new Transform3D(new Basis(rotation), origin);
+		snapshot.Velocity = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
+		snapshot.ViewYaw = buffer.GetFloat();
+		snapshot.ViewPitch = buffer.GetFloat();
 		return snapshot;
 	}
 }

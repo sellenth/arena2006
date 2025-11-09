@@ -11,7 +11,6 @@ script = ExtResource("1_b4myk")
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="BOTTOM" type="VBoxContainer" parent="CanvasLayer"]
-visible = false
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0

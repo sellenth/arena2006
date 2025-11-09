@@ -33,15 +33,19 @@ public partial class RemotePlayerManager : Node3D
 		}
 	}
 
-	private void OnPlayerStateUpdated(int playerId, CarSnapshot snapshot)
+	private void OnPlayerStateUpdated(int playerId, PlayerStateSnapshot snapshot)
 	{
+		var carSnapshot = snapshot?.CarSnapshot;
+		if (carSnapshot == null)
+			return;
+
 		if (!_remotePlayers.ContainsKey(playerId))
 		{
-			SpawnRemotePlayer(playerId, snapshot);
+			SpawnRemotePlayer(playerId, carSnapshot);
 		}
 		else
 		{
-			UpdateRemotePlayer(playerId, snapshot);
+			UpdateRemotePlayer(playerId, carSnapshot);
 		}
 	}
 
@@ -111,4 +115,3 @@ public partial class RemotePlayerManager : Node3D
 		}
 	}
 }
-

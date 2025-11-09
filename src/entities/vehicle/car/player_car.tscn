@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=4 uid="uid://ct07rpph3wvww"]
+[gd_scene load_steps=22 format=4 uid="uid://ct07rpph3wvww"]
 
 [ext_resource type="Script" uid="uid://dw4dmwb4754jj" path="res://src/entities/vehicle/car/RaycastCar.cs" id="1"]
 [ext_resource type="Script" uid="uid://blkjol6xn0n1a" path="res://src/entities/vehicle/car/RaycastWheel.cs" id="2"]
@@ -8,6 +8,7 @@
 [ext_resource type="Curve" uid="uid://d3nv4w51hbb4y" path="res://src/entities/vehicle/car/car_tire_BACK.tres" id="7"]
 [ext_resource type="Curve" uid="uid://s7soqbgm8k37" path="res://src/entities/vehicle/car/car_tire_FRONT.tres" id="8"]
 [ext_resource type="Texture2D" uid="uid://cjaykabx1y8yk" path="res://src/entities/vehicle/speedster/CAR-F1-2048-DIFFUSE.png" id="9_xwe2w"]
+[ext_resource type="Script" uid="uid://cpdk37mhap207" path="res://src/systems/vehicle/VehicleSeat.cs" id="10_vseat"]
 
 [sub_resource type="PhysicsMaterial" id="1"]
 friction = 0.0
@@ -188,6 +189,12 @@ draw_pass_1 = SubResource("10")
 [node name="Car#nissan_skyliner35" parent="." instance=ExtResource("4")]
 transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, -0.00728956, 0)
 visible = false
+
+[node name="DriverSeat" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0933576, 0.91233873, 0)
+script = ExtResource("10_vseat")
+ExitOffset = Vector3(0, 0, -3)
+InteractionRadius = 3.0
 
 [node name="CameraPivot" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.00728956, 0)

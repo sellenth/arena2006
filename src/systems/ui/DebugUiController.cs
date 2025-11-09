@@ -3,6 +3,8 @@ using Godot;
 public partial class DebugUiController : Node
 {
 	private RaycastCar _car;
+	private FootPlayerController _foot;
+	private NetworkController _network;
 	
 	private Label _offsetLabel;
 	private CheckBox _allForcesCB;
@@ -18,7 +20,9 @@ public partial class DebugUiController : Node
 
 	public override void _Ready()
 	{
-		_car = GetNode<RaycastCar>("../Car");
+		_car = GetNodeOrNull<RaycastCar>("../Car");
+		_foot = GetNodeOrNull<FootPlayerController>("../FootPlayer");
+		_network = GetNodeOrNull<NetworkController>("/root/NetworkController");
 		
 		var canvasLayer = GetNode<CanvasLayer>("CanvasLayer");
 		
@@ -37,20 +41,38 @@ public partial class DebugUiController : Node
 
 	public override void _Process(double delta)
 	{
-		if (_car == null) return;
+		var isFootMode = _network != null && _network.CurrentClientMode == PlayerMode.Foot;
 		
-		_handBreakCB.ButtonPressed = _car.HandBreak;
-		_slippingCB.ButtonPressed = _car.IsSlipping;
-		
-		var speed = _car.LinearVelocity.Length();
-		_speedLabel.Text = $"Speed: {speed:F2} m/s";
-		
-		_motorRatio.Value = Mathf.Abs(_car.MotorInput);
-		
-		_turnRatio.Value = -_car.SteerInput;
-		
-		var accelForce = _car.Acceleration * _car.MotorInput;
-		_accelLabel.Text = $"AccelForce: {accelForce:F1}";
+		if (isFootMode && _foot != null)
+		{
+			var speed = _foot.Velocity.Length();
+			_speedLabel.Text = $"Speed: {speed:F2} m/s";
+		}
+		else if (_car != null)
+		{
+			_handBreakCB.ButtonPressed = _car.HandBreak;
+			_slippingCB.ButtonPressed = _car.IsSlipping;
+			
+			var speed = _car.LinearVelocity.Length();
+			_speedLabel.Text = $"Speed: {speed:F2} m/s";
+			
+			_motorRatio.Value = Mathf.Abs(_car.MotorInput);
+			
+			_turnRatio.Value = -_car.SteerInput;
+			
+			var accelForce = _car.Acceleration * _car.MotorInput;
+			_accelLabel.Text = $"AccelForce: {accelForce:F1}";
+			
+			if (_car.Wheels != null && _car.Wheels.Count > 0)
+			{
+				var firstWheel = _car.Wheels[0];
+				if (firstWheel != null)
+				{
+					var offset = firstWheel.CurrentOffset;
+					_offsetLabel.Text = $"Offset: {offset:F3}";
+				}
+			}
+		}
 		
 		_timeScaleLabel.Text = $"Time Scale: {Engine.TimeScale:F2}";
 		
@@ -61,16 +83,6 @@ public partial class DebugUiController : Node
 		else
 		{
 			_gameModeLabel.Text = "Game Mode: None";
-		}
-		
-		if (_car.Wheels != null && _car.Wheels.Count > 0)
-		{
-			var firstWheel = _car.Wheels[0];
-			if (firstWheel != null)
-			{
-				var offset = firstWheel.RestDist;
-				_offsetLabel.Text = $"Offset: {offset:F3}";
-			}
 		}
 	}
 }
