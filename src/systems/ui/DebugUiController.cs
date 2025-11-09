@@ -10,6 +10,7 @@ public partial class DebugUiController : Node
 	private CheckBox _handBreakCB;
 	private CheckBox _slippingCB;
 	private Label _timeScaleLabel;
+	private Label _gameModeLabel;
 	private Label _speedLabel;
 	private ProgressBar _motorRatio;
 	private Label _accelLabel;
@@ -27,6 +28,7 @@ public partial class DebugUiController : Node
 		_handBreakCB = canvasLayer.GetNode<CheckBox>("TOP/HandBreakCB");
 		_slippingCB = canvasLayer.GetNode<CheckBox>("TOP/SlippingCB");
 		_timeScaleLabel = canvasLayer.GetNode<Label>("TOP/TimeScaleLabel");
+		_gameModeLabel = canvasLayer.GetNode<Label>("TOP/GameModeLabel");
 		_speedLabel = canvasLayer.GetNode<Label>("RIGHT_TOP/SpeedLabel");
 		_motorRatio = canvasLayer.GetNode<ProgressBar>("RIGHT_TOP/MotorRatio");
 		_accelLabel = canvasLayer.GetNode<Label>("RIGHT_TOP/AccelLabel");
@@ -51,6 +53,15 @@ public partial class DebugUiController : Node
 		_accelLabel.Text = $"AccelForce: {accelForce:F1}";
 		
 		_timeScaleLabel.Text = $"Time Scale: {Engine.TimeScale:F2}";
+		
+		if (GameModeManager.Instance != null && GameModeManager.Instance.ActiveMode != null)
+		{
+			_gameModeLabel.Text = $"Game Mode: {GameModeManager.Instance.ActiveMode.DisplayName}";
+		}
+		else
+		{
+			_gameModeLabel.Text = "Game Mode: None";
+		}
 		
 		if (_car.Wheels != null && _car.Wheels.Count > 0)
 		{

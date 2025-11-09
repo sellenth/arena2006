@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 NetworkController="*res://src/systems/network/NetworkController.cs"
 AudioSettingsManager="*res://src/systems/audio/AudioSettingsManager.cs"
+GameModeManager="*res://src/systems/gamemode/GameModeManager.cs"
 
 [display]
 
