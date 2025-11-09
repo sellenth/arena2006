@@ -10,6 +10,7 @@ public partial class RemotePlayerLabels : Node3D
 	private NetworkController _networkController;
 	private Dictionary<int, Label3D> _labels = new Dictionary<int, Label3D>();
 	private Node3D _remotePlayersContainer;
+	private Node3D _remoteFootPlayersContainer;
 
 	public override void _Ready()
 	{
@@ -22,6 +23,7 @@ public partial class RemotePlayerLabels : Node3D
 
 		// Find the RemotePlayers container (managed by RemotePlayerManager)
 		_remotePlayersContainer = GetNodeOrNull<Node3D>("../RemotePlayers");
+		_remoteFootPlayersContainer = GetNodeOrNull<Node3D>("../RemoteFootPlayers");
 		if (_remotePlayersContainer == null)
 		{
 			GD.PushWarning("RemotePlayerLabels: RemotePlayers node not found, labels won't work");
@@ -41,23 +43,18 @@ public partial class RemotePlayerLabels : Node3D
 		}
 	}
 
-	private void OnPlayerStateUpdated(int playerId, CarSnapshot snapshot)
+	private void OnPlayerStateUpdated(int playerId, PlayerStateSnapshot snapshot)
 	{
 		if (snapshot == null) return;
 
-		// Create label if it doesn't exist
 		if (!_labels.ContainsKey(playerId))
 		{
-			// Find the remote player car
-			var remotePlayerCar = _remotePlayersContainer?.GetNodeOrNull<Node3D>($"RemotePlayer_{playerId}");
-			if (remotePlayerCar != null)
-			{
-				var label = CreateLabel(playerId);
-				label.Position = new Vector3(0, LabelHeight, 0);
-				remotePlayerCar.AddChild(label);
-				_labels[playerId] = label;
-			}
+			var label = CreateLabel(playerId);
+			AddChild(label);
+			_labels[playerId] = label;
 		}
+
+		AttachLabelToTarget(playerId, snapshot.Mode);
 	}
 
 	private void OnPlayerDisconnected(int playerId)
@@ -86,5 +83,30 @@ public partial class RemotePlayerLabels : Node3D
 		};
 		return label;
 	}
-}
 
+	private void AttachLabelToTarget(int playerId, PlayerMode mode)
+	{
+		if (!_labels.TryGetValue(playerId, out var label))
+			return;
+
+		Node3D target = null;
+		if (mode == PlayerMode.Foot)
+		{
+			target = _remoteFootPlayersContainer?.GetNodeOrNull<Node3D>($"RemoteFoot_{playerId}");
+		}
+		else
+		{
+			target = _remotePlayersContainer?.GetNodeOrNull<Node3D>($"RemotePlayer_{playerId}");
+		}
+
+		if (target == null)
+			return;
+
+		if (label.GetParent() != target)
+		{
+			label.GetParent()?.RemoveChild(label);
+			target.AddChild(label);
+			label.Position = new Vector3(0, LabelHeight, 0);
+		}
+	}
+}

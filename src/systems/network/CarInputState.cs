@@ -8,6 +8,7 @@ public partial class CarInputState : RefCounted
 	public bool Handbrake { get; set; } = false;
 	public bool Brake { get; set; } = false;
 	public bool Respawn { get; set; } = false;
+	public bool Interact { get; set; } = false;
 
 	public void CopyFrom(CarInputState other)
 	{
@@ -17,6 +18,7 @@ public partial class CarInputState : RefCounted
 		Handbrake = other.Handbrake;
 		Brake = other.Brake;
 		Respawn = other.Respawn;
+		Interact = other.Interact;
 	}
 
 	public void Reset()
@@ -27,6 +29,6 @@ public partial class CarInputState : RefCounted
 		Handbrake = false;
 		Brake = false;
 		Respawn = false;
+		Interact = false;
 	}
 }
-

@@ -24,6 +24,7 @@ public partial class RaycastWheel : RayCast3D
 	public float EngineForce { get; set; } = 0.0f;
 	public float GripFactor { get; set; } = 0.0f;
 	public bool IsBraking { get; set; } = false;
+	public float CurrentOffset { get; private set; } = 0.0f;
 
 	public override void _Ready()
 	{
@@ -60,11 +61,15 @@ public partial class RaycastWheel : RayCast3D
 		var vel = forwardDir.Dot(car.LinearVelocity);
 		_wheel.RotateX((-vel * (float)GetPhysicsProcessDeltaTime()) / WheelRadius);
 
-		if (!IsColliding()) return;
+		if (!IsColliding())
+		{
+			CurrentOffset = 0.0f;
+			return;
+		}
 
 		var contact = GetCollisionPoint();
 		var springLen = Mathf.Max(0.0f, GlobalPosition.DistanceTo(contact) - WheelRadius);
-		var offset = RestDist - springLen;
+		CurrentOffset = RestDist - springLen;
 
 		_wheel.Position = new Vector3(_wheel.Position.X, 
 			Mathf.MoveToward(_wheel.Position.Y, -springLen, 5 * (float)GetPhysicsProcessDeltaTime()), 
@@ -72,7 +77,7 @@ public partial class RaycastWheel : RayCast3D
 		contact = _wheel.GlobalPosition;
 		var forcePos = contact - car.GlobalPosition;
 
-		var springForce = SpringStrength * offset;
+		var springForce = SpringStrength * CurrentOffset;
 		var tireVel = car.GetPointVelocity(contact);
 		var springDampF = SpringDamping * GlobalBasis.Y.Dot(tireVel);
 

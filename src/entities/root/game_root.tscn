@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://pgudwlq5efn0"]
+[gd_scene load_steps=20 format=3 uid="uid://pgudwlq5efn0"]
 
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/materials/black_square.tres" id="2_n38sr"]
 [ext_resource type="Material" uid="uid://dwgngqcfvi3s4" path="res://src/materials/red_square.tres" id="3_k6g81"]
@@ -7,6 +7,9 @@
 [ext_resource type="PackedScene" uid="uid://c7m8fswqpshy4" path="res://src/systems/ui/pause_menu.tscn" id="7_liv0r"]
 [ext_resource type="PackedScene" uid="uid://ch2s1v2av6f0p" path="res://src/systems/ui/options_menu.tscn" id="8_njg2t"]
 [ext_resource type="PackedScene" uid="uid://cukaeucupjo2e" path="res://src/systems/ui/debug_ui_controller.tscn" id="9_73xoc"]
+[ext_resource type="PackedScene" uid="uid://bp5wletrm4dw2" path="res://src/entities/player/foot/foot_player.tscn" id="10_foot"]
+[ext_resource type="Script" uid="uid://dw3owa0i2p1f2" path="res://src/entities/player/PlayerWrapper.cs" id="11_pwrap"]
+[ext_resource type="Script" uid="uid://c3b5xve2kalg" path="res://src/systems/network/RemoteFootPlayerManager.cs" id="12_rfoot"]
 [ext_resource type="PackedScene" uid="uid://dqsjudt64pb3u" path="res://src/entities/building/building_1/skyscraper_1.tscn" id="14_886vf"]
 [ext_resource type="PackedScene" uid="uid://c68mijg2v2wkf" path="res://src/entities/jump_pad/jump_pad.tscn" id="15_l2d1b"]
 
@@ -33,6 +36,19 @@ _data = {
 }
 point_count = 11
 
+[sub_resource type="BoxMesh" id="BoxMesh_2bu5k"]
+size = Vector3(0.1, 5, 300)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_2bu5k"]
+points = PackedVector3Array(-0.05, -2.5, -150, 0.05, -2.5, -150, -0.05, -2.5, 150, -0.05, 2.5, -150, 0.05, 2.5, -150, 0.05, -2.5, 150, -0.05, 2.5, 150, 0.05, 2.5, 150)
+
+[sub_resource type="Curve3D" id="Curve3D_2bu5k"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 0, 20, 0, -15.518671, -4.145767, -27.06517, 15.518671, 4.145767, 27.06517, -23.448, 0, 71.109, 0, 0, 0, 0, 0, 0, -106.276, 0, 142.767),
+"tilts": PackedFloat32Array(0, 0, 0)
+}
+point_count = 3
+
 [node name="GameRoot" type="Node3D"]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
@@ -53,6 +69,9 @@ use_collision = true
 size = Vector3(500, 0.5, 500)
 
 [node name="RemotePlayerLabels" type="Node3D" parent="."]
+
+[node name="RemoteFootPlayers" type="Node3D" parent="."]
+script = ExtResource("12_rfoot")
 
 [node name="RemotePlayers" type="Node3D" parent="."]
 script = ExtResource("4_3h70o")
@@ -83,8 +102,18 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66.4095, -23.3205, -232.403)
 [node name="JumpPad" parent="." instance=ExtResource("15_l2d1b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5435, 0, -51.0122)
 
+[node name="FootPlayer" parent="." instance=ExtResource("10_foot")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88.74045, 1.05, -114.77704)
+
 [node name="Car" parent="." instance=ExtResource("6_awmje")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.5344, 2.15127, -143.126)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 93.4638, 2.15127, -112.403046)
+
+[node name="PlayerWrapper" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 141.24045, 0, 30.722965)
+script = ExtResource("11_pwrap")
+CarPath = NodePath("../Car")
+FootPath = NodePath("../FootPlayer")
+CarCameraPath = NodePath("../Car/CameraPivot/Camera")
 
 [node name="PauseMenu" parent="." instance=ExtResource("7_liv0r")]
 
@@ -93,4 +122,34 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.5344, 2.15127, -143.126)
 [node name="DebugUI" parent="." instance=ExtResource("9_73xoc")]
 
 [node name="CarSpawnPoint" type="Marker3D" parent="."]
-transform = Transform3D(-0.5945142, 0, -0.8040851, 0, 1, 0, 0.8040851, 0, -0.5945142, -68.2146, 1.2100546, -106.007)
+transform = Transform3D(-0.5945142, 0, -0.8040851, 0, 1, 0, 0.8040851, 0, -0.5945142, 116.27646, 1.2100546, -56.801403)
+
+[node name="Ramp" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42.274063, 0, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ramp"]
+transform = Transform3D(0.88970345, 0.45653903, 0, -0.45653903, 0.88970345, 0, 0, 0, 1, 1.0178925, 1.9836692, 0)
+mesh = SubResource("BoxMesh_2bu5k")
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="Ramp"]
+transform = Transform3D(0.88970345, 0.45653903, 0, -0.45653903, 0.88970345, 0, 0, 0, 1, 1.0178925, 1.9836692, 0)
+shape = SubResource("ConvexPolygonShape3D_2bu5k")
+
+[node name="Surf" type="Path3D" parent="."]
+transform = Transform3D(0.99502087, -0.09966708, 0, 0.09966708, 0.99502087, 0, 0, 0, 1, 53.94768, 3.2689078, -30.311882)
+curve = SubResource("Curve3D_2bu5k")
+
+[node name="CSGPolygon3D" type="CSGPolygon3D" parent="Surf"]
+use_collision = true
+polygon = PackedVector2Array(0, 0, 1.0398712, 4.5954165, 1, 0)
+mode = 2
+path_node = NodePath("..")
+path_interval_type = 1
+path_interval = 0.01
+path_simplify_angle = 0.0
+path_rotation = 2
+path_rotation_accurate = false
+path_local = true
+path_continuous_u = true
+path_u_distance = 1.0
+path_joined = false
