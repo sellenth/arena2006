@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://pgudwlq5efn0"]
+[gd_scene load_steps=22 format=3 uid="uid://pgudwlq5efn0"]
 
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/materials/black_square.tres" id="2_n38sr"]
 [ext_resource type="Material" uid="uid://dwgngqcfvi3s4" path="res://src/materials/red_square.tres" id="3_k6g81"]
@@ -31,7 +31,7 @@ tonemap_mode = 1
 closed = true
 bake_interval = 0.01
 _data = {
-"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -51.154, 0, -36.803, 0, 0, 0, 0, 0, 0, -127.164, 0, -66.987, 0, 0, 0, -17.69, 0, 0, -197.889, 0, -71.389, 0, 0, 0, 4.31, 0, 0, -211.729, 0, -14.274, 0, 0, 0, 0, 0, 0, -69.784, 0, 58.398, 0, 0, 0, 0, 0, 0, 122.756, 0, 109.573, 0, 0, 0, 0, 0, 0, 219.254, 0, 79.488, 0, 0, 0, 0, 0, 0, 153.255, 0, 21.216, 35.04, 0, 0, -13.79, 0, 0, 96.962, 0, 1.608, 0, 0, 0, -12, 0, 0, 45.9237, 14.7709, 3.8857),
+"points": PackedVector3Array(-8.72235, -7.4649787, 13.554188, 8.72235, 7.4649787, -13.554188, 0, 0, 0, 0, 0, 0, 0, 0, 0, -51.154, 0, -36.803, 0, 0, 0, 0, 0, 0, -127.164, 0, -66.987, 0.22123718, 0.055853307, -11.237801, -0.22123718, -0.055853307, 11.237801, -197.889, 0, -71.389, 78.73035, 0.24514776, -53.36718, -78.73035, -0.24514776, 53.36718, -213.23438, 0.84331363, -14.5049515, 0, 0, 0, 0, 0, 0, -69.784, 0, 58.398, 0, 0, 0, 0, 0, 0, 122.756, 0, 109.573, 0, 0, 0, 0, 0, 0, 219.254, 0, 79.488, 0, 0, 0, 0, 0, 0, 153.255, 0, 21.216, 35.04, 0, 0, -13.79, 0, 0, 96.962, 0, 1.608, 0, 0, 0, -12, 0, 0, 45.9237, 14.7709, 3.8857),
 "tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.32)
 }
 point_count = 11
@@ -41,6 +41,12 @@ size = Vector3(0.1, 5, 300)
 
 [sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_2bu5k"]
 points = PackedVector3Array(-0.05, -2.5, -150, 0.05, -2.5, -150, -0.05, -2.5, 150, -0.05, 2.5, -150, 0.05, 2.5, -150, 0.05, -2.5, 150, -0.05, 2.5, 150, 0.05, 2.5, 150)
+
+[sub_resource type="BoxMesh" id="BoxMesh_38sdm"]
+size = Vector3(10, 10, 1)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_886vf"]
+points = PackedVector3Array(-5.078371, -5.077377, -0.57936513, 4.7881784, 4.787241, 0.5, 4.7881784, -4.787241, 0.5, 5.078371, 5.077377, -0.57936513, -4.7881784, 4.787241, 0.5, 5.078371, -5.077377, -0.57936513, -5.078371, 5.077377, -0.57936513, -4.7881784, -4.787241, 0.5)
 
 [sub_resource type="Curve3D" id="Curve3D_2bu5k"]
 _data = {
@@ -125,7 +131,7 @@ CarCameraPath = NodePath("../Car/CameraPivot/Camera")
 transform = Transform3D(-0.5945142, 0, -0.8040851, 0, 1, 0, 0.8040851, 0, -0.5945142, 116.27646, 1.2100546, -56.801403)
 
 [node name="Ramp" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42.274063, 0, 0)
+transform = Transform3D(0.17084587, 0, 0.9852978, 0, 1, 0, -0.9852978, 0, 0.17084587, 4.266861, 4.032215, 12.885757)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Ramp"]
 transform = Transform3D(0.88970345, 0.45653903, 0, -0.45653903, 0.88970345, 0, 0, 0, 1, 1.0178925, 1.9836692, 0)
@@ -135,13 +141,21 @@ mesh = SubResource("BoxMesh_2bu5k")
 transform = Transform3D(0.88970345, 0.45653903, 0, -0.45653903, 0.88970345, 0, 0, 0, 1, 1.0178925, 1.9836692, 0)
 shape = SubResource("ConvexPolygonShape3D_2bu5k")
 
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="Ramp"]
+transform = Transform3D(0.97900105, 0.17290926, -0.107981905, -0.17290926, 0.423741, -0.88912654, -0.1079819, 0.88912654, 0.44474047, -1.1718221, -1.8405948, 0.22788525)
+mesh = SubResource("BoxMesh_38sdm")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ramp"]
+transform = Transform3D(0.97900105, 0.17290926, -0.107981905, -0.17290926, 0.423741, -0.88912654, -0.1079819, 0.88912654, 0.44474047, -1.1718221, -1.8405948, 0.22788525)
+shape = SubResource("ConvexPolygonShape3D_886vf")
+
 [node name="Surf" type="Path3D" parent="."]
-transform = Transform3D(0.99502087, -0.09966708, 0, 0.09966708, 0.99502087, 0, 0, 0, 1, 53.94768, 3.2689078, -30.311882)
+transform = Transform3D(0.42445764, -0.028023908, -0.905014, 0.018104218, 0.99958384, -0.022461263, 0.90526676, -0.0068507087, 0.42478833, 58.826405, 1.8856678, -19.275656)
 curve = SubResource("Curve3D_2bu5k")
 
 [node name="CSGPolygon3D" type="CSGPolygon3D" parent="Surf"]
 use_collision = true
-polygon = PackedVector2Array(0, 0, 1.0398712, 4.5954165, 1, 0)
+polygon = PackedVector2Array(0, 0, 3, 10, 6, 0)
 mode = 2
 path_node = NodePath("..")
 path_interval_type = 1
