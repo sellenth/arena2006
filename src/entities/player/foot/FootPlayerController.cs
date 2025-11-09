@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Godot;
 
 public partial class FootPlayerController : CharacterBody3D

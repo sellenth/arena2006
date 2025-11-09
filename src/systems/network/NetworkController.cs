@@ -3,19 +3,12 @@ using Godot.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 
 public partial class NetworkController : Node
 {
 	private const int DefaultPort = 45000;
-	private const byte PacketCarInput = 1;
-	private const byte PacketPlayerState = 2;
-	private const byte PacketWelcome = 3;
-	private const byte PacketRemovePlayer = 4;
-	private const byte PacketFootInput = 5;
-
 	private const int PeerTimeoutMsec = 5000;
-	private const int CarSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
-	private const int FootSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
 
 	[Signal] public delegate void PlayerStateUpdatedEventHandler(int playerId, PlayerStateSnapshot snapshot);
 	[Signal] public delegate void PlayerDisconnectedEventHandler(int playerId);
@@ -46,12 +39,6 @@ public partial class NetworkController : Node
 		{
 			LastSeenMsec = (long)Time.GetTicksMsec();
 		}
-	}
-
-	private partial class PlayerStateData : GodotObject
-	{
-		public int PlayerId { get; set; }
-		public PlayerStateSnapshot Snapshot { get; set; }
 	}
 
 	private enum Role { None, Server, Client }
@@ -263,13 +250,13 @@ public partial class NetworkController : Node
 		var packetType = packet[0];
 		switch (packetType)
 		{
-			case PacketCarInput:
-				var carState = DeserializeCarInput(packet);
+			case NetworkSerializer.PacketCarInput:
+				var carState = NetworkSerializer.DeserializeCarInput(packet);
 				if (carState != null && carState.Tick >= peerInfo.CarInputState.Tick)
 					peerInfo.CarInputState.CopyFrom(carState);
 				break;
-			case PacketFootInput:
-				var footState = DeserializeFootInput(packet);
+			case NetworkSerializer.PacketFootInput:
+				var footState = NetworkSerializer.DeserializeFootInput(packet);
 				if (footState != null && footState.Tick >= peerInfo.FootInputState.Tick)
 					peerInfo.FootInputState.CopyFrom(footState);
 				break;
@@ -433,7 +420,7 @@ public partial class NetworkController : Node
 				_clientInput.CopyFrom(localInput);
 				_car?.SetInputState(_clientInput);
 				if (_clientPeer != null)
-					_clientPeer.PutPacket(SerializeCarInput(localInput));
+					_clientPeer.PutPacket(NetworkSerializer.SerializeCarInput(localInput));
 				break;
 			}
 			case PlayerMode.Foot:
@@ -443,7 +430,7 @@ public partial class NetworkController : Node
 				_clientFootInput.CopyFrom(localInput);
 				_foot?.SetInputState(_clientFootInput);
 				if (_clientPeer != null)
-					_clientPeer.PutPacket(SerializeFootInput(localInput));
+					_clientPeer.PutPacket(NetworkSerializer.SerializeFootInput(localInput));
 				break;
 			}
 		}
@@ -498,8 +485,8 @@ public partial class NetworkController : Node
 			var packetType = packet[0];
 			switch (packetType)
 			{
-				case PacketWelcome:
-					var newId = DeserializeWelcome(packet);
+				case NetworkSerializer.PacketWelcome:
+					var newId = NetworkSerializer.DeserializeWelcome(packet);
 					if (newId != 0)
 					{
 						_clientId = newId;
@@ -507,8 +494,8 @@ public partial class NetworkController : Node
 						GD.Print($"TEST_EVENT: CLIENT_RECEIVED_WELCOME id={_clientId}");
 					}
 					break;
-				case PacketPlayerState:
-					var remoteState = DeserializePlayerState(packet);
+				case NetworkSerializer.PacketPlayerState:
+					var remoteState = NetworkSerializer.DeserializePlayerState(packet);
 					if (remoteState?.Snapshot != null)
 					{
 						var remoteId = remoteState.PlayerId;
@@ -524,8 +511,8 @@ public partial class NetworkController : Node
 						}
 					}
 					break;
-				case PacketRemovePlayer:
-					var removedId = DeserializeRemovePlayer(packet);
+				case NetworkSerializer.PacketRemovePlayer:
+					var removedId = NetworkSerializer.DeserializeRemovePlayer(packet);
 					if (removedId != 0)
 					{
 						_remotePlayerSnapshots.Remove(removedId);
@@ -549,7 +536,7 @@ public partial class NetworkController : Node
 		}
 		GD.Print($"Client connected from {newPeer.GetPacketIP()}:{newPeer.GetPacketPort()} assigned id={peerId}");
 		GD.Print($"TEST_EVENT: CLIENT_CONNECTED id={peerId}");
-		newPeer.PutPacket(SerializeWelcome(peerId));
+		newPeer.PutPacket(NetworkSerializer.SerializeWelcome(peerId));
 		SendExistingPlayerStates(peerId);
 	}
 
@@ -572,7 +559,7 @@ public partial class NetworkController : Node
 				CarSnapshot = other.LastCarSnapshot,
 				FootSnapshot = other.LastFootSnapshot
 			};
-			targetInfo.Peer.PutPacket(SerializePlayerState(peerId, snapshot));
+			targetInfo.Peer.PutPacket(NetworkSerializer.SerializePlayerState(peerId, snapshot));
 		}
 	}
 
@@ -732,7 +719,7 @@ public partial class NetworkController : Node
 
 	private void SendSnapshotToAll(int playerId, PlayerStateSnapshot snapshot)
 	{
-		var packet = SerializePlayerState(playerId, snapshot);
+		var packet = NetworkSerializer.SerializePlayerState(playerId, snapshot);
 		foreach (var info in _peers.Values)
 		{
 			info?.Peer.PutPacket(packet);
@@ -765,7 +752,7 @@ public partial class NetworkController : Node
 			info.Foot.QueueFree();
 		if (notifyClients && _peers.Count > 0)
 		{
-			var packet = SerializeRemovePlayer(peerId);
+			var packet = NetworkSerializer.SerializeRemovePlayer(peerId);
 			foreach (var other in _peers.Values)
 			{
 				other?.Peer.PutPacket(packet);
@@ -808,249 +795,5 @@ public partial class NetworkController : Node
 	private void ApplyClientInputToFoot()
 	{
 		_foot?.SetInputState(_clientFootInput);
-	}
-
-	private byte[] SerializeCarInput(CarInputState state)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.PutU8(PacketCarInput);
-		buffer.PutU32((uint)state.Tick);
-		buffer.PutFloat(state.Throttle);
-		buffer.PutFloat(state.Steer);
-		buffer.PutU8((byte)(state.Handbrake ? 1 : 0));
-		buffer.PutU8((byte)(state.Brake ? 1 : 0));
-		buffer.PutU8((byte)(state.Respawn ? 1 : 0));
-		buffer.PutU8((byte)(state.Interact ? 1 : 0));
-		return buffer.DataArray;
-	}
-
-	private CarInputState DeserializeCarInput(byte[] packet)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.DataArray = packet;
-		if (buffer.GetAvailableBytes() < 1) return null;
-		var packetType = buffer.GetU8();
-		if (packetType != PacketCarInput) return null;
-		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1 + 1) return null;
-		var state = new CarInputState
-		{
-			Tick = (int)buffer.GetU32(),
-			Throttle = buffer.GetFloat(),
-			Steer = buffer.GetFloat(),
-			Handbrake = buffer.GetU8() == 1,
-			Brake = buffer.GetU8() == 1,
-			Respawn = buffer.GetU8() == 1,
-			Interact = buffer.GetU8() == 1
-		};
-		return state;
-	}
-
-	private byte[] SerializeFootInput(FootInputState state)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.PutU8(PacketFootInput);
-		buffer.PutU32((uint)state.Tick);
-		buffer.PutFloat(state.MoveInput.X);
-		buffer.PutFloat(state.MoveInput.Y);
-		buffer.PutU8((byte)(state.Jump ? 1 : 0));
-		buffer.PutU8((byte)(state.Interact ? 1 : 0));
-		buffer.PutFloat(state.LookDelta.X);
-		buffer.PutFloat(state.LookDelta.Y);
-		return buffer.DataArray;
-	}
-
-	private FootInputState DeserializeFootInput(byte[] packet)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.DataArray = packet;
-		if (buffer.GetAvailableBytes() < 1) return null;
-		var packetType = buffer.GetU8();
-		if (packetType != PacketFootInput) return null;
-		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 4 + 4) return null;
-		var state = new FootInputState
-		{
-			Tick = (int)buffer.GetU32(),
-			MoveInput = new Vector2(buffer.GetFloat(), buffer.GetFloat()),
-			Jump = buffer.GetU8() == 1,
-			Interact = buffer.GetU8() == 1,
-			LookDelta = new Vector2(buffer.GetFloat(), buffer.GetFloat())
-		};
-		return state;
-	}
-
-	private byte[] SerializePlayerState(int playerId, PlayerStateSnapshot snapshot)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.PutU8(PacketPlayerState);
-		buffer.PutU32((uint)playerId);
-		buffer.PutU8((byte)snapshot.Mode);
-		WriteCarSnapshot(buffer, snapshot.CarSnapshot);
-		WriteFootSnapshot(buffer, snapshot.FootSnapshot);
-		return buffer.DataArray;
-	}
-
-	private PlayerStateData DeserializePlayerState(byte[] packet)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.DataArray = packet;
-		if (buffer.GetAvailableBytes() < 1) return null;
-		var packetType = buffer.GetU8();
-		if (packetType != PacketPlayerState) return null;
-		if (buffer.GetAvailableBytes() < 5) return null;
-		var data = new PlayerStateData
-		{
-			PlayerId = (int)buffer.GetU32()
-		};
-		if (buffer.GetAvailableBytes() < 1) return null;
-		var mode = (PlayerMode)buffer.GetU8();
-		var snapshot = new PlayerStateSnapshot
-		{
-			Mode = mode,
-			CarSnapshot = ReadCarSnapshot(buffer),
-			FootSnapshot = ReadFootSnapshot(buffer)
-		};
-		data.Snapshot = snapshot;
-		return data;
-	}
-
-	private byte[] SerializeWelcome(int peerId)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.PutU8(PacketWelcome);
-		buffer.PutU32((uint)peerId);
-		return buffer.DataArray;
-	}
-
-	private int DeserializeWelcome(byte[] packet)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.DataArray = packet;
-		if (buffer.GetAvailableBytes() < 5) return 0;
-		var packetType = buffer.GetU8();
-		if (packetType != PacketWelcome) return 0;
-		return (int)buffer.GetU32();
-	}
-
-	private byte[] SerializeRemovePlayer(int peerId)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.PutU8(PacketRemovePlayer);
-		buffer.PutU32((uint)peerId);
-		return buffer.DataArray;
-	}
-
-	private int DeserializeRemovePlayer(byte[] packet)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.DataArray = packet;
-		if (buffer.GetAvailableBytes() < 5) return 0;
-		var packetType = buffer.GetU8();
-		if (packetType != PacketRemovePlayer) return 0;
-		return (int)buffer.GetU32();
-	}
-
-	private void WriteCarSnapshot(StreamPeerBuffer buffer, CarSnapshot snapshot)
-	{
-		if (snapshot == null)
-		{
-			buffer.PutU8(0);
-			return;
-		}
-
-		buffer.PutU8(1);
-		buffer.PutU32((uint)snapshot.Tick);
-		var origin = snapshot.Transform.Origin;
-		buffer.PutFloat(origin.X);
-		buffer.PutFloat(origin.Y);
-		buffer.PutFloat(origin.Z);
-		var rotation = snapshot.Transform.Basis.GetRotationQuaternion();
-		buffer.PutFloat(rotation.X);
-		buffer.PutFloat(rotation.Y);
-		buffer.PutFloat(rotation.Z);
-		buffer.PutFloat(rotation.W);
-		var lin = snapshot.LinearVelocity;
-		buffer.PutFloat(lin.X);
-		buffer.PutFloat(lin.Y);
-		buffer.PutFloat(lin.Z);
-		var ang = snapshot.AngularVelocity;
-		buffer.PutFloat(ang.X);
-		buffer.PutFloat(ang.Y);
-		buffer.PutFloat(ang.Z);
-	}
-
-	private CarSnapshot ReadCarSnapshot(StreamPeerBuffer buffer)
-	{
-		if (buffer.GetAvailableBytes() < 1) return null;
-		var hasSnapshot = buffer.GetU8();
-		if (hasSnapshot == 0)
-			return null;
-		if (buffer.GetAvailableBytes() < CarSnapshotPayloadBytes) return null;
-		var snapshot = new CarSnapshot
-		{
-			Tick = (int)buffer.GetU32()
-		};
-		var origin = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
-		var rotation = new Quaternion(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
-		snapshot.Transform = new Transform3D(new Basis(rotation), origin);
-		snapshot.LinearVelocity = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
-		snapshot.AngularVelocity = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
-		return snapshot;
-	}
-
-	private void WriteFootSnapshot(StreamPeerBuffer buffer, FootSnapshot snapshot)
-	{
-		if (snapshot == null)
-		{
-			buffer.PutU8(0);
-			return;
-		}
-
-		buffer.PutU8(1);
-		buffer.PutU32((uint)snapshot.Tick);
-		var origin = snapshot.Transform.Origin;
-		buffer.PutFloat(origin.X);
-		buffer.PutFloat(origin.Y);
-		buffer.PutFloat(origin.Z);
-		var rotation = snapshot.Transform.Basis.GetRotationQuaternion();
-		buffer.PutFloat(rotation.X);
-		buffer.PutFloat(rotation.Y);
-		buffer.PutFloat(rotation.Z);
-		buffer.PutFloat(rotation.W);
-		var vel = snapshot.Velocity;
-		buffer.PutFloat(vel.X);
-		buffer.PutFloat(vel.Y);
-		buffer.PutFloat(vel.Z);
-		buffer.PutFloat(snapshot.ViewYaw);
-		buffer.PutFloat(snapshot.ViewPitch);
-	}
-
-	private FootSnapshot ReadFootSnapshot(StreamPeerBuffer buffer)
-	{
-		if (buffer.GetAvailableBytes() < 1) return null;
-		var hasSnapshot = buffer.GetU8();
-		if (hasSnapshot == 0)
-			return null;
-		if (buffer.GetAvailableBytes() < FootSnapshotPayloadBytes) return null;
-		var snapshot = new FootSnapshot
-		{
-			Tick = (int)buffer.GetU32()
-		};
-		var origin = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
-		var rotation = new Quaternion(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
-		snapshot.Transform = new Transform3D(new Basis(rotation), origin);
-		snapshot.Velocity = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
-		snapshot.ViewYaw = buffer.GetFloat();
-		snapshot.ViewPitch = buffer.GetFloat();
-		return snapshot;
 	}
 }
