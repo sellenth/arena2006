@@ -24,9 +24,12 @@ entities/                    # Scene entities (visual components + behavior)
 systems/                     # System logic (not tied to specific scenes)
   └── network/              # Networking system
       ├── NetworkController.cs      # Main network controller (autoloaded)
-      ├── RemotePlayerManager.cs    # Manages remote player spawning
-      ├── CarInputState.cs          # Input state serialization
-      └── CarSnapshot.cs            # Car state snapshot
+      ├── RemotePlayerManager.cs    # Manages remote on-foot player spawning
+      ├── RemoteVehicleManager.cs   # Manages replicated vehicle proxies
+      ├── CarInputState.cs          # Vehicle input state serialization
+      ├── PlayerInputState.cs       # On-foot input state serialization
+      ├── CarSnapshot.cs            # Car state snapshot
+      └── PlayerSnapshot.cs         # On-foot player snapshot
 
 resources/                   # Shared resources
   └── materials/            # Materials (prototype, etc.)
@@ -50,23 +53,32 @@ The project uses a client-server UDP networking model where:
 
 #### 2. RemotePlayerManager
 - **Location**: `systems/network/RemotePlayerManager.cs`
-- **Purpose**: CLIENT-ONLY - Spawns and updates visual representations of remote players
+- **Purpose**: CLIENT-ONLY - Spawns and updates the remote on-foot player characters
 - **Functionality**:
   - Listens to `NetworkController.PlayerStateUpdated` signal
-  - Spawns `player_car.tscn` instances as kinematic (frozen) bodies
-  - Interpolates remote car positions smoothly
+  - Spawns `player_character.tscn` instances in spectator (non-authority) mode
+  - Applies replicated `PlayerSnapshot` data for smooth interpolation
   - Cleans up disconnected players
 
-#### 3. RemotePlayerLabels
+#### 3. RemoteVehicleManager
+- **Location**: `systems/network/RemoteVehicleManager.cs`
+- **Purpose**: CLIENT-ONLY - Spawns and updates replicated vehicles owned by the server
+- **Functionality**:
+  - Listens to `VehicleStateUpdated`/`VehicleDespawned` signals
+  - Instantiates kinematic `RaycastCar` proxies for authoritative vehicles
+  - Keeps track of which player is occupying which vehicle
+  - Hands camera control to the local client when they occupy a remote vehicle
+
+#### 4. RemotePlayerLabels
 - **Location**: `entities/ui/RemotePlayerLabels.cs`
 - **Purpose**: CLIENT-ONLY - Adds floating name labels above remote players
 - **Functionality**:
   - Listens to `NetworkController.PlayerStateUpdated` signal
-  - Finds remote player cars spawned by `RemotePlayerManager`
-  - Attaches 3D billboard labels above each remote car
-  - Labels follow cars automatically (as children)
+  - Finds remote player characters spawned by `RemotePlayerManager`
+  - For vehicle occupants, looks up the matching car via `RemoteVehicleManager`
+  - Attaches 3D billboard labels above the appropriate node so they follow automatically
 
-#### 4. RaycastCar (Universal car scene)
+#### 5. RaycastCar (Universal car scene)
 - **Location**: `entities/vehicle/car/RaycastCar.cs`
 - **Purpose**: Universal car controller, works for both local and network-driven cars
 - **Modes**:
@@ -92,12 +104,12 @@ The project uses a client-server UDP networking model where:
 4. Receive snapshot from server
 5. Apply snapshot for server reconciliation (smoothly blend)
 
-#### Client Flow (Remote Players)
-1. `RemotePlayerManager` listens for `PlayerStateUpdated`
-2. First update → spawn kinematic car at snapshot position
-3. `RemotePlayerLabels` detects new car → attaches floating label above it
-4. Subsequent updates → interpolate car position smoothly (label follows)
-5. On disconnect → remove car and label from scene
+#### Client Flow (Remote Players & Vehicles)
+1. `RemotePlayerManager` listens for `PlayerStateUpdated` and spawns `player_character.tscn` proxies
+2. `RemoteVehicleManager` listens for authoritative vehicle snapshots and spawns kinematic `player_car.tscn` proxies
+3. `RemotePlayerLabels` attaches floating labels to either the player character or the vehicle the player currently occupies
+4. Subsequent updates → both player characters and vehicles smoothly interpolate toward the replicated transforms
+5. On disconnect → remove associated player characters, vehicles, and labels from the scene
 
 ## Key Design Decisions
 
@@ -123,8 +135,9 @@ The project uses a client-server UDP networking model where:
 
 Key nodes:
 - `Car`: Local player's car (full physics)
-- `RemotePlayers`: Container for remote player cars (managed by RemotePlayerManager)
-- `RemotePlayerLabels`: Manages floating labels above remote players
+- `RemotePlayers`: Container for remote player characters (managed by RemotePlayerManager)
+- `RemoteVehicles`: Container for remote vehicle proxies (managed by RemoteVehicleManager)
+- `RemotePlayerLabels`: Manages floating labels above whichever node the player occupies
 - `Camera3D`: Debug/spectator camera
 - `Car/CameraPivot/Camera3D`: Follow camera (tracks local player)
 
@@ -132,13 +145,17 @@ Key nodes:
 
 ```
 NetworkController (autoload)
-    ↓ signals: PlayerStateUpdated, PlayerDisconnected
-    ├→ RemotePlayerManager (spawns cars)
+    ↓ signals: PlayerStateUpdated, VehicleStateUpdated, PlayerDisconnected
+    ├→ RemotePlayerManager (spawns player characters)
     │       ↓ creates Node3D "RemotePlayer_X"
     │       └→ adds to RemotePlayers container
     │
+    ├→ RemoteVehicleManager (spawns vehicles)
+    │       ↓ creates Node3D "Vehicle_X"
+    │       └→ adds to RemoteVehicles container
+    │
     └→ RemotePlayerLabels (adds labels)
-            ↓ finds "RemotePlayer_X" in RemotePlayers
+            ↓ finds "RemotePlayer_X" or vehicle occupant node
             └→ attaches Label3D as child
 ```
 

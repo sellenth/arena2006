@@ -6,12 +6,12 @@ public static partial class NetworkSerializer
 	public const byte PacketPlayerState = 2;
 	public const byte PacketWelcome = 3;
 	public const byte PacketRemovePlayer = 4;
-	public const byte PacketFootInput = 5;
+	public const byte PacketPlayerInput = 5;
 	public const byte PacketVehicleState = 6;
 	public const byte PacketVehicleDespawn = 7;
 
 	public const int CarSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
-	public const int FootSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
+	public const int PlayerSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
 	public const int VehicleStatePayloadBytes = 4 + 4 + 4 + 12 + 16 + 12 + 12;
 
 	public static byte[] SerializeCarInput(CarInputState state)
@@ -53,11 +53,11 @@ public static partial class NetworkSerializer
 		return state;
 	}
 
-	public static byte[] SerializeFootInput(FootInputState state)
+	public static byte[] SerializePlayerInput(PlayerInputState state)
 	{
 		var buffer = new StreamPeerBuffer();
 		buffer.BigEndian = false;
-		buffer.PutU8(PacketFootInput);
+		buffer.PutU8(PacketPlayerInput);
 		buffer.PutU32((uint)state.Tick);
 		buffer.PutFloat(state.MoveInput.X);
 		buffer.PutFloat(state.MoveInput.Y);
@@ -68,16 +68,16 @@ public static partial class NetworkSerializer
 		return buffer.DataArray;
 	}
 
-	public static FootInputState DeserializeFootInput(byte[] packet)
+	public static PlayerInputState DeserializePlayerInput(byte[] packet)
 	{
 		var buffer = new StreamPeerBuffer();
 		buffer.BigEndian = false;
 		buffer.DataArray = packet;
 		if (buffer.GetAvailableBytes() < 1) return null;
 		var packetType = buffer.GetU8();
-		if (packetType != PacketFootInput) return null;
+		if (packetType != PacketPlayerInput) return null;
 		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 4 + 4) return null;
-		var state = new FootInputState
+		var state = new PlayerInputState
 		{
 			Tick = (int)buffer.GetU32(),
 			MoveInput = new Vector2(buffer.GetFloat(), buffer.GetFloat()),
@@ -97,7 +97,7 @@ public static partial class NetworkSerializer
 		buffer.PutU8((byte)snapshot.Mode);
 		buffer.PutU32((uint)snapshot.VehicleId);
 		WriteCarSnapshot(buffer, snapshot.CarSnapshot);
-		WriteFootSnapshot(buffer, snapshot.FootSnapshot);
+		WritePlayerSnapshot(buffer, snapshot.PlayerSnapshot);
 		return buffer.DataArray;
 	}
 
@@ -123,7 +123,7 @@ public static partial class NetworkSerializer
 			Mode = mode,
 			VehicleId = vehicleId,
 			CarSnapshot = ReadCarSnapshot(buffer),
-			FootSnapshot = ReadFootSnapshot(buffer)
+			PlayerSnapshot = ReadPlayerSnapshot(buffer)
 		};
 		data.Snapshot = snapshot;
 		return data;
@@ -277,7 +277,7 @@ public static partial class NetworkSerializer
 		return snapshot;
 	}
 
-	private static void WriteFootSnapshot(StreamPeerBuffer buffer, FootSnapshot snapshot)
+	private static void WritePlayerSnapshot(StreamPeerBuffer buffer, PlayerSnapshot snapshot)
 	{
 		if (snapshot == null)
 		{
@@ -304,14 +304,14 @@ public static partial class NetworkSerializer
 		buffer.PutFloat(snapshot.ViewPitch);
 	}
 
-	private static FootSnapshot ReadFootSnapshot(StreamPeerBuffer buffer)
+	private static PlayerSnapshot ReadPlayerSnapshot(StreamPeerBuffer buffer)
 	{
 		if (buffer.GetAvailableBytes() < 1) return null;
 		var hasSnapshot = buffer.GetU8();
 		if (hasSnapshot == 0)
 			return null;
-		if (buffer.GetAvailableBytes() < FootSnapshotPayloadBytes) return null;
-		var snapshot = new FootSnapshot
+		if (buffer.GetAvailableBytes() < PlayerSnapshotPayloadBytes) return null;
+		var snapshot = new PlayerSnapshot
 		{
 			Tick = (int)buffer.GetU32()
 		};
