@@ -41,9 +41,7 @@ public partial class NetworkController : Node
 		}
 	}
 
-	private enum Role { None, Server, Client }
-
-	private Role _role = Role.None;
+	private NetworkRole _role = NetworkRole.None;
 	private RaycastCar _car;
 	private FootPlayerController _foot;
 	private int _tick = 0;
@@ -61,8 +59,8 @@ public partial class NetworkController : Node
 	private Godot.Collections.Dictionary<int, PlayerStateSnapshot> _remotePlayerSnapshots = new Godot.Collections.Dictionary<int, PlayerStateSnapshot>();
 	public PlayerMode CurrentClientMode { get; private set; } = PlayerMode.Vehicle;
 	public event Action<PlayerMode> ClientModeChanged;
-	public bool IsServer => _role == Role.Server;
-	public bool IsClient => _role == Role.Client;
+	public bool IsServer => _role == NetworkRole.Server;
+	public bool IsClient => _role == NetworkRole.Client;
 
 	private PackedScene _playerCarScene;
 	private PackedScene _footPlayerScene;
@@ -77,27 +75,27 @@ public partial class NetworkController : Node
 		_playerCarScene = GD.Load<PackedScene>("res://src/entities/vehicle/car/player_car.tscn");
 		_footPlayerScene = GD.Load<PackedScene>("res://src/entities/player/foot/foot_player.tscn");
 		Engine.PhysicsTicksPerSecond = 60;
-		_role = DetermineRole();
+		_role = CmdLineArgsManager.GetNetworkRole();
 		InitializeTestInputScript();
 
 		switch (_role)
 		{
-			case Role.Server:
+			case NetworkRole.Server:
 				StartServer();
 				break;
-			case Role.Client:
+			case NetworkRole.Client:
 				StartClient();
 				break;
 		}
 
-		SetPhysicsProcess(_role != Role.None);
+		SetPhysicsProcess(_role != NetworkRole.None);
 	}
 
 	public void RegisterCar(RaycastCar car)
 	{
 		GD.Print($"NetworkController: RegisterCar called, role={_role}, car={car?.Name ?? "null"}");
 		_car = car;
-		if (_role == Role.Client)
+		if (_role == NetworkRole.Client)
 		{
 			GD.Print("NetworkController: Client car registered, applying input");
 			ApplyClientInputToCar();
@@ -108,7 +106,7 @@ public partial class NetworkController : Node
 	{
 		GD.Print($"NetworkController: RegisterFoot called, role={_role}, foot={foot?.Name ?? "null"}");
 		_foot = foot;
-		if (_role == Role.Client)
+		if (_role == NetworkRole.Client)
 		{
 			foot.ConfigureAuthority(true);
 			foot.SetCameraActive(CurrentClientMode == PlayerMode.Foot);
@@ -116,39 +114,6 @@ public partial class NetworkController : Node
 		}
 	}
 
-	private Role DetermineRole()
-	{
-		// Get command line args - check both system args and user args (passed after --)
-		var args = OS.GetCmdlineArgs();
-		var userArgs = OS.GetCmdlineUserArgs();
-		
-		var parsedRole = Role.Client;
-		
-		// Check system args - they may come as a single string, so split if needed
-		foreach (var arg in args)
-		{
-			// Split the arg if it contains spaces (single string with multiple args)
-			var splitArgs = arg.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
-			foreach (var splitArg in splitArgs)
-			{
-				if (splitArg == "--server")
-					return Role.Server;
-				else if (splitArg == "--client")
-					parsedRole = Role.Client;
-			}
-		}
-		
-		// Check user args (passed after -- separator)
-		foreach (var arg in userArgs)
-		{
-			if (arg == "--server")
-				return Role.Server;
-			else if (arg == "--client")
-				parsedRole = Role.Client;
-		}
-		
-		return parsedRole;
-	}
 
 	private void StartServer()
 	{
@@ -176,7 +141,8 @@ public partial class NetworkController : Node
 	private void StartClient()
 	{
 		_clientPeer = new PacketPeerUdp();
-		var err = _clientPeer.ConnectToHost("127.0.0.1", DefaultPort);
+		var clientIp = CmdLineArgsManager.GetClientIp();
+		var err = _clientPeer.ConnectToHost(clientIp, DefaultPort);
 		if (err != Error.Ok)
 		{
 			GD.PushError($"Failed to start UDP client (err {err})");
@@ -186,7 +152,7 @@ public partial class NetworkController : Node
 			_clientId = 0;
 			_remotePlayerSnapshots.Clear();
 			CurrentClientMode = PlayerMode.Vehicle;
-			GD.Print($"Client connecting to 127.0.0.1:{DefaultPort}");
+			GD.Print($"Client connecting to {clientIp}:{DefaultPort}");
 			ApplyClientInputToCar();
 		}
 	}
@@ -203,10 +169,10 @@ public partial class NetworkController : Node
 	{
 		switch (_role)
 		{
-			case Role.Server:
+			case NetworkRole.Server:
 				ProcessServer();
 				break;
-			case Role.Client:
+			case NetworkRole.Client:
 				ProcessClient();
 				break;
 		}
@@ -528,7 +494,7 @@ public partial class NetworkController : Node
 		var peerId = _nextPeerId++;
 		var info = new PeerInfo(peerId, newPeer);
 		_peers[peerId] = info;
-		if (_role == Role.Server)
+		if (_role == NetworkRole.Server)
 		{
 			info.Car = SpawnServerCar(peerId);
 			info.DriverSeat = FindDriverSeat(info.Car);
