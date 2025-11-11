@@ -171,19 +171,25 @@ public partial class RaycastCar : RigidBody3D
 
 	public override void _PhysicsProcess(double delta)
 	{
-		var rawSteerInput = _inputState.Steer;
-		var deltaFloat = (float)delta;
-		
-		if (Mathf.Abs(rawSteerInput) > 0.01f)
+		var raw = Mathf.Clamp(_inputState.Steer, -1f, 1f);
+		var df = (float)delta;
+
+		float speed = LinearVelocity.Length();
+		float speed01 = Mathf.Clamp(speed / MaxSpeed, 0f, 1f);
+
+		float maxSteerNorm = Mathf.Lerp(1f, 0.25f, speed01 * 0.85f);
+
+		float accel = SteerAccelerationRate * df;
+		float decel = SteerDecelerationRate * df;
+
+		bool reversing = Mathf.Sign(raw) != Mathf.Sign(_smoothedSteerInput) && Mathf.Abs(_smoothedSteerInput) > 0.1f;
+		float rate = reversing ? decel * 1.6f : accel;
+
+		_smoothedSteerInput = Mathf.MoveToward(_smoothedSteerInput, raw * maxSteerNorm, rate);
+
+		if (Mathf.Abs(raw) < 0.01f)
 		{
-			var targetSteer = rawSteerInput;
-			var steerDelta = SteerAccelerationRate * deltaFloat;
-			_smoothedSteerInput = Mathf.MoveToward(_smoothedSteerInput, targetSteer, steerDelta);
-		}
-		else
-		{
-			var steerDelta = 1.0f;
-			_smoothedSteerInput = Mathf.MoveToward(_smoothedSteerInput, 0.0f, steerDelta);
+			_smoothedSteerInput = Mathf.MoveToward(_smoothedSteerInput, 0f, decel);
 		}
 		
 		// if (ShowDebug) 
