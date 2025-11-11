@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Godot;
 
-public partial class FootPlayerController : CharacterBody3D
+public partial class PlayerCharacter : CharacterBody3D
 {
 	[Export] public NodePath HeadPath { get; set; } = "Head";
 	[Export] public NodePath CameraPath { get; set; } = "Head/Cam";
@@ -26,8 +26,8 @@ public partial class FootPlayerController : CharacterBody3D
 	private CollisionShape3D _collisionShape;
 	private NetworkController _networkController;
 
-	private readonly FootInputState _inputState = new FootInputState();
-	private FootSnapshot _pendingSnapshot;
+	private readonly PlayerInputState _inputState = new PlayerInputState();
+	private PlayerSnapshot _pendingSnapshot;
 	private Vector2 _lookAccumulator = Vector2.Zero;
 	private Vector2 _pendingMouseDelta = Vector2.Zero;
 	private Color _playerColor = Colors.Red;
@@ -39,7 +39,7 @@ public partial class FootPlayerController : CharacterBody3D
 	private float _viewYaw = 0f;
 	private float _viewPitch = 0f;
 
-	public FootPlayerController()
+	public PlayerCharacter()
 	{
 		// CharacterBody defaults for surf-style movement
 		FloorStopOnSlope = false;
@@ -68,7 +68,7 @@ public partial class FootPlayerController : CharacterBody3D
 		{
 			_networkController = GetNodeOrNull<NetworkController>("/root/NetworkController");
 			if (_networkController != null && _networkController.IsClient)
-				_networkController.RegisterFoot(this);
+				_networkController.RegisterPlayerCharacter(this);
 		}
 
 		_managesMouseMode = AutoRegisterWithNetwork && (_networkController == null || _networkController.IsClient);
@@ -106,9 +106,9 @@ public partial class FootPlayerController : CharacterBody3D
 		}
 	}
 
-	public FootInputState CollectClientInputState()
+	public PlayerInputState CollectClientInputState()
 	{
-		var state = new FootInputState
+		var state = new PlayerInputState
 		{
 			MoveInput = Input.GetVector("move_left", "move_right", "move_forward", "move_backward"),
 			Jump = Input.IsActionPressed("jump"),
@@ -119,15 +119,15 @@ public partial class FootPlayerController : CharacterBody3D
 		return state;
 	}
 
-	public void SetInputState(FootInputState state)
+	public void SetInputState(PlayerInputState state)
 	{
 		_inputState.CopyFrom(state);
 		_lookAccumulator += state.LookDelta;
 	}
 
-	public FootSnapshot CaptureSnapshot(int tick)
+	public PlayerSnapshot CaptureSnapshot(int tick)
 	{
-		return new FootSnapshot
+		return new PlayerSnapshot
 		{
 			Tick = tick,
 			Transform = GlobalTransform,
@@ -137,7 +137,7 @@ public partial class FootPlayerController : CharacterBody3D
 		};
 	}
 
-	public void QueueSnapshot(FootSnapshot snapshot)
+	public void QueueSnapshot(PlayerSnapshot snapshot)
 	{
 		_pendingSnapshot = snapshot;
 	}

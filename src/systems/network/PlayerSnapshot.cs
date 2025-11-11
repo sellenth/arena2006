@@ -1,6 +1,6 @@
 using Godot;
 
-public partial class FootSnapshot : RefCounted
+public partial class PlayerSnapshot : RefCounted
 {
 	public int Tick { get; set; }
 	public Transform3D Transform { get; set; } = Transform3D.Identity;

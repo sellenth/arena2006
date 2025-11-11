@@ -6,9 +6,9 @@
 [ext_resource type="PackedScene" uid="uid://c7m8fswqpshy4" path="res://src/systems/ui/pause_menu.tscn" id="7_liv0r"]
 [ext_resource type="PackedScene" uid="uid://ch2s1v2av6f0p" path="res://src/systems/ui/options_menu.tscn" id="8_njg2t"]
 [ext_resource type="PackedScene" uid="uid://cukaeucupjo2e" path="res://src/systems/ui/debug_ui_controller.tscn" id="9_73xoc"]
-[ext_resource type="PackedScene" uid="uid://bp5wletrm4dw2" path="res://src/entities/player/foot/foot_player.tscn" id="10_foot"]
+[ext_resource type="PackedScene" path="res://src/entities/player/player_character.tscn" id="10_player"]
 [ext_resource type="Script" uid="uid://dw3owa0i2p1f2" path="res://src/entities/player/PlayerWrapper.cs" id="11_pwrap"]
-[ext_resource type="Script" uid="uid://c3b5xve2kalg" path="res://src/systems/network/RemoteFootPlayerManager.cs" id="12_rfoot"]
+[ext_resource type="Script" uid="uid://c3b5xve2kalg" path="res://src/systems/network/RemotePlayerManager.cs" id="12_rplayer"]
 [ext_resource type="Script" uid="uid://ygqck2ca07ti" path="res://src/systems/network/RemoteVehicleManager.cs" id="13_38sdm"]
 [ext_resource type="PackedScene" uid="uid://dqsjudt64pb3u" path="res://src/entities/building/building_1/skyscraper_1.tscn" id="14_886vf"]
 [ext_resource type="PackedScene" uid="uid://c68mijg2v2wkf" path="res://src/entities/jump_pad/jump_pad.tscn" id="15_l2d1b"]
@@ -110,15 +110,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5435, 0, -51.0122)
 [node name="RemotePlayerLabels" type="Node3D" parent="."]
 
 [node name="RemotePlayers" type="Node3D" parent="."]
-script = ExtResource("12_rfoot")
+script = ExtResource("12_rplayer")
 
-[node name="FootPlayer" parent="." instance=ExtResource("10_foot")]
+[node name="PlayerCharacter" parent="." instance=ExtResource("10_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88.74045, 1.05, -114.77704)
 
 [node name="PlayerWrapper" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 141.24045, 0, 30.722965)
 script = ExtResource("11_pwrap")
-FootPath = NodePath("../FootPlayer")
+PlayerPath = NodePath("../PlayerCharacter")
 
 [node name="VehicleSpawns" type="Node3D" parent="."]
 

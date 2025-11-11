@@ -2,20 +2,20 @@ using Godot;
 
 public partial class PlayerWrapper : Node3D
 {
-	[Export] public NodePath FootPath { get; set; }
+	[Export] public NodePath PlayerPath { get; set; }
 
-	private FootPlayerController _foot;
+	private PlayerCharacter _player;
 	private NetworkController _network;
 	private PlayerMode _currentMode = PlayerMode.Foot;
 
 	public override void _Ready()
 	{
-		_foot = GetNodeOrNull<FootPlayerController>(FootPath);
+		_player = GetNodeOrNull<PlayerCharacter>(PlayerPath);
 		_network = GetNodeOrNull<NetworkController>("/root/NetworkController");
 
 		if (_network != null && !_network.IsClient)
 		{
-			_foot?.SetWorldActive(false);
+			_player?.SetWorldActive(false);
 			SetProcess(false);
 			SetPhysicsProcess(false);
 			return;
@@ -28,7 +28,7 @@ public partial class PlayerWrapper : Node3D
 		}
 
 		ApplyMode(_currentMode);
-		RandomizeLocalFootColor();
+		RandomizeLocalPlayerColor();
 	}
 
 	public override void _ExitTree()
@@ -47,22 +47,22 @@ public partial class PlayerWrapper : Node3D
 
 	private void ApplyMode(PlayerMode mode)
 	{
-		if (_foot == null)
+		if (_player == null)
 			return;
 
 		var isFoot = mode == PlayerMode.Foot;
-		_foot.SetWorldActive(isFoot);
-		_foot.SetCameraActive(isFoot);
+		_player.SetWorldActive(isFoot);
+		_player.SetCameraActive(isFoot);
 	}
 
-	private void RandomizeLocalFootColor()
+	private void RandomizeLocalPlayerColor()
 	{
-		if (_foot == null)
+		if (_player == null)
 			return;
 
 		var rng = new RandomNumberGenerator();
 		rng.Randomize();
 		var color = new Color(rng.Randf(), rng.Randf(), rng.Randf());
-		_foot.SetPlayerColor(color);
+		_player.SetPlayerColor(color);
 	}
 }

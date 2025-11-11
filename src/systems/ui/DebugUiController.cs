@@ -4,7 +4,7 @@ public partial class DebugUiController : Node
 {
 	private RaycastCar _car;
 	private RaycastCar _fallbackCar;
-	private FootPlayerController _foot;
+	private PlayerCharacter _player;
 	private NetworkController _network;
 	
 	private Label _offsetLabel;
@@ -23,7 +23,7 @@ public partial class DebugUiController : Node
 	{
 		_car = GetNodeOrNull<RaycastCar>("../Car");
 		_fallbackCar = _car;
-		_foot = GetNodeOrNull<FootPlayerController>("../FootPlayer");
+		_player = GetNodeOrNull<PlayerCharacter>("../PlayerCharacter");
 		_network = GetNodeOrNull<NetworkController>("/root/NetworkController");
 
 		if (_network != null)
@@ -57,9 +57,9 @@ public partial class DebugUiController : Node
 	{
 		var isFootMode = _network != null && _network.CurrentClientMode == PlayerMode.Foot;
 		
-		if (isFootMode && _foot != null)
+		if (isFootMode && _player != null)
 		{
-			var speed = _foot.Velocity.Length();
+			var speed = _player.Velocity.Length();
 			_speedLabel.Text = $"Speed: {speed:F2} m/s";
 		}
 		else if (_car != null)

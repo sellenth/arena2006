@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://bp5wletrm4dw2"]
 
-[ext_resource type="Script" uid="uid://dpian2gawtw4a" path="res://src/entities/player/foot/FootPlayerController.cs" id="1_qj4xw"]
+[ext_resource type="Script" uid="uid://dpian2gawtw4a" path="res://src/entities/player/PlayerCharacter.cs" id="1_qj4xw"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v2uir"]
 resource_local_to_scene = true
@@ -14,7 +14,7 @@ height = 1.8
 height = 1.8
 radius = 0.25
 
-[node name="FootPlayer" type="CharacterBody3D"]
+[node name="PlayerCharacter" type="CharacterBody3D"]
 collision_layer = 0
 wall_min_slide_angle = 2.9146998
 floor_stop_on_slope = false

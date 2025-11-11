@@ -6,5 +6,5 @@ public partial class PlayerStateSnapshot : RefCounted
 	public PlayerMode Mode { get; set; } = PlayerMode.Foot;
 	public int VehicleId { get; set; }
 	public CarSnapshot CarSnapshot { get; set; }
-	public FootSnapshot FootSnapshot { get; set; }
+	public PlayerSnapshot PlayerSnapshot { get; set; }
 }

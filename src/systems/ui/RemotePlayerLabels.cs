@@ -9,8 +9,7 @@ public partial class RemotePlayerLabels : Node3D
 
 	private NetworkController _networkController;
 	private Dictionary<int, Label3D> _labels = new Dictionary<int, Label3D>();
-	private Node3D _remotePlayersContainer;
-	private Node3D _remoteFootPlayersContainer;
+	private Node3D _remotePlayerCharacters;
 	private RemoteVehicleManager _vehicleManager;
 
 	public override void _Ready()
@@ -22,17 +21,17 @@ public partial class RemotePlayerLabels : Node3D
 			return;
 		}
 
-		// Find the RemotePlayers container (managed by RemotePlayerManager)
-		_remotePlayersContainer = GetNodeOrNull<Node3D>("../RemotePlayers");
-		_remoteFootPlayersContainer = GetNodeOrNull<Node3D>("../RemoteFootPlayers");
-		if (_remotePlayersContainer == null)
+		// Find player/vehicle containers so we can attach labels
+		_remotePlayerCharacters = GetNodeOrNull<Node3D>("../RemotePlayers");
+		if (_remotePlayerCharacters == null)
 		{
 			GD.PushWarning("RemotePlayerLabels: RemotePlayers node not found, labels won't work");
 			return;
 		}
 
-		_vehicleManager = _remotePlayersContainer as RemoteVehicleManager;
-		_vehicleManager ??= _remotePlayersContainer?.GetNodeOrNull<RemoteVehicleManager>(".");
+		var remoteVehiclesNode = GetNodeOrNull<Node3D>("../RemoteVehicles");
+		_vehicleManager = remoteVehiclesNode as RemoteVehicleManager;
+		_vehicleManager ??= remoteVehiclesNode?.GetNodeOrNull<RemoteVehicleManager>(".");
 
 		_networkController.PlayerStateUpdated += OnPlayerStateUpdated;
 		_networkController.PlayerDisconnected += OnPlayerDisconnected;
@@ -94,14 +93,9 @@ public partial class RemotePlayerLabels : Node3D
 			return;
 
 		Node3D target = null;
-		if (mode == PlayerMode.Foot)
-		{
-			target = _remoteFootPlayersContainer?.GetNodeOrNull<Node3D>($"RemoteFoot_{playerId}");
-		}
-		else
-		{
-			target = _vehicleManager?.GetVehicleNodeForPlayer(playerId);
-		}
+		target = mode == PlayerMode.Foot
+			? _remotePlayerCharacters?.GetNodeOrNull<Node3D>($"RemotePlayer_{playerId}")
+			: _vehicleManager?.GetVehicleNodeForPlayer(playerId);
 
 		if (target == null)
 			return;
