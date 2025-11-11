@@ -1,8 +1,7 @@
-[gd_scene load_steps=22 format=3 uid="uid://pgudwlq5efn0"]
+[gd_scene load_steps=23 format=3 uid="uid://pgudwlq5efn0"]
 
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/materials/black_square.tres" id="2_n38sr"]
 [ext_resource type="Material" uid="uid://dwgngqcfvi3s4" path="res://src/materials/red_square.tres" id="3_k6g81"]
-[ext_resource type="Script" uid="uid://db8dybniui1jv" path="res://src/systems/network/RemotePlayerManager.cs" id="4_3h70o"]
 [ext_resource type="PackedScene" uid="uid://ct07rpph3wvww" path="res://src/entities/vehicle/car/player_car.tscn" id="6_awmje"]
 [ext_resource type="PackedScene" uid="uid://c7m8fswqpshy4" path="res://src/systems/ui/pause_menu.tscn" id="7_liv0r"]
 [ext_resource type="PackedScene" uid="uid://ch2s1v2av6f0p" path="res://src/systems/ui/options_menu.tscn" id="8_njg2t"]
@@ -10,8 +9,10 @@
 [ext_resource type="PackedScene" uid="uid://bp5wletrm4dw2" path="res://src/entities/player/foot/foot_player.tscn" id="10_foot"]
 [ext_resource type="Script" uid="uid://dw3owa0i2p1f2" path="res://src/entities/player/PlayerWrapper.cs" id="11_pwrap"]
 [ext_resource type="Script" uid="uid://c3b5xve2kalg" path="res://src/systems/network/RemoteFootPlayerManager.cs" id="12_rfoot"]
+[ext_resource type="Script" uid="uid://ygqck2ca07ti" path="res://src/systems/network/RemoteVehicleManager.cs" id="13_38sdm"]
 [ext_resource type="PackedScene" uid="uid://dqsjudt64pb3u" path="res://src/entities/building/building_1/skyscraper_1.tscn" id="14_886vf"]
 [ext_resource type="PackedScene" uid="uid://c68mijg2v2wkf" path="res://src/entities/jump_pad/jump_pad.tscn" id="15_l2d1b"]
+[ext_resource type="Script" uid="uid://5whgjxft7d3o" path="res://src/systems/vehicle/VehicleSpawnManager.cs" id="16_vspawn"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_liv0r"]
 sky_top_color = Color(0.53064, 0.646875, 0.808594, 1)
@@ -74,14 +75,6 @@ material_override = ExtResource("2_n38sr")
 use_collision = true
 size = Vector3(500, 0.5, 500)
 
-[node name="RemotePlayerLabels" type="Node3D" parent="."]
-
-[node name="RemoteFootPlayers" type="Node3D" parent="."]
-script = ExtResource("12_rfoot")
-
-[node name="RemotePlayers" type="Node3D" parent="."]
-script = ExtResource("4_3h70o")
-
 [node name="Path3D" type="Path3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.394751, -55.8006)
 curve = SubResource("Curve3D_qm2o8")
@@ -108,27 +101,45 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66.4095, -23.3205, -232.403)
 [node name="JumpPad" parent="." instance=ExtResource("15_l2d1b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5435, 0, -51.0122)
 
-[node name="FootPlayer" parent="." instance=ExtResource("10_foot")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88.74045, 1.05, -114.77704)
-
-[node name="Car" parent="." instance=ExtResource("6_awmje")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 93.4638, 2.15127, -112.403046)
-
-[node name="PlayerWrapper" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 141.24045, 0, 30.722965)
-script = ExtResource("11_pwrap")
-CarPath = NodePath("../Car")
-FootPath = NodePath("../FootPlayer")
-CarCameraPath = NodePath("../Car/CameraPivot/Camera")
-
 [node name="PauseMenu" parent="." instance=ExtResource("7_liv0r")]
 
 [node name="OptionsMenu" parent="." instance=ExtResource("8_njg2t")]
 
 [node name="DebugUI" parent="." instance=ExtResource("9_73xoc")]
 
-[node name="CarSpawnPoint" type="Marker3D" parent="."]
-transform = Transform3D(-0.5945142, 0, -0.8040851, 0, 1, 0, 0.8040851, 0, -0.5945142, 116.27646, 1.2100546, -56.801403)
+[node name="RemotePlayerLabels" type="Node3D" parent="."]
+
+[node name="RemotePlayers" type="Node3D" parent="."]
+script = ExtResource("12_rfoot")
+
+[node name="FootPlayer" parent="." instance=ExtResource("10_foot")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88.74045, 1.05, -114.77704)
+
+[node name="PlayerWrapper" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 141.24045, 0, 30.722965)
+script = ExtResource("11_pwrap")
+FootPath = NodePath("../FootPlayer")
+
+[node name="VehicleSpawns" type="Node3D" parent="."]
+
+[node name="CarSpawnPoint" type="Marker3D" parent="VehicleSpawns"]
+transform = Transform3D(-0.5945142, 0, -0.8040851, 0, 1, 0, 0.8040851, 0, -0.5945142, 105.95998, 1.2100546, -31.56152)
+
+[node name="VehicleSpawn2" type="Marker3D" parent="VehicleSpawns"]
+transform = Transform3D(0.34202, 0, 0.939693, 0, 1, 0, -0.939693, 0, 0.34202, 122.08298, 1.2, -7.3828964)
+
+[node name="VehicleSpawn3" type="Marker3D" parent="VehicleSpawns"]
+transform = Transform3D(-0.939693, 0, 0.34202, 0, 1, 0, -0.34202, 0, -0.939693, 147.7611, 1.2, -7.9932556)
+
+[node name="VehicleSpawnManager" type="Node3D" parent="."]
+script = ExtResource("16_vspawn")
+VehicleScene = ExtResource("6_awmje")
+SpawnPointsRootPath = NodePath("../VehicleSpawns")
+MaxVehicles = 3
+
+[node name="RemoteVehicles" type="Node3D" parent="."]
+script = ExtResource("13_38sdm")
+VehicleScene = ExtResource("6_awmje")
 
 [node name="Ramp" type="StaticBody3D" parent="."]
 transform = Transform3D(0.17084587, 0, 0.9852978, 0, 1, 0, -0.9852978, 0, 0.17084587, 4.266861, 4.032215, 12.885757)
