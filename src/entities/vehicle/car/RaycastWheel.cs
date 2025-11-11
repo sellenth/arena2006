@@ -10,6 +10,7 @@ public partial class RaycastWheel : RayCast3D
 	[Export] public float WheelRadius { get; set; } = 0.33f;
 	[Export] public float ZTraction { get; set; } = 0.05f;
 	[Export] public float ZBrakeTraction { get; set; } = 0.25f;
+	[Export] public bool IsBackWheel { get; set; } = false;
 
 	[ExportCategory("Motor")]
 	[Export] public bool IsMotor { get; set; } = false;
@@ -100,8 +101,8 @@ public partial class RaycastWheel : RayCast3D
 
 		if (!car.HandBreak && GripFactor < 0.2f)
 			car.IsSlipping = false;
-		if (car.HandBreak)
-			xTraction = 0.01f;
+		if (car.HandBreak && IsBackWheel)
+			xTraction = 0.1f;
 		else if (car.IsSlipping)
 			xTraction = 0.1f;
 
