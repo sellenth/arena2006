@@ -161,3 +161,19 @@ godot --client
 2. Start client 1: `godot`
 3. Start client 2: `godot`
 4. All clients should see each other's cars
+
+
+### creating vm
+
+// godot linux x64
+
+wget https://builds.dotnet.microsoft.com/dotnet/Sdk/9.0.306/dotnet-sdk-9.0.306-linux-x64.tar.gz
+mkdir -p $HOME/dotnet && tar zxf dotnet-sdk-9.0.306-linux-x64.tar.gz -C $HOME/dotnet
+export DOTNET_ROOT=$HOME/dotnet
+export PATH=$PATH:$HOME/dotnet
+
+
+// some subset of these instructions
+Downloading a compatible version of Blender
+Adding blender to ~/.config/godot/editor_settings-4.*.tres
+Installing various xorg-related packages (on Ubuntu this was apt install xorg xz-utils xvfb)
