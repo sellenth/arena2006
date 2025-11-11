@@ -7,9 +7,12 @@ public static partial class NetworkSerializer
 	public const byte PacketWelcome = 3;
 	public const byte PacketRemovePlayer = 4;
 	public const byte PacketFootInput = 5;
+	public const byte PacketVehicleState = 6;
+	public const byte PacketVehicleDespawn = 7;
 
 	public const int CarSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
 	public const int FootSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
+	public const int VehicleStatePayloadBytes = 4 + 4 + 4 + 12 + 16 + 12 + 12;
 
 	public static byte[] SerializeCarInput(CarInputState state)
 	{
@@ -17,6 +20,7 @@ public static partial class NetworkSerializer
 		buffer.BigEndian = false;
 		buffer.PutU8(PacketCarInput);
 		buffer.PutU32((uint)state.Tick);
+		buffer.PutU32((uint)state.VehicleId);
 		buffer.PutFloat(state.Throttle);
 		buffer.PutFloat(state.Steer);
 		buffer.PutU8((byte)(state.Handbrake ? 1 : 0));
@@ -34,10 +38,11 @@ public static partial class NetworkSerializer
 		if (buffer.GetAvailableBytes() < 1) return null;
 		var packetType = buffer.GetU8();
 		if (packetType != PacketCarInput) return null;
-		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1 + 1) return null;
+		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 4 + 1 + 1 + 1 + 1) return null;
 		var state = new CarInputState
 		{
 			Tick = (int)buffer.GetU32(),
+			VehicleId = (int)buffer.GetU32(),
 			Throttle = buffer.GetFloat(),
 			Steer = buffer.GetFloat(),
 			Handbrake = buffer.GetU8() == 1,
@@ -90,6 +95,7 @@ public static partial class NetworkSerializer
 		buffer.PutU8(PacketPlayerState);
 		buffer.PutU32((uint)playerId);
 		buffer.PutU8((byte)snapshot.Mode);
+		buffer.PutU32((uint)snapshot.VehicleId);
 		WriteCarSnapshot(buffer, snapshot.CarSnapshot);
 		WriteFootSnapshot(buffer, snapshot.FootSnapshot);
 		return buffer.DataArray;
@@ -110,9 +116,12 @@ public static partial class NetworkSerializer
 		};
 		if (buffer.GetAvailableBytes() < 1) return null;
 		var mode = (PlayerMode)buffer.GetU8();
+		if (buffer.GetAvailableBytes() < 4) return null;
+		var vehicleId = (int)buffer.GetU32();
 		var snapshot = new PlayerStateSnapshot
 		{
 			Mode = mode,
+			VehicleId = vehicleId,
 			CarSnapshot = ReadCarSnapshot(buffer),
 			FootSnapshot = ReadFootSnapshot(buffer)
 		};
@@ -157,6 +166,66 @@ public static partial class NetworkSerializer
 		if (buffer.GetAvailableBytes() < 5) return 0;
 		var packetType = buffer.GetU8();
 		if (packetType != PacketRemovePlayer) return 0;
+		return (int)buffer.GetU32();
+	}
+
+	public static byte[] SerializeVehicleStates(System.Collections.Generic.IReadOnlyList<VehicleStateSnapshot> snapshots)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.PutU8(PacketVehicleState);
+		buffer.PutU16((ushort)(snapshots?.Count ?? 0));
+		if (snapshots != null)
+		{
+			foreach (var snapshot in snapshots)
+			{
+				WriteVehicleSnapshot(buffer, snapshot);
+			}
+		}
+		return buffer.DataArray;
+	}
+
+	public static Godot.Collections.Array<VehicleStateSnapshot> DeserializeVehicleStates(byte[] packet)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.DataArray = packet;
+		if (buffer.GetAvailableBytes() < 3)
+			return null;
+		if (buffer.GetU8() != PacketVehicleState)
+			return null;
+		var count = buffer.GetU16();
+		var list = new Godot.Collections.Array<VehicleStateSnapshot>();
+		for (var i = 0; i < count; i++)
+		{
+			if (buffer.GetAvailableBytes() < VehicleStatePayloadBytes)
+				break;
+			var snapshot = ReadVehicleSnapshot(buffer);
+			if (snapshot != null)
+				list.Add(snapshot);
+		}
+		return list;
+	}
+
+	public static byte[] SerializeVehicleDespawn(int vehicleId)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.PutU8(PacketVehicleDespawn);
+		buffer.PutU32((uint)vehicleId);
+		return buffer.DataArray;
+	}
+
+	public static int DeserializeVehicleDespawn(byte[] packet)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.DataArray = packet;
+		if (buffer.GetAvailableBytes() < 5)
+			return 0;
+		var type = buffer.GetU8();
+		if (type != PacketVehicleDespawn)
+			return 0;
 		return (int)buffer.GetU32();
 	}
 
@@ -255,10 +324,69 @@ public static partial class NetworkSerializer
 		return snapshot;
 	}
 
+	private static void WriteVehicleSnapshot(StreamPeerBuffer buffer, VehicleStateSnapshot snapshot)
+	{
+		if (snapshot == null)
+		{
+			buffer.PutU32(0);
+			buffer.PutU32(0);
+			buffer.PutU32(0);
+			buffer.PutFloat(0);
+			buffer.PutFloat(0);
+			buffer.PutFloat(0);
+			buffer.PutFloat(0);
+			buffer.PutFloat(0);
+			buffer.PutFloat(0);
+			buffer.PutFloat(0);
+			buffer.PutFloat(0);
+			buffer.PutFloat(0);
+			buffer.PutFloat(0);
+			buffer.PutFloat(0);
+			buffer.PutFloat(0);
+			return;
+		}
+
+		buffer.PutU32((uint)snapshot.VehicleId);
+		buffer.PutU32((uint)snapshot.Tick);
+		buffer.PutU32((uint)snapshot.OccupantPeerId);
+		var origin = snapshot.Transform.Origin;
+		buffer.PutFloat(origin.X);
+		buffer.PutFloat(origin.Y);
+		buffer.PutFloat(origin.Z);
+		var rotation = snapshot.Transform.Basis.GetRotationQuaternion();
+		buffer.PutFloat(rotation.X);
+		buffer.PutFloat(rotation.Y);
+		buffer.PutFloat(rotation.Z);
+		buffer.PutFloat(rotation.W);
+		var lin = snapshot.LinearVelocity;
+		buffer.PutFloat(lin.X);
+		buffer.PutFloat(lin.Y);
+		buffer.PutFloat(lin.Z);
+		var ang = snapshot.AngularVelocity;
+		buffer.PutFloat(ang.X);
+		buffer.PutFloat(ang.Y);
+		buffer.PutFloat(ang.Z);
+	}
+
+	private static VehicleStateSnapshot ReadVehicleSnapshot(StreamPeerBuffer buffer)
+	{
+		var snapshot = new VehicleStateSnapshot
+		{
+			VehicleId = (int)buffer.GetU32(),
+			Tick = (int)buffer.GetU32(),
+			OccupantPeerId = (int)buffer.GetU32()
+		};
+		var origin = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
+		var rotation = new Quaternion(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
+		snapshot.Transform = new Transform3D(new Basis(rotation), origin);
+		snapshot.LinearVelocity = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
+		snapshot.AngularVelocity = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
+		return snapshot;
+	}
+
 	public partial class PlayerStateData : GodotObject
 	{
 		public int PlayerId { get; set; }
 		public PlayerStateSnapshot Snapshot { get; set; }
 	}
 }
-

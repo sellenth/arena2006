@@ -11,6 +11,7 @@ public partial class RemotePlayerLabels : Node3D
 	private Dictionary<int, Label3D> _labels = new Dictionary<int, Label3D>();
 	private Node3D _remotePlayersContainer;
 	private Node3D _remoteFootPlayersContainer;
+	private RemoteVehicleManager _vehicleManager;
 
 	public override void _Ready()
 	{
@@ -29,6 +30,9 @@ public partial class RemotePlayerLabels : Node3D
 			GD.PushWarning("RemotePlayerLabels: RemotePlayers node not found, labels won't work");
 			return;
 		}
+
+		_vehicleManager = _remotePlayersContainer as RemoteVehicleManager;
+		_vehicleManager ??= _remotePlayersContainer?.GetNodeOrNull<RemoteVehicleManager>(".");
 
 		_networkController.PlayerStateUpdated += OnPlayerStateUpdated;
 		_networkController.PlayerDisconnected += OnPlayerDisconnected;
@@ -96,7 +100,7 @@ public partial class RemotePlayerLabels : Node3D
 		}
 		else
 		{
-			target = _remotePlayersContainer?.GetNodeOrNull<Node3D>($"RemotePlayer_{playerId}");
+			target = _vehicleManager?.GetVehicleNodeForPlayer(playerId);
 		}
 
 		if (target == null)

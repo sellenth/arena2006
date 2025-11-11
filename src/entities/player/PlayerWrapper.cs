@@ -2,35 +2,24 @@ using Godot;
 
 public partial class PlayerWrapper : Node3D
 {
-	[Export] public NodePath CarPath { get; set; }
 	[Export] public NodePath FootPath { get; set; }
-	[Export] public NodePath CarCameraPath { get; set; }
-	[Export] public bool StartInVehicle { get; set; } = true;
 
-	private RaycastCar _car;
 	private FootPlayerController _foot;
-	private Camera3D _carCamera;
 	private NetworkController _network;
-	private PlayerMode _currentMode = PlayerMode.Vehicle;
+	private PlayerMode _currentMode = PlayerMode.Foot;
 
 	public override void _Ready()
 	{
-		_car = GetNodeOrNull<RaycastCar>(CarPath);
 		_foot = GetNodeOrNull<FootPlayerController>(FootPath);
-		_carCamera = GetNodeOrNull<Camera3D>(CarCameraPath);
 		_network = GetNodeOrNull<NetworkController>("/root/NetworkController");
 
 		if (_network != null && !_network.IsClient)
 		{
 			_foot?.SetWorldActive(false);
-			if (_carCamera != null)
-				_carCamera.Current = false;
 			SetProcess(false);
 			SetPhysicsProcess(false);
 			return;
 		}
-
-		_currentMode = StartInVehicle ? PlayerMode.Vehicle : PlayerMode.Foot;
 
 		if (_network != null)
 		{
@@ -38,7 +27,7 @@ public partial class PlayerWrapper : Node3D
 			_network.ClientModeChanged += OnClientModeChanged;
 		}
 
-		ApplyMode(_currentMode, true);
+		ApplyMode(_currentMode);
 		RandomizeLocalFootColor();
 	}
 
@@ -53,10 +42,10 @@ public partial class PlayerWrapper : Node3D
 	private void OnClientModeChanged(PlayerMode mode)
 	{
 		_currentMode = mode;
-		ApplyMode(mode, false);
+		ApplyMode(mode);
 	}
 
-	private void ApplyMode(PlayerMode mode, bool immediate)
+	private void ApplyMode(PlayerMode mode)
 	{
 		if (_foot == null)
 			return;
@@ -64,11 +53,6 @@ public partial class PlayerWrapper : Node3D
 		var isFoot = mode == PlayerMode.Foot;
 		_foot.SetWorldActive(isFoot);
 		_foot.SetCameraActive(isFoot);
-
-		if (_carCamera != null)
-		{
-			_carCamera.Current = !isFoot;
-		}
 	}
 
 	private void RandomizeLocalFootColor()

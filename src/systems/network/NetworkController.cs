@@ -12,6 +12,8 @@ public partial class NetworkController : Node
 
 	[Signal] public delegate void PlayerStateUpdatedEventHandler(int playerId, PlayerStateSnapshot snapshot);
 	[Signal] public delegate void PlayerDisconnectedEventHandler(int playerId);
+	[Signal] public delegate void VehicleStateUpdatedEventHandler(int vehicleId, VehicleStateSnapshot snapshot);
+	[Signal] public delegate void VehicleDespawnedEventHandler(int vehicleId);
 
 	private partial class PeerInfo : GodotObject
 	{
@@ -22,11 +24,10 @@ public partial class NetworkController : Node
 		public CarSnapshot LastCarSnapshot { get; set; }
 		public FootSnapshot LastFootSnapshot { get; set; }
 		public long LastSeenMsec { get; set; }
-		public RaycastCar Car { get; set; }
 		public FootPlayerController Foot { get; set; }
-		public PlayerMode Mode { get; set; } = PlayerMode.Vehicle;
-		public VehicleSeat DriverSeat { get; set; }
+		public PlayerMode Mode { get; set; } = PlayerMode.Foot;
 		public Transform3D FootRestTransform { get; set; } = Transform3D.Identity;
+		public int ControlledVehicleId { get; set; }
 
 		public PeerInfo(int peerId, PacketPeerUdp peerRef)
 		{
@@ -39,6 +40,17 @@ public partial class NetworkController : Node
 		{
 			LastSeenMsec = (long)Time.GetTicksMsec();
 		}
+	}
+
+	private partial class VehicleInfo : GodotObject
+	{
+		public int Id { get; set; }
+		public RaycastCar Car { get; set; }
+		public VehicleSeat DriverSeat { get; set; }
+		public int OccupantPeerId { get; set; }
+		public VehicleStateSnapshot LastSnapshot { get; set; }
+
+		public ulong InstanceId => Car?.GetInstanceId() ?? 0;
 	}
 
 	private NetworkRole _role = NetworkRole.None;
@@ -56,14 +68,21 @@ public partial class NetworkController : Node
 	private CarInputState _clientInput = new CarInputState();
 	private FootInputState _clientFootInput = new FootInputState();
 	private int _clientId = 0;
+	private int _clientVehicleId = 0;
 	private Godot.Collections.Dictionary<int, PlayerStateSnapshot> _remotePlayerSnapshots = new Godot.Collections.Dictionary<int, PlayerStateSnapshot>();
-	public PlayerMode CurrentClientMode { get; private set; } = PlayerMode.Vehicle;
+	public PlayerMode CurrentClientMode { get; private set; } = PlayerMode.Foot;
 	public event Action<PlayerMode> ClientModeChanged;
+	public event Action<RaycastCar> LocalCarChanged;
 	public bool IsServer => _role == NetworkRole.Server;
 	public bool IsClient => _role == NetworkRole.Client;
+	public int ClientPeerId => _clientId;
+	public RaycastCar LocalCar => _car;
 
-	private PackedScene _playerCarScene;
 	private PackedScene _footPlayerScene;
+	private readonly System.Collections.Generic.Dictionary<int, VehicleInfo> _serverVehicles = new System.Collections.Generic.Dictionary<int, VehicleInfo>();
+	private readonly System.Collections.Generic.Dictionary<ulong, int> _vehicleIdByInstance = new System.Collections.Generic.Dictionary<ulong, int>();
+	private readonly System.Collections.Generic.List<VehicleStateSnapshot> _vehicleSnapshotBuffer = new System.Collections.Generic.List<VehicleStateSnapshot>();
+	private int _nextVehicleId = 1;
 	private bool _respawnPointsCached = false;
 	private bool _hasFallbackSpawn = false;
 	private Transform3D _fallbackSpawnTransform = Transform3D.Identity;
@@ -72,7 +91,6 @@ public partial class NetworkController : Node
 
 	public override void _Ready()
 	{
-		_playerCarScene = GD.Load<PackedScene>("res://src/entities/vehicle/car/player_car.tscn");
 		_footPlayerScene = GD.Load<PackedScene>("res://src/entities/player/foot/foot_player.tscn");
 		Engine.PhysicsTicksPerSecond = 60;
 		_role = CmdLineArgsManager.GetNetworkRole();
@@ -91,15 +109,47 @@ public partial class NetworkController : Node
 		SetPhysicsProcess(_role != NetworkRole.None);
 	}
 
-	public void RegisterCar(RaycastCar car)
+	private void UpdateLocalCarReference(RaycastCar car)
 	{
-		GD.Print($"NetworkController: RegisterCar called, role={_role}, car={car?.Name ?? "null"}");
+		if (_car == car)
+			return;
+
 		_car = car;
+		LocalCarChanged?.Invoke(_car);
+	}
+
+	public void RegisterLocalPlayerCar(RaycastCar car)
+	{
+		if (car == null)
+			return;
+
+		GD.Print($"NetworkController: RegisterLocalPlayerCar role={_role}, car={car.Name}");
+		UpdateLocalCarReference(car);
 		if (_role == NetworkRole.Client)
 		{
-			GD.Print("NetworkController: Client car registered, applying input");
+			_car?.ConfigureForLocalDriver(false);
 			ApplyClientInputToCar();
 		}
+	}
+
+	public void RegisterAuthoritativeVehicle(RaycastCar car)
+	{
+		if (_role != NetworkRole.Server || car == null)
+			return;
+
+		var id = _nextVehicleId++;
+		var info = new VehicleInfo
+		{
+			Id = id,
+			Car = car,
+			DriverSeat = FindDriverSeat(car),
+			OccupantPeerId = 0
+		};
+
+		_serverVehicles[id] = info;
+		_vehicleIdByInstance[car.GetInstanceId()] = id;
+		car.TreeExiting += () => OnServerVehicleExiting(id);
+		GD.Print($"NetworkController: Server vehicle registered id={id} name={car.Name}");
 	}
 
 	public void RegisterFoot(FootPlayerController foot)
@@ -112,6 +162,32 @@ public partial class NetworkController : Node
 			foot.SetCameraActive(CurrentClientMode == PlayerMode.Foot);
 			ApplyClientInputToFoot();
 		}
+	}
+
+	public void AttachLocalVehicle(int vehicleId, RaycastCar car)
+	{
+		if (!IsClient || car == null)
+			return;
+
+		_clientVehicleId = vehicleId;
+		UpdateLocalCarReference(car);
+		_car?.ConfigureForLocalDriver(true);
+		GD.Print($"NetworkController: Local client now controls vehicle {vehicleId}");
+	}
+
+	public void DetachLocalVehicle(int vehicleId, RaycastCar car)
+	{
+		if (!IsClient)
+			return;
+
+		if (_clientVehicleId == vehicleId && _car != null && car == _car)
+		{
+			_car.ConfigureForLocalDriver(false);
+			UpdateLocalCarReference(null);
+		}
+
+		if (_clientVehicleId == vehicleId)
+			_clientVehicleId = 0;
 	}
 
 
@@ -151,7 +227,7 @@ public partial class NetworkController : Node
 		{
 			_clientId = 0;
 			_remotePlayerSnapshots.Clear();
-			CurrentClientMode = PlayerMode.Vehicle;
+			CurrentClientMode = PlayerMode.Foot;
 			GD.Print($"Client connecting to {clientIp}:{DefaultPort}");
 			ApplyClientInputToCar();
 		}
@@ -205,6 +281,7 @@ public partial class NetworkController : Node
 		_tick++;
 		UpdateServerPlayers();
 		CheckPeerTimeouts();
+		BroadcastVehicleStates();
 	}
 
 	private void HandleServerPacket(int peerId, byte[] packet)
@@ -241,15 +318,28 @@ public partial class NetworkController : Node
 			switch (info.Mode)
 			{
 				case PlayerMode.Vehicle:
-					if (info.Car != null)
+					var vehicle = GetVehicleInfo(info.ControlledVehicleId);
+					if (info.CarInputState.VehicleId != info.ControlledVehicleId)
+						info.CarInputState.VehicleId = info.ControlledVehicleId;
+					if (vehicle?.Car != null)
 					{
-						info.Car.SetInputState(info.CarInputState);
+						vehicle.Car.SetInputState(info.CarInputState);
 						if (info.CarInputState.Interact)
 						{
 							TryExitVehicle(info);
 							info.CarInputState.Interact = false;
 						}
+						if (info.CarInputState.Respawn)
+						{
+							vehicle.Car.Respawn();
+							info.CarInputState.Respawn = false;
+						}
 					}
+					else
+					{
+						info.Mode = PlayerMode.Foot;
+					}
+
 					if (info.Foot != null)
 					{
 						info.Foot.SetWorldActive(false);
@@ -276,7 +366,8 @@ public partial class NetworkController : Node
 			if (!_peers.TryGetValue(peerId, out var info) || info == null)
 				continue;
 
-			var carSnapshot = info.Car?.CaptureSnapshot(_tick);
+			var vehicleInfo = GetVehicleInfo(info.ControlledVehicleId);
+			var carSnapshot = vehicleInfo?.Car?.CaptureSnapshot(_tick);
 			var footSnapshot = info.Foot?.CaptureSnapshot(_tick);
 			info.LastCarSnapshot = carSnapshot;
 			info.LastFootSnapshot = footSnapshot;
@@ -285,6 +376,7 @@ public partial class NetworkController : Node
 			{
 				Tick = _tick,
 				Mode = info.Mode,
+				VehicleId = info.ControlledVehicleId,
 				CarSnapshot = carSnapshot,
 				FootSnapshot = footSnapshot
 			};
@@ -294,31 +386,24 @@ public partial class NetworkController : Node
 
 	private void EnsureServerEntities(int peerId, PeerInfo info)
 	{
-		if (info.Car == null)
-		{
-			info.Car = SpawnServerCar(peerId);
-			info.DriverSeat = FindDriverSeat(info.Car);
-		}
 		if (info.Foot == null)
 		{
-			info.Foot = SpawnServerFoot(peerId, info.Car);
+			info.Foot = SpawnServerFoot(peerId, null);
 		}
 	}
 
 	private bool TryEnterVehicle(PeerInfo info)
 	{
-		if (info == null || info.Car == null || info.Foot == null)
+		if (info == null || info.Foot == null)
 			return false;
 
-		var seat = info.DriverSeat ?? FindDriverSeat(info.Car);
-		if (seat == null)
-			return false;
-
-		var distance = info.Foot.GlobalPosition.DistanceTo(seat.GlobalTransform.Origin);
-		if (distance > seat.InteractionRadius)
+		var vehicle = FindAvailableVehicle(info.Foot.GlobalTransform.Origin, out var seat);
+		if (vehicle == null || seat == null)
 			return false;
 
 		info.FootRestTransform = info.Foot.GlobalTransform;
+		info.ControlledVehicleId = vehicle.Id;
+		vehicle.OccupantPeerId = info.Id;
 		info.Mode = PlayerMode.Vehicle;
 		info.Foot.SetWorldActive(false);
 		return true;
@@ -326,22 +411,28 @@ public partial class NetworkController : Node
 
 	private bool TryExitVehicle(PeerInfo info)
 	{
-		if (info == null || info.Car == null || info.Foot == null)
+		if (info == null || info.Foot == null)
 			return false;
 
-		var exitTransform = GetSeatExitTransform(info);
+		var vehicle = GetVehicleInfo(info.ControlledVehicleId);
+		if (vehicle?.Car == null)
+			return false;
+
+		var exitTransform = GetSeatExitTransform(vehicle);
 		info.Mode = PlayerMode.Foot;
+		info.ControlledVehicleId = 0;
+		vehicle.OccupantPeerId = 0;
 		info.Foot.TeleportTo(exitTransform);
-		var yaw = info.Car.GlobalTransform.Basis.GetEuler().Y;
+		var yaw = vehicle.Car.GlobalTransform.Basis.GetEuler().Y;
 		info.Foot.SetYawPitch(yaw, 0f);
 		info.Foot.SetWorldActive(true);
 		return true;
 	}
 
-	private Transform3D GetSeatExitTransform(PeerInfo info)
+	private Transform3D GetSeatExitTransform(VehicleInfo vehicle)
 	{
-		var carTransform = info.Car?.GlobalTransform ?? Transform3D.Identity;
-		var seat = info.DriverSeat ?? FindDriverSeat(info.Car);
+		var carTransform = vehicle.Car?.GlobalTransform ?? Transform3D.Identity;
+		var seat = vehicle.DriverSeat;
 		if (seat != null)
 		{
 			var exit = seat.GetExitPosition();
@@ -374,6 +465,43 @@ public partial class NetworkController : Node
 		return null;
 	}
 
+	private VehicleInfo GetVehicleInfo(int vehicleId)
+	{
+		if (vehicleId == 0)
+			return null;
+
+		return _serverVehicles.TryGetValue(vehicleId, out var info) ? info : null;
+	}
+
+	private VehicleInfo FindAvailableVehicle(Vector3 position, out VehicleSeat seat)
+	{
+		seat = null;
+		VehicleInfo bestVehicle = null;
+		var bestDistance = float.MaxValue;
+
+		foreach (var vehicle in _serverVehicles.Values)
+		{
+			var candidateSeat = vehicle.DriverSeat;
+			if (candidateSeat == null)
+				continue;
+			if (vehicle.OccupantPeerId != 0)
+				continue;
+
+			var distance = candidateSeat.GetSeatPosition().DistanceTo(position);
+			if (distance > candidateSeat.InteractionRadius)
+				continue;
+
+			if (distance < bestDistance)
+			{
+				bestDistance = distance;
+				bestVehicle = vehicle;
+				seat = candidateSeat;
+			}
+		}
+
+		return bestVehicle;
+	}
+
 	private void ProcessClient()
 	{
 		_tick++;
@@ -381,6 +509,9 @@ public partial class NetworkController : Node
 		{
 			case PlayerMode.Vehicle:
 			{
+				if (_clientVehicleId == 0)
+					break;
+
 				var localInput = CollectLocalCarInput();
 				localInput.Tick = _tick;
 				_clientInput.CopyFrom(localInput);
@@ -421,6 +552,7 @@ public partial class NetworkController : Node
 		state.Brake = Input.IsActionPressed("brake");
 		state.Respawn = Input.IsKeyPressed(Key.R);
 		state.Interact = Input.IsActionJustPressed("interact");
+		state.VehicleId = _clientVehicleId;
 		
 		/* VERBOSE PRINT
 		if (Mathf.Abs(state.Throttle) > 0.1f || Mathf.Abs(state.Steer) > 0.1f || state.Handbrake || state.Brake || state.Respawn)
@@ -485,6 +617,19 @@ public partial class NetworkController : Node
 						EmitSignal(SignalName.PlayerDisconnected, removedId);
 					}
 					break;
+				case NetworkSerializer.PacketVehicleState:
+					var vehicleStates = NetworkSerializer.DeserializeVehicleStates(packet);
+					if (vehicleStates != null)
+					{
+						foreach (var snapshot in vehicleStates)
+							EmitSignal(SignalName.VehicleStateUpdated, snapshot.VehicleId, snapshot);
+					}
+					break;
+				case NetworkSerializer.PacketVehicleDespawn:
+					var removedVehicleId = NetworkSerializer.DeserializeVehicleDespawn(packet);
+					if (removedVehicleId != 0)
+						EmitSignal(SignalName.VehicleDespawned, removedVehicleId);
+					break;
 			}
 		}
 	}
@@ -496,14 +641,13 @@ public partial class NetworkController : Node
 		_peers[peerId] = info;
 		if (_role == NetworkRole.Server)
 		{
-			info.Car = SpawnServerCar(peerId);
-			info.DriverSeat = FindDriverSeat(info.Car);
-			info.Foot = SpawnServerFoot(peerId, info.Car);
+			info.Foot = SpawnServerFoot(peerId, null);
 		}
 		GD.Print($"Client connected from {newPeer.GetPacketIP()}:{newPeer.GetPacketPort()} assigned id={peerId}");
 		GD.Print($"TEST_EVENT: CLIENT_CONNECTED id={peerId}");
 		newPeer.PutPacket(NetworkSerializer.SerializeWelcome(peerId));
 		SendExistingPlayerStates(peerId);
+		SendExistingVehicleStates(peerId);
 	}
 
 	private void SendExistingPlayerStates(int targetPeerId)
@@ -529,18 +673,27 @@ public partial class NetworkController : Node
 		}
 	}
 
-	private RaycastCar SpawnServerCar(int peerId)
+	private void SendExistingVehicleStates(int targetPeerId)
 	{
-		if (_serverCarParent == null) return null;
-		var car = _playerCarScene.Instantiate<RaycastCar>();
-		if (car == null) return null;
-		car.Name = $"ServerCar_{peerId}";
-		car.ShowDebug = false;
-		_serverCarParent.AddChild(car);
-		car.GlobalTransform = GetSpawnTransform(peerId);
-		CleanupServerOnlyNodes(car);
-		GD.Print($"TEST_EVENT: SERVER_CAR_SPAWNED player_id={peerId}");
-		return car;
+		if (!_peers.ContainsKey(targetPeerId))
+			return;
+
+		if (_serverVehicles.Count == 0)
+			return;
+
+		var list = new System.Collections.Generic.List<VehicleStateSnapshot>();
+		foreach (var vehicle in _serverVehicles.Values)
+		{
+			if (vehicle.LastSnapshot != null)
+				list.Add(vehicle.LastSnapshot);
+		}
+
+		if (list.Count == 0)
+			return;
+
+		var packet = NetworkSerializer.SerializeVehicleStates(list);
+		var target = _peers[targetPeerId];
+		target?.Peer.PutPacket(packet);
 	}
 
 	private FootPlayerController SpawnServerFoot(int peerId, RaycastCar ownerCar)
@@ -559,7 +712,7 @@ public partial class NetworkController : Node
 		foot.SetWorldActive(false);
 		_serverFootParent.AddChild(foot);
 
-		var transform = ownerCar?.GlobalTransform ?? Transform3D.Identity;
+		var transform = ownerCar?.GlobalTransform ?? GetSpawnTransform(peerId);
 		transform.Origin += Vector3.Up * 1.2f;
 		foot.TeleportTo(transform);
 		return foot;
@@ -570,9 +723,9 @@ public partial class NetworkController : Node
 		EnsureRespawnPointsCached();
 		var manager = RespawnManager.Instance;
 		var contextNode = _serverCarParent as Node3D ?? GetTree().CurrentScene as Node3D;
-		var otherPositions = _peers.Values
-			.Where(info => info != null && info.Car != null && info.Id != peerId)
-			.Select(info => info.Car.GlobalTransform.Origin)
+		var otherPositions = _serverVehicles.Values
+			.Where(vehicle => vehicle?.Car != null)
+			.Select(vehicle => vehicle.Car.GlobalTransform.Origin)
 			.ToList();
 
 		var query = RespawnManager.SpawnQuery.Create(contextNode);
@@ -663,24 +816,8 @@ public partial class NetworkController : Node
 				break;
 		}
 
+		state.VehicleId = _clientVehicleId;
 		return state;
-	}
-
-	private void CleanupServerOnlyNodes(Node car)
-	{
-		// Remove camera nodes from server cars
-		// These are only needed for client-side player cars
-		foreach (var child in car.GetChildren())
-		{
-			if (child is Camera3D)
-			{
-				child.QueueFree();
-			}
-			else if (child.Name.ToString().Contains("CameraPivot") || child.Name.ToString().Contains("Camera"))
-			{
-				CleanupServerOnlyNodes(child);
-			}
-		}
 	}
 
 	private void SendSnapshotToAll(int playerId, PlayerStateSnapshot snapshot)
@@ -689,6 +826,54 @@ public partial class NetworkController : Node
 		foreach (var info in _peers.Values)
 		{
 			info?.Peer.PutPacket(packet);
+		}
+	}
+
+	private void BroadcastVehicleStates()
+	{
+		if (_serverVehicles.Count == 0 || _peers.Count == 0)
+			return;
+
+		_vehicleSnapshotBuffer.Clear();
+		foreach (var vehicle in _serverVehicles.Values)
+		{
+			if (vehicle?.Car == null)
+				continue;
+			var snapshot = new VehicleStateSnapshot
+			{
+				Tick = _tick,
+				VehicleId = vehicle.Id,
+				OccupantPeerId = vehicle.OccupantPeerId,
+				Transform = vehicle.Car.GlobalTransform,
+				LinearVelocity = vehicle.Car.LinearVelocity,
+				AngularVelocity = vehicle.Car.AngularVelocity
+			};
+			vehicle.LastSnapshot = snapshot;
+			_vehicleSnapshotBuffer.Add(snapshot);
+		}
+
+		if (_vehicleSnapshotBuffer.Count == 0)
+			return;
+
+		var packet = NetworkSerializer.SerializeVehicleStates(_vehicleSnapshotBuffer);
+		foreach (var peer in _peers.Values)
+			peer?.Peer.PutPacket(packet);
+	}
+
+	private void OnServerVehicleExiting(int vehicleId)
+	{
+		if (!_serverVehicles.TryGetValue(vehicleId, out var info))
+			return;
+
+		_serverVehicles.Remove(vehicleId);
+		if (info.InstanceId != 0)
+			_vehicleIdByInstance.Remove(info.InstanceId);
+
+		if (_peers.Count > 0)
+		{
+			var packet = NetworkSerializer.SerializeVehicleDespawn(vehicleId);
+			foreach (var peer in _peers.Values)
+				peer?.Peer.PutPacket(packet);
 		}
 	}
 
@@ -712,8 +897,12 @@ public partial class NetworkController : Node
 		if (!_peers.ContainsKey(peerId)) return;
 		var info = _peers[peerId];
 		_peers.Remove(peerId);
-		if (info.Car != null && GodotObject.IsInstanceValid(info.Car))
-			info.Car.QueueFree();
+		if (info.ControlledVehicleId != 0)
+		{
+			var vehicle = GetVehicleInfo(info.ControlledVehicleId);
+			if (vehicle != null && vehicle.OccupantPeerId == peerId)
+				vehicle.OccupantPeerId = 0;
+		}
 		if (info.Foot != null && GodotObject.IsInstanceValid(info.Foot))
 			info.Foot.QueueFree();
 		if (notifyClients && _peers.Count > 0)
@@ -731,6 +920,8 @@ public partial class NetworkController : Node
 	{
 		if (snapshot == null)
 			return;
+
+		_clientVehicleId = snapshot.VehicleId;
 
 		if (snapshot.CarSnapshot != null)
 		{

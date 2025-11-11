@@ -3,6 +3,7 @@ using Godot;
 public partial class DebugUiController : Node
 {
 	private RaycastCar _car;
+	private RaycastCar _fallbackCar;
 	private FootPlayerController _foot;
 	private NetworkController _network;
 	
@@ -21,8 +22,15 @@ public partial class DebugUiController : Node
 	public override void _Ready()
 	{
 		_car = GetNodeOrNull<RaycastCar>("../Car");
+		_fallbackCar = _car;
 		_foot = GetNodeOrNull<FootPlayerController>("../FootPlayer");
 		_network = GetNodeOrNull<NetworkController>("/root/NetworkController");
+
+		if (_network != null)
+		{
+			_network.LocalCarChanged += OnLocalCarChanged;
+			OnLocalCarChanged(_network.LocalCar);
+		}
 		
 		var canvasLayer = GetNode<CanvasLayer>("CanvasLayer");
 		
@@ -37,6 +45,12 @@ public partial class DebugUiController : Node
 		_motorRatio = canvasLayer.GetNode<ProgressBar>("RIGHT_TOP/MotorRatio");
 		_accelLabel = canvasLayer.GetNode<Label>("RIGHT_TOP/AccelLabel");
 		_turnRatio = canvasLayer.GetNode<ProgressBar>("RIGHT_TOP/TurnRatio");
+	}
+
+	public override void _ExitTree()
+	{
+		if (_network != null)
+			_network.LocalCarChanged -= OnLocalCarChanged;
 	}
 
 	public override void _Process(double delta)
@@ -84,5 +98,10 @@ public partial class DebugUiController : Node
 		{
 			_gameModeLabel.Text = "Game Mode: None";
 		}
+	}
+
+	private void OnLocalCarChanged(RaycastCar car)
+	{
+		_car = car ?? _fallbackCar;
 	}
 }
