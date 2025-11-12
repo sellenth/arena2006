@@ -422,7 +422,7 @@ public partial class NetworkController : Node
 		info.Mode = PlayerMode.Foot;
 		info.ControlledVehicleId = 0;
 		vehicle.OccupantPeerId = 0;
-		info.PlayerCharacter.TeleportTo(exitTransform);
+		info.PlayerCharacter.TeleportTo(new Transform3D( info.PlayerCharacter.GlobalBasis, exitTransform.Origin));
 		var yaw = vehicle.Car.GlobalTransform.Basis.GetEuler().Y;
 		info.PlayerCharacter.SetYawPitch(yaw, 0f);
 		info.PlayerCharacter.SetWorldActive(true);
