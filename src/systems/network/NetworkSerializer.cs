@@ -11,7 +11,7 @@ public static partial class NetworkSerializer
 	public const byte PacketVehicleDespawn = 7;
 
 	public const int CarSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
-	public const int PlayerSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
+	public const int PlayerSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8 + 4;
 	public const int VehicleStatePayloadBytes = 4 + 4 + 4 + 12 + 16 + 12 + 12;
 
 	public static byte[] SerializeCarInput(CarInputState state)
@@ -303,6 +303,8 @@ public static partial class NetworkSerializer
 		buffer.PutFloat(vel.Z);
 		buffer.PutFloat(snapshot.ViewYaw);
 		buffer.PutFloat(snapshot.ViewPitch);
+		var ackTick = snapshot.LastProcessedInputTick >= 0 ? (uint)snapshot.LastProcessedInputTick : uint.MaxValue;
+		buffer.PutU32(ackTick);
 	}
 
 	private static PlayerSnapshot ReadPlayerSnapshot(StreamPeerBuffer buffer)
@@ -322,6 +324,8 @@ public static partial class NetworkSerializer
 		snapshot.Velocity = new Vector3(buffer.GetFloat(), buffer.GetFloat(), buffer.GetFloat());
 		snapshot.ViewYaw = buffer.GetFloat();
 		snapshot.ViewPitch = buffer.GetFloat();
+		var ackTick = buffer.GetU32();
+		snapshot.LastProcessedInputTick = ackTick == uint.MaxValue ? -1 : (int)ackTick;
 		return snapshot;
 	}
 

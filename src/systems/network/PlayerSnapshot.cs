@@ -7,4 +7,5 @@ public partial class PlayerSnapshot : RefCounted
 	public Vector3 Velocity { get; set; } = Vector3.Zero;
 	public float ViewYaw { get; set; }
 	public float ViewPitch { get; set; }
+	public int LastProcessedInputTick { get; set; } = -1;
 }

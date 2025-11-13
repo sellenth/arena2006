@@ -369,6 +369,10 @@ public partial class NetworkController : Node
 			var vehicleInfo = GetVehicleInfo(info.ControlledVehicleId);
 			var carSnapshot = vehicleInfo?.Car?.CaptureSnapshot(_tick);
 			var playerSnapshot = info.PlayerCharacter?.CaptureSnapshot(_tick);
+			if (playerSnapshot != null)
+			{
+				playerSnapshot.LastProcessedInputTick = info.PlayerInputState?.Tick ?? -1;
+			}
 			info.LastCarSnapshot = carSnapshot;
 			info.LastPlayerSnapshot = playerSnapshot;
 

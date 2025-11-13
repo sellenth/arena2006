@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics;
 using Godot;
 
@@ -20,6 +21,16 @@ public partial class PlayerCharacter : CharacterBody3D
 	private const float MinPitch = -1.2f;
 	private const float MaxPitch = 1.2f;
 
+	private struct PredictedCommand
+	{
+		public int Tick;
+		public Vector2 MoveInput;
+		public bool Jump;
+		public float ViewYaw;
+		public float ViewPitch;
+		public float Delta;
+	}
+
 	private Node3D _head;
 	private Camera3D _camera;
 	private MeshInstance3D _mesh;
@@ -37,6 +48,10 @@ public partial class PlayerCharacter : CharacterBody3D
 	private bool _managesMouseMode = false;
 	private float _viewYaw = 0f;
 	private float _viewPitch = 0f;
+	private bool _isLocalClientPlayer = false;
+	private bool _needsReconciliation = false;
+	private const int MaxCommandHistory = 64;
+	private readonly List<PredictedCommand> _commandHistory = new List<PredictedCommand>();
 
 	public PlayerCharacter()
 	{
@@ -71,6 +86,7 @@ public partial class PlayerCharacter : CharacterBody3D
 		}
 
 		_managesMouseMode = AutoRegisterWithNetwork && (_networkController == null || _networkController.IsClient);
+		_isLocalClientPlayer = AutoRegisterWithNetwork && _networkController != null && _networkController.IsClient;
 
 		ApplyColor(_playerColor);
 	}
@@ -83,6 +99,10 @@ public partial class PlayerCharacter : CharacterBody3D
 		var deltaFloat = (float)delta;
 		if (_simulateLocally)
 		{
+			if (_isLocalClientPlayer)
+			{
+				RecordPredictedCommandSample(deltaFloat);
+			}
 			SimulateMovement(deltaFloat);
 		}
 
@@ -144,6 +164,10 @@ public partial class PlayerCharacter : CharacterBody3D
 	public void QueueSnapshot(PlayerSnapshot snapshot)
 	{
 		_pendingSnapshot = snapshot;
+		if (_isLocalClientPlayer)
+		{
+			_needsReconciliation = snapshot != null;
+		}
 	}
 
 	public void ConfigureAuthority(bool isAuthority)
@@ -174,6 +198,12 @@ public partial class PlayerCharacter : CharacterBody3D
 			_collisionShape.Disabled = !active;
 		}
 		SetPhysicsProcess(active);
+		if (!active)
+		{
+			_pendingSnapshot = null;
+			_needsReconciliation = false;
+			ClearPredictionHistory();
+		}
 	}
 
 	public void SetPlayerColor(Color color)
@@ -193,6 +223,10 @@ public partial class PlayerCharacter : CharacterBody3D
 	{
 		GlobalTransform = transform;
 		Velocity = Vector3.Zero;
+		if (_isLocalClientPlayer)
+		{
+			ClearPredictionHistory();
+		}
 	}
 
 	private void ApplyColor(Color color)
@@ -271,6 +305,15 @@ public partial class PlayerCharacter : CharacterBody3D
 		if (_pendingSnapshot == null)
 			return;
 
+		if (_isLocalClientPlayer && _needsReconciliation)
+		{
+			var snapshot = _pendingSnapshot;
+			_pendingSnapshot = null;
+			_needsReconciliation = false;
+			ReconcilePrediction(snapshot);
+			return;
+		}
+
 		var target = _pendingSnapshot;
 		var blend = Mathf.Clamp(delta * 10f, 0f, 1f);
 		GlobalTransform = GlobalTransform.InterpolateWith(target.Transform, blend);
@@ -283,6 +326,88 @@ public partial class PlayerCharacter : CharacterBody3D
 		{
 			_pendingSnapshot = null;
 		}
+	}
+
+	private void RecordPredictedCommandSample(float delta)
+	{
+		if (!_isLocalClientPlayer)
+			return;
+
+		if (_inputState.Tick <= 0)
+			return;
+
+		var command = new PredictedCommand
+		{
+			Tick = _inputState.Tick,
+			MoveInput = _inputState.MoveInput,
+			Jump = _inputState.Jump,
+			ViewYaw = _viewYaw,
+			ViewPitch = _viewPitch,
+			Delta = delta
+		};
+
+		_commandHistory.Add(command);
+		if (_commandHistory.Count > MaxCommandHistory)
+		{
+			_commandHistory.RemoveAt(0);
+		}
+	}
+
+	private void ReconcilePrediction(PlayerSnapshot snapshot)
+	{
+		if (snapshot == null)
+			return;
+
+		ApplyAuthoritativeSnapshot(snapshot);
+
+		if (!_isLocalClientPlayer)
+			return;
+
+		var ackTick = snapshot.LastProcessedInputTick;
+		if (ackTick < 0)
+		{
+			ClearPredictionHistory();
+			return;
+		}
+
+		DiscardAckedCommands(ackTick);
+
+		for (var i = 0; i < _commandHistory.Count; i++)
+		{
+			var command = _commandHistory[i];
+			_inputState.Tick = command.Tick;
+			_inputState.MoveInput = command.MoveInput;
+			_inputState.Jump = command.Jump;
+			_viewYaw = command.ViewYaw;
+			_viewPitch = Mathf.Clamp(command.ViewPitch, MinPitch, MaxPitch);
+			UpdateViewNodes();
+			SimulateMovement(command.Delta);
+		}
+	}
+
+	private void ApplyAuthoritativeSnapshot(PlayerSnapshot snapshot)
+	{
+		GlobalTransform = snapshot.Transform;
+		Velocity = snapshot.Velocity;
+		SetYawPitch(snapshot.ViewYaw, snapshot.ViewPitch);
+	}
+
+	private void DiscardAckedCommands(int ackTick)
+	{
+		if (_commandHistory.Count == 0)
+			return;
+
+		var removeCount = 0;
+		while (removeCount < _commandHistory.Count && _commandHistory[removeCount].Tick <= ackTick)
+			removeCount++;
+
+		if (removeCount > 0)
+			_commandHistory.RemoveRange(0, removeCount);
+	}
+
+	private void ClearPredictionHistory()
+	{
+		_commandHistory.Clear();
 	}
 
 	private void ApplyPendingLookInput()
