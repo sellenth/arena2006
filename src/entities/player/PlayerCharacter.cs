@@ -52,6 +52,7 @@ public partial class PlayerCharacter : CharacterBody3D
 	private bool _needsReconciliation = false;
 	private const int MaxCommandHistory = 64;
 	private readonly List<PredictedCommand> _commandHistory = new List<PredictedCommand>();
+	private int _lastRecordedCommandTick = -1;
 
 	public PlayerCharacter()
 	{
@@ -97,6 +98,9 @@ public partial class PlayerCharacter : CharacterBody3D
 			return;
 
 		var deltaFloat = (float)delta;
+
+		ApplySnapshotCorrection(deltaFloat);
+
 		if (_simulateLocally)
 		{
 			if (_isLocalClientPlayer)
@@ -105,8 +109,6 @@ public partial class PlayerCharacter : CharacterBody3D
 			}
 			SimulateMovement(deltaFloat);
 		}
-
-		ApplySnapshotCorrection(deltaFloat);
 
 		ApplyPendingLookInput();
 	}
@@ -336,6 +338,9 @@ public partial class PlayerCharacter : CharacterBody3D
 		if (_inputState.Tick <= 0)
 			return;
 
+		if (_inputState.Tick <= _lastRecordedCommandTick)
+			return;
+
 		var command = new PredictedCommand
 		{
 			Tick = _inputState.Tick,
@@ -347,6 +352,7 @@ public partial class PlayerCharacter : CharacterBody3D
 		};
 
 		_commandHistory.Add(command);
+		_lastRecordedCommandTick = command.Tick;
 		if (_commandHistory.Count > MaxCommandHistory)
 		{
 			_commandHistory.RemoveAt(0);
@@ -408,6 +414,7 @@ public partial class PlayerCharacter : CharacterBody3D
 	private void ClearPredictionHistory()
 	{
 		_commandHistory.Clear();
+		_lastRecordedCommandTick = -1;
 	}
 
 	private void ApplyPendingLookInput()
