@@ -5,7 +5,8 @@ public partial class PlayerInputState : RefCounted
 	public int Tick { get; set; }
 	public Vector2 MoveInput { get; set; } = Vector2.Zero;
 	public bool Jump { get; set; }
-	public Vector2 LookDelta { get; set; } = Vector2.Zero;
+	public float ViewYaw { get; set; } = float.NaN;
+	public float ViewPitch { get; set; } = float.NaN;
 	public bool Interact { get; set; }
 
 	public void CopyFrom(PlayerInputState other)
@@ -13,7 +14,8 @@ public partial class PlayerInputState : RefCounted
 		Tick = other.Tick;
 		MoveInput = other.MoveInput;
 		Jump = other.Jump;
-		LookDelta = other.LookDelta;
+		ViewYaw = other.ViewYaw;
+		ViewPitch = other.ViewPitch;
 		Interact = other.Interact;
 	}
 
@@ -22,7 +24,8 @@ public partial class PlayerInputState : RefCounted
 		Tick = 0;
 		MoveInput = Vector2.Zero;
 		Jump = false;
-		LookDelta = Vector2.Zero;
+		ViewYaw = float.NaN;
+		ViewPitch = float.NaN;
 		Interact = false;
 	}
 }
