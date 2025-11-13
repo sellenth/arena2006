@@ -146,6 +146,11 @@ public partial class PlayerCharacter : CharacterBody3D
 		_pendingSnapshot = snapshot;
 	}
 
+	public void ClearPendingSnapshot()
+	{
+		_pendingSnapshot = null;
+	}
+
 	public void ConfigureAuthority(bool isAuthority)
 	{
 		_isAuthority = isAuthority;

@@ -1064,6 +1064,8 @@ private readonly struct PlayerPredictionSample
 		CurrentClientMode = newMode;
 		_playerPredictionHistory.Clear();
 		_lastAcknowledgedPlayerInputTick = 0;
+		if (newMode == PlayerMode.Foot)
+			_playerCharacter?.ClearPendingSnapshot();
 		ClientModeChanged?.Invoke(newMode);
 	}
 

@@ -16,7 +16,6 @@ radius = 0.25
 
 [node name="PlayerCharacter" type="CharacterBody3D"]
 collision_layer = 0
-wall_min_slide_angle = 2.9146998
 floor_stop_on_slope = false
 floor_block_on_wall = false
 script = ExtResource("1_qj4xw")
