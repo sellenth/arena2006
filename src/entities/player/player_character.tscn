@@ -10,9 +10,9 @@ top_radius = 0.25
 bottom_radius = 0.25
 height = 1.8
 
-[sub_resource type="CylinderShape3D" id="CylinderShape3D_oe2fo"]
-height = 1.8
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_s6pao"]
 radius = 0.25
+height = 1.8
 
 [node name="PlayerCharacter" type="CharacterBody3D"]
 collision_layer = 0
@@ -27,7 +27,7 @@ mesh = SubResource("CylinderMesh_2in2a")
 
 [node name="Collision" type="CollisionShape3D" parent="."]
 transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0.9, 0)
-shape = SubResource("CylinderShape3D_oe2fo")
+shape = SubResource("CapsuleShape3D_s6pao")
 
 [node name="Head" type="Node3D" parent="."]
 transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 2.12948, 0)
