@@ -146,11 +146,6 @@ public partial class PlayerCharacter : CharacterBody3D
 		_pendingSnapshot = snapshot;
 	}
 
-	public void SimulatePredictionStep(float delta)
-	{
-		SimulateMovement(delta);
-	}
-
 	public void ConfigureAuthority(bool isAuthority)
 	{
 		_isAuthority = isAuthority;
@@ -268,6 +263,11 @@ public partial class PlayerCharacter : CharacterBody3D
 			{
 				Velocity = Velocity.Slide(collision.GetNormal());
 			}
+		}
+
+		if (_networkController != null && _networkController.IsClient && _simulateLocally)
+		{
+			_networkController.RecordLocalPlayerPrediction(_inputState.Tick, GlobalTransform, Velocity);
 		}
 	}
 
