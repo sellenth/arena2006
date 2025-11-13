@@ -28,7 +28,6 @@ public partial class PlayerCharacter : CharacterBody3D
 
 	private readonly PlayerInputState _inputState = new PlayerInputState();
 	private PlayerSnapshot _pendingSnapshot;
-	private Vector2 _lookAccumulator = Vector2.Zero;
 	private Vector2 _pendingMouseDelta = Vector2.Zero;
 	private Color _playerColor = Colors.Red;
 	private bool _isAuthority = true;
@@ -89,10 +88,7 @@ public partial class PlayerCharacter : CharacterBody3D
 
 		ApplySnapshotCorrection(deltaFloat);
 
-		if (_head != null)
-		{
-			ApplyLookAccumulator();
-		}
+		ApplyPendingLookInput();
 	}
 
 	public override void _UnhandledInput(InputEvent @event)
@@ -108,21 +104,29 @@ public partial class PlayerCharacter : CharacterBody3D
 
 	public PlayerInputState CollectClientInputState()
 	{
+		ApplyPendingLookInput();
+
 		var state = new PlayerInputState
 		{
 			MoveInput = Input.GetVector("move_left", "move_right", "move_forward", "move_backward"),
 			Jump = Input.IsActionPressed("jump"),
 			Interact = Input.IsActionJustPressed("interact"),
-			LookDelta = _pendingMouseDelta
+			ViewYaw = _viewYaw,
+			ViewPitch = _viewPitch
 		};
-		_pendingMouseDelta = Vector2.Zero;
 		return state;
 	}
 
 	public void SetInputState(PlayerInputState state)
 	{
+		if (state == null)
+			return;
+
 		_inputState.CopyFrom(state);
-		_lookAccumulator += state.LookDelta;
+		if (!float.IsNaN(state.ViewYaw) && !float.IsNaN(state.ViewPitch))
+		{
+			SetYawPitch(state.ViewYaw, state.ViewPitch);
+		}
 	}
 
 	public PlayerSnapshot CaptureSnapshot(int tick)
@@ -281,14 +285,16 @@ public partial class PlayerCharacter : CharacterBody3D
 		}
 	}
 
-	private void ApplyLookAccumulator()
+	private void ApplyPendingLookInput()
 	{
-		if (_lookAccumulator == Vector2.Zero)
+		if (_pendingMouseDelta == Vector2.Zero)
 			return;
 
-		_viewYaw -= _lookAccumulator.X * MouseSensitivity;
-		_viewPitch = Mathf.Clamp(_viewPitch - _lookAccumulator.Y * MouseSensitivity, MinPitch, MaxPitch);
-		_lookAccumulator = Vector2.Zero;
+		var lookDelta = _pendingMouseDelta;
+		_pendingMouseDelta = Vector2.Zero;
+
+		_viewYaw -= lookDelta.X * MouseSensitivity;
+		_viewPitch = Mathf.Clamp(_viewPitch - lookDelta.Y * MouseSensitivity, MinPitch, MaxPitch);
 		UpdateViewNodes();
 	}
 
