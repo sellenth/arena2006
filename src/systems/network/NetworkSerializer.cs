@@ -97,6 +97,7 @@ public static partial class NetworkSerializer
 		buffer.PutU32((uint)playerId);
 		buffer.PutU8((byte)snapshot.Mode);
 		buffer.PutU32((uint)snapshot.VehicleId);
+		buffer.PutU32((uint)snapshot.LastProcessedInputTick);
 		WriteCarSnapshot(buffer, snapshot.CarSnapshot);
 		WritePlayerSnapshot(buffer, snapshot.PlayerSnapshot);
 		return buffer.DataArray;
@@ -119,10 +120,13 @@ public static partial class NetworkSerializer
 		var mode = (PlayerMode)buffer.GetU8();
 		if (buffer.GetAvailableBytes() < 4) return null;
 		var vehicleId = (int)buffer.GetU32();
+		if (buffer.GetAvailableBytes() < 4) return null;
+		var processedInputTick = (int)buffer.GetU32();
 		var snapshot = new PlayerStateSnapshot
 		{
 			Mode = mode,
 			VehicleId = vehicleId,
+			LastProcessedInputTick = processedInputTick,
 			CarSnapshot = ReadCarSnapshot(buffer),
 			PlayerSnapshot = ReadPlayerSnapshot(buffer)
 		};

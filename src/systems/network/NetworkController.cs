@@ -53,6 +53,18 @@ public partial class NetworkController : Node
 		public ulong InstanceId => Car?.GetInstanceId() ?? 0;
 	}
 
+	private readonly struct PendingPlayerInput
+	{
+		public PlayerInputState State { get; }
+		public float Delta { get; }
+
+		public PendingPlayerInput(PlayerInputState state, float delta)
+		{
+			State = state;
+			Delta = delta;
+		}
+	}
+
 	private NetworkRole _role = NetworkRole.None;
 	private RaycastCar _car;
 	private PlayerCharacter _playerCharacter;
@@ -69,6 +81,8 @@ public partial class NetworkController : Node
 	private PlayerInputState _clientPlayerInput = new PlayerInputState();
 	private int _clientId = 0;
 	private int _clientVehicleId = 0;
+	private float _lastClientDelta = 1f / 60f;
+	private int _lastAcknowledgedPlayerInputTick = 0;
 	private Godot.Collections.Dictionary<int, PlayerStateSnapshot> _remotePlayerSnapshots = new Godot.Collections.Dictionary<int, PlayerStateSnapshot>();
 	public PlayerMode CurrentClientMode { get; private set; } = PlayerMode.Foot;
 	public event Action<PlayerMode> ClientModeChanged;
@@ -82,12 +96,16 @@ public partial class NetworkController : Node
 	private readonly System.Collections.Generic.Dictionary<int, VehicleInfo> _serverVehicles = new System.Collections.Generic.Dictionary<int, VehicleInfo>();
 	private readonly System.Collections.Generic.Dictionary<ulong, int> _vehicleIdByInstance = new System.Collections.Generic.Dictionary<ulong, int>();
 	private readonly System.Collections.Generic.List<VehicleStateSnapshot> _vehicleSnapshotBuffer = new System.Collections.Generic.List<VehicleStateSnapshot>();
+	private readonly System.Collections.Generic.List<PendingPlayerInput> _pendingPlayerInputs = new System.Collections.Generic.List<PendingPlayerInput>();
 	private int _nextVehicleId = 1;
 	private bool _respawnPointsCached = false;
 	private bool _hasFallbackSpawn = false;
 	private Transform3D _fallbackSpawnTransform = Transform3D.Identity;
 	private TestInputMode _testInputMode = TestInputMode.None;
 	private int _testInputStartTick = -1;
+	private const int MaxPendingPlayerInputs = 256;
+	private const float PlayerSnapDistance = 1.25f;
+	private const float PlayerSmallCorrectionBlend = 0.25f;
 
 	public override void _Ready()
 	{
@@ -227,6 +245,8 @@ public partial class NetworkController : Node
 		{
 			_clientId = 0;
 			_remotePlayerSnapshots.Clear();
+			_pendingPlayerInputs.Clear();
+			_lastAcknowledgedPlayerInputTick = 0;
 			CurrentClientMode = PlayerMode.Foot;
 			GD.Print($"Client connecting to {clientIp}:{DefaultPort}");
 			ApplyClientInputToCar();
@@ -243,6 +263,11 @@ public partial class NetworkController : Node
 
 	public override void _PhysicsProcess(double delta)
 	{
+		if (_role == NetworkRole.Client)
+		{
+			_lastClientDelta = (float)Math.Max(delta, 0.0001);
+		}
+
 		switch (_role)
 		{
 			case NetworkRole.Server:
@@ -377,6 +402,7 @@ public partial class NetworkController : Node
 				Tick = _tick,
 				Mode = info.Mode,
 				VehicleId = info.ControlledVehicleId,
+				LastProcessedInputTick = info.PlayerInputState?.Tick ?? 0,
 				CarSnapshot = carSnapshot,
 				PlayerSnapshot = playerSnapshot
 			};
@@ -525,6 +551,7 @@ public partial class NetworkController : Node
 				var localInput = CollectLocalPlayerInput();
 				localInput.Tick = _tick;
 				_clientPlayerInput.CopyFrom(localInput);
+				EnqueuePendingPlayerInput(localInput);
 				_playerCharacter?.SetInputState(_clientPlayerInput);
 				if (_clientPeer != null)
 					_clientPeer.PutPacket(NetworkSerializer.SerializePlayerInput(localInput));
@@ -569,6 +596,81 @@ public partial class NetworkController : Node
 
 		var state = _playerCharacter.CollectClientInputState();
 		return state;
+	}
+
+	private void EnqueuePendingPlayerInput(PlayerInputState state)
+	{
+		if (state == null)
+			return;
+
+		var copy = new PlayerInputState();
+		copy.CopyFrom(state);
+		var delta = Math.Max(_lastClientDelta, 0.0001f);
+		_pendingPlayerInputs.Add(new PendingPlayerInput(copy, delta));
+		if (_pendingPlayerInputs.Count > MaxPendingPlayerInputs)
+		{
+			var overflow = _pendingPlayerInputs.Count - MaxPendingPlayerInputs;
+			_pendingPlayerInputs.RemoveRange(0, overflow);
+		}
+	}
+
+	private void RemoveAcknowledgedInputs(int processedTick)
+	{
+		if (_pendingPlayerInputs.Count == 0 || processedTick <= 0)
+			return;
+
+		var removeCount = 0;
+		foreach (var pending in _pendingPlayerInputs)
+		{
+			if (pending.State.Tick <= processedTick)
+				removeCount++;
+			else
+				break;
+		}
+
+		if (removeCount > 0)
+			_pendingPlayerInputs.RemoveRange(0, removeCount);
+	}
+
+	private void ReplayPendingInputs()
+	{
+		if (_pendingPlayerInputs.Count == 0 || _playerCharacter == null)
+			return;
+
+		foreach (var pending in _pendingPlayerInputs)
+		{
+			_playerCharacter.SetInputState(pending.State);
+			_playerCharacter.SimulatePredictionStep(pending.Delta);
+		}
+	}
+
+	private void ReconcileLocalPlayer(PlayerSnapshot serverSnapshot, int processedInputTick)
+	{
+		if (_playerCharacter == null || serverSnapshot == null)
+			return;
+
+		RemoveAcknowledgedInputs(processedInputTick);
+
+		var currentTransform = _playerCharacter.GlobalTransform;
+		var targetTransform = serverSnapshot.Transform;
+		var positionError = currentTransform.Origin.DistanceTo(targetTransform.Origin);
+
+		if (positionError > PlayerSnapDistance)
+		{
+			_playerCharacter.GlobalTransform = targetTransform;
+			_playerCharacter.Velocity = serverSnapshot.Velocity;
+		}
+		else
+		{
+			var blend = PlayerSmallCorrectionBlend;
+			_playerCharacter.GlobalTransform = currentTransform.InterpolateWith(targetTransform, blend);
+			_playerCharacter.Velocity = _playerCharacter.Velocity.Lerp(serverSnapshot.Velocity, blend);
+		}
+
+		_lastAcknowledgedPlayerInputTick = Math.Max(_lastAcknowledgedPlayerInputTick, processedInputTick);
+
+		ReplayPendingInputs();
+		ApplyClientInputToPlayer();
 	}
 
 	private void PollClientPackets()
@@ -666,6 +768,8 @@ public partial class NetworkController : Node
 			{
 				Tick = _tick,
 				Mode = other.Mode,
+				VehicleId = other.ControlledVehicleId,
+				LastProcessedInputTick = other.PlayerInputState?.Tick ?? 0,
 				CarSnapshot = other.LastCarSnapshot,
 				PlayerSnapshot = other.LastPlayerSnapshot
 			};
@@ -921,6 +1025,7 @@ public partial class NetworkController : Node
 		if (snapshot == null)
 			return;
 
+		var snapshotMode = snapshot.Mode;
 		_clientVehicleId = snapshot.VehicleId;
 
 		if (snapshot.CarSnapshot != null)
@@ -930,10 +1035,17 @@ public partial class NetworkController : Node
 
 		if (snapshot.PlayerSnapshot != null)
 		{
-			_playerCharacter?.QueueSnapshot(snapshot.PlayerSnapshot);
+			if (snapshotMode == PlayerMode.Foot)
+			{
+				ReconcileLocalPlayer(snapshot.PlayerSnapshot, snapshot.LastProcessedInputTick);
+			}
+			else
+			{
+				_playerCharacter?.QueueSnapshot(snapshot.PlayerSnapshot);
+			}
 		}
 
-		UpdateClientMode(snapshot.Mode);
+		UpdateClientMode(snapshotMode);
 	}
 
 	private void UpdateClientMode(PlayerMode newMode)
@@ -941,6 +1053,8 @@ public partial class NetworkController : Node
 		if (CurrentClientMode == newMode)
 			return;
 		CurrentClientMode = newMode;
+		_pendingPlayerInputs.Clear();
+		_lastAcknowledgedPlayerInputTick = 0;
 		ClientModeChanged?.Invoke(newMode);
 	}
 
