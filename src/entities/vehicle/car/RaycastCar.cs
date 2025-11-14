@@ -1,7 +1,7 @@
 using Godot;
 using Godot.Collections;
 
-public partial class RaycastCar : RigidBody3D
+public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 {
 	public enum NetworkRegistrationMode
 	{
@@ -24,6 +24,7 @@ public partial class RaycastCar : RigidBody3D
 	[Export] public NetworkRegistrationMode RegistrationMode { get; set; } = NetworkRegistrationMode.LocalPlayer;
 	[Export] public bool AutoRespawnOnReady { get; set; } = true;
 	[Export] public NodePath CameraPath { get; set; } = "CameraPivot/Camera";
+	[Export] public int NetworkId { get; set; } = 0;
 
 	public int TotalWheels { get; private set; }
 
@@ -48,12 +49,18 @@ public partial class RaycastCar : RigidBody3D
 	private Camera3D _camera;
 	private bool _simulateLocally = true;
 	private bool _cameraActive = false;
+	
+	private ReplicatedTransform3D _transformProperty;
+	private ReplicatedVector3 _linearVelocityProperty;
+	private ReplicatedVector3 _angularVelocityProperty;
 
 	public override void _Ready()
 	{
 		TotalWheels = Wheels.Count;
 
 		_camera = GetNodeOrNull<Camera3D>(CameraPath);
+		
+		InitializeReplication();
 
 		var network = GetTree().Root.GetNodeOrNull<NetworkController>("/root/NetworkController");
 
@@ -62,6 +69,7 @@ public partial class RaycastCar : RigidBody3D
 			case NetworkRegistrationMode.LocalPlayer:
 				if (network != null && network.IsClient)
 				{
+					RegisterAsLocalVehicle();
 					network.RegisterLocalPlayerCar(this);
 					_isNetworked = true;
 				}
@@ -69,6 +77,7 @@ public partial class RaycastCar : RigidBody3D
 			case NetworkRegistrationMode.AuthoritativeVehicle:
 				if (network != null && network.IsServer)
 				{
+					RegisterAsAuthority();
 					network.RegisterAuthoritativeVehicle(this);
 					_isNetworked = true;
 				}
@@ -82,6 +91,74 @@ public partial class RaycastCar : RigidBody3D
 			RespawnAtManagedPoint();
 
 		ApplySimulationMode();
+	}
+	
+	private void InitializeReplication()
+	{
+		_transformProperty = new ReplicatedTransform3D(
+			"Transform",
+			() => GlobalTransform,
+			(value) => ApplyTransformFromReplication(value),
+			ReplicationMode.Always,
+			positionThreshold: SnapPosEps,
+			rotationThreshold: SnapAngEps
+		);
+		
+		_linearVelocityProperty = new ReplicatedVector3(
+			"LinearVelocity",
+			() => LinearVelocity,
+			(value) => LinearVelocity = value,
+			ReplicationMode.Always
+		);
+		
+		_angularVelocityProperty = new ReplicatedVector3(
+			"AngularVelocity",
+			() => AngularVelocity,
+			(value) => AngularVelocity = value,
+			ReplicationMode.Always
+		);
+	}
+	
+	private void RegisterAsAuthority()
+	{
+		if (EntityReplicationRegistry.Instance == null)
+		{
+			GD.PushError($"RaycastCar ({Name}): EntityReplicationRegistry.Instance is NULL! Cannot register.");
+			return;
+		}
+		
+		var assignedId = EntityReplicationRegistry.Instance.RegisterEntity(this, this);
+		if (assignedId == 0)
+		{
+			GD.PushWarning($"RaycastCar ({Name}): Registered but got NetworkId 0");
+		}
+		
+		NetworkId = assignedId;
+		GD.Print($"RaycastCar ({Name}): Registered as authority with NetworkId {NetworkId}");
+	}
+	
+	private void RegisterAsLocalVehicle()
+	{
+		var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
+		if (remoteManager != null)
+		{
+			remoteManager.RegisterRemoteEntity(NetworkId, this);
+			GD.Print($"RaycastCar: Registered as remote with NetworkId {NetworkId}");
+		}
+		else
+		{
+			GD.PushWarning("RaycastCar: RemoteEntityManager not found in scene!");
+		}
+	}
+	
+	private void ApplyTransformFromReplication(Transform3D value)
+	{
+		if (_simulateLocally && _pendingSnapshot != null)
+		{
+			return;
+		}
+		
+		GlobalTransform = value;
 	}
 
 	public override void _Input(InputEvent @event)
@@ -359,5 +436,26 @@ public partial class RaycastCar : RigidBody3D
 		{
 			SetCameraActive(false);
 		}
+	}
+	
+	public void WriteSnapshot(StreamPeerBuffer buffer)
+	{
+		_transformProperty.Write(buffer);
+		_linearVelocityProperty.Write(buffer);
+		_angularVelocityProperty.Write(buffer);
+	}
+	
+	public void ReadSnapshot(StreamPeerBuffer buffer)
+	{
+		_transformProperty.Read(buffer);
+		_linearVelocityProperty.Read(buffer);
+		_angularVelocityProperty.Read(buffer);
+	}
+	
+	public int GetSnapshotSizeBytes()
+	{
+		return _transformProperty.GetSizeBytes() 
+			 + _linearVelocityProperty.GetSizeBytes() 
+			 + _angularVelocityProperty.GetSizeBytes();
 	}
 }
