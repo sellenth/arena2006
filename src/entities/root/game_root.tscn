@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://c3b5xve2kalg" path="res://src/systems/network/RemotePlayerManager.cs" id="12_rplayer"]
 [ext_resource type="Script" uid="uid://ygqck2ca07ti" path="res://src/systems/network/RemoteVehicleManager.cs" id="13_38sdm"]
 [ext_resource type="PackedScene" uid="uid://dqsjudt64pb3u" path="res://src/entities/building/building_1/skyscraper_1.tscn" id="14_886vf"]
+[ext_resource type="PackedScene" uid="uid://cpvucgc6lmay1" path="res://src/entities/building/hut.blend" id="14_l2d1b"]
 [ext_resource type="PackedScene" uid="uid://c68mijg2v2wkf" path="res://src/entities/jump_pad/jump_pad.tscn" id="15_l2d1b"]
 [ext_resource type="Script" uid="uid://5whgjxft7d3o" path="res://src/systems/vehicle/VehicleSpawnManager.cs" id="16_vspawn"]
 
@@ -62,11 +63,6 @@ _data = {
 "tilts": PackedFloat32Array(0, 0, 0)
 }
 point_count = 3
-
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_38sdm"]
-properties/0/path = NodePath(".:progress_ratio")
-properties/0/spawn = true
-properties/0/replication_mode = 1
 
 [node name="GameRoot" type="Node3D"]
 
@@ -199,7 +195,8 @@ path_continuous_u = true
 path_u_distance = 1.0
 path_joined = false
 
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
-root_path = NodePath("../Path3D2/PathFollow3D")
-replication_interval = 1.0
-replication_config = SubResource("SceneReplicationConfig_38sdm")
+[node name="hut" parent="." instance=ExtResource("14_l2d1b")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -443.55066, 142.31943, 189.83522)
+
+[node name="hut2" parent="." instance=ExtResource("14_l2d1b")]
+transform = Transform3D(-30.54626, 0, 95.22041, 0, 100, 0, -95.22041, 0, -30.54626, -711.03204, 46.61862, 384.85995)
