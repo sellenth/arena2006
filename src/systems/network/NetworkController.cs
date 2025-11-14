@@ -291,8 +291,8 @@ private readonly struct PlayerPredictionSample
 		var root = GetTree().CurrentScene;
 		var pathFollow3d = root.FindChild("PathFollow3D", true, false) as PathFollow3D;
 		if (pathFollow3d != null) {
-
 			pathFollow3d.ProgressRatio += 0.01f;
+			BroadcastSceneState(pathFollow3d.ProgressRatio);
 		}
 
 		foreach (var peerId in _peers.Keys.ToList())
@@ -750,6 +750,11 @@ private readonly struct PlayerPredictionSample
 					if (removedVehicleId != 0)
 						EmitSignal(SignalName.VehicleDespawned, removedVehicleId);
 					break;
+				case NetworkSerializer.PacketSceneState:
+					var progressRatio = NetworkSerializer.DeserializeSceneState(packet);
+					if (progressRatio >= 0f)
+						ApplySceneState(progressRatio);
+					break;
 			}
 		}
 	}
@@ -982,6 +987,16 @@ private readonly struct PlayerPredictionSample
 			peer?.Peer.PutPacket(packet);
 	}
 
+	private void BroadcastSceneState(float progressRatio)
+	{
+		if (_peers.Count == 0)
+			return;
+
+		var packet = NetworkSerializer.SerializeSceneState(progressRatio);
+		foreach (var peer in _peers.Values)
+			peer?.Peer.PutPacket(packet);
+	}
+
 	private void OnServerVehicleExiting(int vehicleId)
 	{
 		if (!_serverVehicles.TryGetValue(vehicleId, out var info))
@@ -1086,5 +1101,15 @@ private readonly struct PlayerPredictionSample
 	private void ApplyClientInputToPlayer()
 	{
 		_playerCharacter?.SetInputState(_clientPlayerInput);
+	}
+
+	private void ApplySceneState(float progressRatio)
+	{
+		var root = GetTree().CurrentScene;
+		var pathFollow3d = root?.FindChild("PathFollow3D", true, false) as PathFollow3D;
+		if (pathFollow3d != null)
+		{
+			pathFollow3d.ProgressRatio = progressRatio;
+		}
 	}
 }

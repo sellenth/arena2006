@@ -9,6 +9,7 @@ public static partial class NetworkSerializer
 	public const byte PacketPlayerInput = 5;
 	public const byte PacketVehicleState = 6;
 	public const byte PacketVehicleDespawn = 7;
+	public const byte PacketSceneState = 8;
 
 	public const int CarSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
 	public const int PlayerSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
@@ -232,6 +233,28 @@ public static partial class NetworkSerializer
 		if (type != PacketVehicleDespawn)
 			return 0;
 		return (int)buffer.GetU32();
+	}
+
+	public static byte[] SerializeSceneState(float progressRatio)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.PutU8(PacketSceneState);
+		buffer.PutFloat(progressRatio);
+		return buffer.DataArray;
+	}
+
+	public static float DeserializeSceneState(byte[] packet)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.DataArray = packet;
+		if (buffer.GetAvailableBytes() < 5)
+			return -1f;
+		var type = buffer.GetU8();
+		if (type != PacketSceneState)
+			return -1f;
+		return buffer.GetFloat();
 	}
 
 	private static void WriteCarSnapshot(StreamPeerBuffer buffer, CarSnapshot snapshot)
