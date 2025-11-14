@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3 uid="uid://c8bnvh3xqm7pd"]
+
+[ext_resource type="Script" path="res://src/entities/props/ReplicatedPathFollow.cs" id="1_demo"]
+[ext_resource type="PackedScene" uid="uid://dqsjudt64pb3u" path="res://src/entities/building/building_1/skyscraper_1.tscn" id="2_building"]
+
+[sub_resource type="Curve3D" id="Curve3D_demo"]
+closed = true
+_data = {
+"points": PackedVector3Array(-29.25177, 0, -106.34547, 29.25177, 0, 106.34547, -3.1953125, 0, -65.187096, 149.56317, 0, -33.457, -149.56317, 0, 33.457, -299.86258, 3.0517578e-05, 373.1105, 12.774048, 9.1552734e-05, 118.83481, -12.774048, -9.1552734e-05, -118.83481, -710.5067, 0.00012207031, 109.31046, -63.089172, 0, 13.71698, 63.089172, 0, -13.71698, -423.20462, 3.0517578e-05, -141.34988),
+"tilts": PackedFloat32Array(0, 0, 0, 0)
+}
+point_count = 4
+
+[node name="SkyboxPath" type="Path3D"]
+transform = Transform3D(-5.9884634e-08, -1.37, 6.8412746e-15, 0.31279427, -1.3672672e-08, 1.333814, -1.333814, 5.830289e-08, 0.31279427, 374.3125, 86.03772, -516.8681)
+curve = SubResource("Curve3D_demo")
+
+[node name="ReplicatedPathFollow" type="PathFollow3D" parent="."]
+transform = Transform3D(-0.9641802, 0, -0.2652109, 0, 1, 0, 0.2652109, 0, -0.9641802, -3.1953125, 0, -65.187096)
+script = ExtResource("1_demo")
+NetworkId = 1001
+IsAuthority = false
+Speed = 0.01
+
+[node name="skyscraper1" parent="ReplicatedPathFollow" instance=ExtResource("2_building")]
+transform = Transform3D(-0.124179244, -4.4068753e-07, 0.99225986, -3.0061244e-08, 1, 4.403629e-07, -0.99225986, 2.4855403e-08, -0.124179244, 14.207611, 3.0517578e-05, -63.70018)
+

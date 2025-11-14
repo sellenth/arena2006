@@ -23,13 +23,18 @@ entities/                    # Scene entities (visual components + behavior)
 
 systems/                     # System logic (not tied to specific scenes)
   └── network/              # Networking system
-      ├── NetworkController.cs      # Main network controller (autoloaded)
-      ├── RemotePlayerManager.cs    # Manages remote on-foot player spawning
-      ├── RemoteVehicleManager.cs   # Manages replicated vehicle proxies
-      ├── CarInputState.cs          # Vehicle input state serialization
-      ├── PlayerInputState.cs       # On-foot input state serialization
-      ├── CarSnapshot.cs            # Car state snapshot
-      └── PlayerSnapshot.cs         # On-foot player snapshot
+      ├── NetworkController.cs           # Main network controller (autoloaded)
+      ├── RemotePlayerManager.cs         # Manages remote on-foot player spawning
+      ├── RemoteVehicleManager.cs        # Manages replicated vehicle proxies
+      ├── RemoteEntityManager.cs         # Manages generic replicated entities
+      ├── EntityReplicationRegistry.cs   # Central registry for replicated entities
+      ├── IReplicatedEntity.cs           # Interface for replicated entities
+      ├── ReplicatedProperty.cs          # Property replication system
+      ├── ReplicatedEntity.cs            # Base class for replicated entities
+      ├── CarInputState.cs               # Vehicle input state serialization
+      ├── PlayerInputState.cs            # On-foot input state serialization
+      ├── CarSnapshot.cs                 # Car state snapshot
+      └── PlayerSnapshot.cs              # On-foot player snapshot
 
 resources/                   # Shared resources
   └── materials/            # Materials (prototype, etc.)
@@ -123,6 +128,81 @@ The project uses a client-server UDP networking model where:
 - **Performance**: No physics simulation needed for remote cars on client
 - **Smooth movement**: Interpolation looks better than physics replication
 - **Network efficiency**: Only need position/rotation, not full physics state
+
+## Entity Replication System
+
+The project includes a general-purpose entity replication system for synchronizing arbitrary game objects (props, platforms, doors, etc.) across the network.
+
+### Key Features
+- **Declarative Property Registration**: Define what to replicate, not how
+- **Delta Compression**: Only send changed properties (OnChange mode)
+- **Type-Safe Properties**: Strongly-typed wrappers (Float, Vector3, Transform3D, Int)
+- **Automatic Serialization**: Properties handle their own serialization
+- **Scalable**: Handles hundreds of entities efficiently
+
+### Components
+
+#### EntityReplicationRegistry (Autoloaded)
+Central registry that tracks all replicated entities. Entities register themselves on spawn.
+
+#### RemoteEntityManager
+CLIENT-ONLY manager that receives entity snapshots and applies them to local entities.
+
+#### IReplicatedEntity Interface
+Entities implement this interface to participate in replication:
+```csharp
+public interface IReplicatedEntity
+{
+    int NetworkId { get; }
+    void WriteSnapshot(StreamPeerBuffer buffer);
+    void ReadSnapshot(StreamPeerBuffer buffer);
+    int GetSnapshotSizeBytes();
+}
+```
+
+#### ReplicatedProperty System
+Strongly-typed property wrappers that handle serialization:
+- `ReplicatedFloat` - Single float value
+- `ReplicatedInt` - Integer value
+- `ReplicatedVector3` - 3D vector
+- `ReplicatedTransform3D` - Full transform (position + rotation)
+
+### Example Usage
+
+```csharp
+public partial class ReplicatedPlatform : Node3D, IReplicatedEntity
+{
+    [Export] public int NetworkId { get; set; }
+    [Export] public bool IsAuthority { get; set; } = false;
+    
+    private ReplicatedTransform3D _transformProperty;
+    
+    public override void _Ready()
+    {
+        _transformProperty = new ReplicatedTransform3D(
+            "Transform",
+            () => GlobalTransform,
+            (value) => GlobalTransform = value,
+            ReplicationMode.Always
+        );
+        
+        if (IsAuthority)
+            NetworkId = EntityReplicationRegistry.Instance?.RegisterEntity(this, this) ?? 0;
+        else
+            GetTree().Root.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager")
+                ?.RegisterRemoteEntity(NetworkId, this);
+    }
+    
+    public void WriteSnapshot(StreamPeerBuffer buffer) => _transformProperty.Write(buffer);
+    public void ReadSnapshot(StreamPeerBuffer buffer) => _transformProperty.Read(buffer);
+    public int GetSnapshotSizeBytes() => _transformProperty.GetSizeBytes();
+}
+```
+
+### Documentation
+- **[REPLICATION_SUMMARY.md](docs/REPLICATION_SUMMARY.md)** - Quick overview
+- **[REPLICATION_SYSTEM.md](docs/REPLICATION_SYSTEM.md)** - Full documentation
+- **[REPLICATION_MIGRATION.md](docs/REPLICATION_MIGRATION.md)** - Migration guide
 
 ### Why Autoload NetworkController?
 - **Persistent**: Survives scene changes
