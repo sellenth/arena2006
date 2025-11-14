@@ -9,16 +9,26 @@ public partial class PlayerCharacter : CharacterBody3D
 	[Export] public NodePath CollisionShapePath { get; set; } = "Collision";
 	[Export] public bool AutoRegisterWithNetwork { get; set; } = true;
 
-	private const float MouseSensitivity = 0.002f;
-	private const float JumpVelocity = 3f;
-	private const float Gravity = 9.8f;
-	private const float GroundAccel = 40f;
-	private const float GroundSpeedLimit = 60f;
-	private const float AirAccel = 80f;
-	private const float AirSpeedLimit = .8f;
-	private const float GroundFriction = 0.9f;
-	private const float MinPitch = -1.2f;
-	private const float MaxPitch = 1.2f;
+	[ExportGroup("Movement")]
+	[Export] public float Gravity { get; set; } = 9.8f;
+	[Export] public float JumpVelocity { get; set; } = 3f;
+	[Export] public float GroundAcceleration { get; set; } = 40f;
+	[Export] public float GroundSpeedLimit { get; set; } = 60f;
+	[Export(PropertyHint.Range, "0.5,1,0.01")] public float GroundFriction { get; set; } = 0.9f;
+	[Export] public float AirAcceleration { get; set; } = 80f;
+	[Export(PropertyHint.Range, "0.1,20,0.1")] public float AirSpeedLimit { get; set; } = 0.8f;
+	[Export(PropertyHint.Range, "0,0.5,0.01")] public float AirDrag { get; set; } = 0f;
+
+	[ExportGroup("Look")]
+	[Export] public float MouseSensitivity { get; set; } = 0.002f;
+	[Export(PropertyHint.Range, "-1.5,-0.1,0.01")] public float MinPitch { get; set; } = -1.2f;
+	[Export(PropertyHint.Range, "0.1,1.5,0.01")] public float MaxPitch { get; set; } = 1.2f;
+	[Export] public float LookBaseFov { get; set; } = 80f;
+	[Export(PropertyHint.Range, "0.1,2,0.05")] public float LookFovSpeedScale { get; set; } = 0.8f;
+	[Export(PropertyHint.Range, "0,20,0.5")] public float LookMaxFovBoost { get; set; } = 12f;
+	[Export] public float LookHeadBobAmplitude { get; set; } = 0.02f;
+	[Export] public float LookHeadBobFrequency { get; set; } = 10f;
+	[Export] public float LookTiltDegrees { get; set; } = 6f;
 
 	private Node3D _head;
 	private Camera3D _camera;
@@ -27,16 +37,15 @@ public partial class PlayerCharacter : CharacterBody3D
 	private NetworkController _networkController;
 
 	private readonly PlayerInputState _inputState = new PlayerInputState();
-	private PlayerSnapshot _pendingSnapshot;
-	private Vector2 _pendingMouseDelta = Vector2.Zero;
+	private readonly PlayerLookController _lookController = new PlayerLookController();
+	private PlayerMovementController _movementController;
+	private readonly PlayerReconciliationController _reconciliation = new PlayerReconciliationController();
 	private Color _playerColor = Colors.Red;
 	private bool _isAuthority = true;
 	private bool _simulateLocally = true;
 	private bool _cameraActive = false;
 	private bool _worldActive = true;
 	private bool _managesMouseMode = false;
-	private float _viewYaw = 0f;
-	private float _viewPitch = 0f;
 
 	public PlayerCharacter()
 	{
@@ -57,11 +66,8 @@ public partial class PlayerCharacter : CharacterBody3D
 		{
 			Debug.Assert(false, "head or camera not found :o");
 		}
-		else
-		{
-			_viewYaw = _head.Rotation.Y;
-			_viewPitch = _camera.Rotation.X;
-		}
+
+		InitializeControllerModules();
 
 		if (AutoRegisterWithNetwork)
 		{
@@ -89,6 +95,7 @@ public partial class PlayerCharacter : CharacterBody3D
 		ApplySnapshotCorrection(deltaFloat);
 
 		ApplyPendingLookInput();
+		_lookController?.Update(deltaFloat, Velocity, IsOnFloor());
 	}
 
 	public override void _UnhandledInput(InputEvent @event)
@@ -98,7 +105,7 @@ public partial class PlayerCharacter : CharacterBody3D
 
 		if (@event is InputEventMouseMotion motion)
 		{
-			_pendingMouseDelta += motion.Relative;
+			_lookController?.QueueLookDelta(motion.Relative);
 		}
 	}
 
@@ -111,8 +118,8 @@ public partial class PlayerCharacter : CharacterBody3D
 			MoveInput = Input.GetVector("move_left", "move_right", "move_forward", "move_backward"),
 			Jump = Input.IsActionPressed("jump"),
 			Interact = Input.IsActionJustPressed("interact"),
-			ViewYaw = _viewYaw,
-			ViewPitch = _viewPitch
+			ViewYaw = _lookController?.Yaw ?? 0f,
+			ViewPitch = _lookController?.Pitch ?? 0f
 		};
 		return state;
 	}
@@ -136,19 +143,19 @@ public partial class PlayerCharacter : CharacterBody3D
 			Tick = tick,
 			Transform = GlobalTransform,
 			Velocity = Velocity,
-			ViewYaw = _viewYaw,
-			ViewPitch = _viewPitch
+			ViewYaw = _lookController?.Yaw ?? 0f,
+			ViewPitch = _lookController?.Pitch ?? 0f
 		};
 	}
 
 	public void QueueSnapshot(PlayerSnapshot snapshot)
 	{
-		_pendingSnapshot = snapshot;
+		_reconciliation.Queue(snapshot);
 	}
 
 	public void ClearPendingSnapshot()
 	{
-		_pendingSnapshot = null;
+		_reconciliation.Clear();
 	}
 
 	public void ConfigureAuthority(bool isAuthority)
@@ -189,9 +196,7 @@ public partial class PlayerCharacter : CharacterBody3D
 
 	public void SetYawPitch(float yaw, float pitch)
 	{
-		_viewYaw = yaw;
-		_viewPitch = Mathf.Clamp(pitch, MinPitch, MaxPitch);
-		UpdateViewNodes();
+		_lookController?.SetYawPitch(yaw, pitch);
 	}
 
 	public void TeleportTo(Transform3D transform)
@@ -208,57 +213,42 @@ public partial class PlayerCharacter : CharacterBody3D
 		}
 	}
 
+	private void InitializeControllerModules()
+	{
+		var movementSettings = PlayerMovementSettings.CreateDefaults();
+		movementSettings.Gravity = Gravity;
+		movementSettings.JumpVelocity = JumpVelocity;
+		movementSettings.GroundAcceleration = GroundAcceleration;
+		movementSettings.GroundSpeedLimit = GroundSpeedLimit;
+		movementSettings.GroundFriction = Mathf.Clamp(GroundFriction, 0.1f, 1f);
+		movementSettings.AirAcceleration = AirAcceleration;
+		movementSettings.AirSpeedLimit = AirSpeedLimit;
+		movementSettings.AirDrag = AirDrag;
+		_movementController = new PlayerMovementController(movementSettings);
+
+		_lookController.MouseSensitivity = MouseSensitivity;
+		_lookController.MinPitch = MinPitch;
+		_lookController.MaxPitch = MaxPitch;
+		_lookController.BaseFov = LookBaseFov > 0f ? LookBaseFov : (_camera?.Fov ?? 75f);
+		_lookController.FovSpeedScale = LookFovSpeedScale;
+		_lookController.MaxFovBoost = LookMaxFovBoost;
+		_lookController.HeadBobAmplitude = LookHeadBobAmplitude;
+		_lookController.HeadBobFrequency = LookHeadBobFrequency;
+		_lookController.TiltAngleDegrees = LookTiltDegrees;
+
+		var initialYaw = _head != null ? _head.Rotation.Y : Rotation.Y;
+		var initialPitch = _camera != null ? _camera.Rotation.X : 0f;
+		_lookController.Initialize(_head, _camera, initialYaw, initialPitch);
+	}
+
 	private void SimulateMovement(float delta)
 	{
-		var velocity = Velocity;
-		var onFloor = IsOnFloor();
+		if (_movementController == null)
+			return;
 
-		if (!onFloor)
-		{
-			velocity.Y -= Gravity * delta;
-		}
-		else
-		{
-			if (_inputState.Jump)
-			{
-				velocity.Y = JumpVelocity;
-			}
-			else
-			{
-				velocity *= GroundFriction;
-			}
-		}
-
-		var moveInput = new Vector3(_inputState.MoveInput.X, 0f, _inputState.MoveInput.Y);
-		if (moveInput.LengthSquared() > 1f)
-			moveInput = moveInput.Normalized();
-
-		if (moveInput.LengthSquared() > 0f)
-		{
-			var basis = _head?.GlobalTransform.Basis ?? GlobalTransform.Basis;
-			var strafeDirection = (basis * moveInput).Normalized();
-			if (strafeDirection.LengthSquared() > 0f)
-			{
-				var strafeAccel = onFloor ? GroundAccel : AirAccel;
-				var speedLimit = onFloor ? GroundSpeedLimit : AirSpeedLimit;
-
-				var currentSpeed = strafeDirection.Dot(velocity);
-				var accel = strafeAccel * delta;
-				var remaining = speedLimit - currentSpeed;
-				if (remaining <= 0f)
-				{
-					accel = 0f;
-				}
-				else if (accel > remaining)
-				{
-					accel = remaining;
-				}
-
-				velocity += strafeDirection * accel;
-			}
-		}
-
-		Velocity = velocity;
+		var basis = _head?.GlobalTransform.Basis ?? GlobalTransform.Basis;
+		var context = new PlayerMovementContext(Velocity, _inputState.MoveInput, _inputState.Jump, false, IsOnFloor(), basis);
+		Velocity = _movementController.Step(context, delta);
 		MoveAndSlide();
 
 		if (GetSlideCollisionCount() > 0 && !IsOnFloor())
@@ -278,53 +268,17 @@ public partial class PlayerCharacter : CharacterBody3D
 
 	private void ApplySnapshotCorrection(float delta)
 	{
-		if (_pendingSnapshot == null)
-			return;
-
-		var target = _pendingSnapshot;
-		var blend = Mathf.Clamp(delta * 10f, 0f, 1f);
-		GlobalTransform = GlobalTransform.InterpolateWith(target.Transform, blend);
-		Velocity = Velocity.Lerp(target.Velocity, blend);
-		_viewYaw = Mathf.LerpAngle(_viewYaw, target.ViewYaw, blend);
-		_viewPitch = Mathf.Lerp(_viewPitch, target.ViewPitch, blend);
-		UpdateViewNodes();
-		var posError = GlobalPosition.DistanceTo(target.Transform.Origin);
-		if (posError < 0.01f)
-		{
-			_pendingSnapshot = null;
-		}
+		_reconciliation.Apply(this, _lookController, delta);
 	}
 
 	private void ApplyPendingLookInput()
 	{
-		if (_pendingMouseDelta == Vector2.Zero)
-			return;
-
-		var lookDelta = _pendingMouseDelta;
-		_pendingMouseDelta = Vector2.Zero;
-
-		_viewYaw -= lookDelta.X * MouseSensitivity;
-		_viewPitch = Mathf.Clamp(_viewPitch - lookDelta.Y * MouseSensitivity, MinPitch, MaxPitch);
-		UpdateViewNodes();
-	}
-
-	private void UpdateViewNodes()
-	{
-		if (_head == null)
-			return;
-
-		_head.Rotation = new Vector3(_head.Rotation.X, _viewYaw, _head.Rotation.Z);
-		if (_camera != null)
-		{
-			_camera.Rotation = new Vector3(_viewPitch, _camera.Rotation.Y, _camera.Rotation.Z);
-		}
+		_lookController?.ApplyQueuedLook();
 	}
 
 	public Vector3 GetViewDirection()
 	{
-		if (_head != null)
-			return -_head.GlobalTransform.Basis.Z;
-		return -GlobalTransform.Basis.Z;
+		return _lookController?.GetViewDirection(this) ?? -GlobalTransform.Basis.Z;
 	}
 
 	public float DistanceTo(Node3D other)
