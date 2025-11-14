@@ -113,13 +113,15 @@ public sealed class PlayerLookController
 		_targetFov = targetFov;
 		_camera.Fov = _currentFov;
 
-	var referenceRight = _head?.GlobalTransform.Basis.X ?? Vector3.Right;
-	var strafe = 0f;
-	if (!referenceRight.IsZeroApprox())
-		strafe = planarVelocity.Dot(referenceRight.Normalized());
-	var normalizedStrafe = Mathf.Clamp(-strafe * 0.1f, -1f, 1f);
-	var tiltTarget = Mathf.DegToRad(normalizedStrafe * TiltAngleDegrees);
-	_cameraTiltRad = Mathf.Lerp(_cameraTiltRad, tiltTarget, 1f - Mathf.Exp(-TiltResponse * delta));
+		var referenceRight = _head?.GlobalTransform.Basis.X ?? Vector3.Right;
+		var strafe = 0f;
+
+		if (!referenceRight.IsZeroApprox())
+			strafe = planarVelocity.Dot(referenceRight.Normalized());
+
+		var normalizedStrafe = Mathf.Clamp(-strafe * 0.1f, -1f, 1f);
+		var tiltTarget = Mathf.DegToRad(normalizedStrafe * TiltAngleDegrees);
+		_cameraTiltRad = Mathf.Lerp(_cameraTiltRad, tiltTarget, 1f - Mathf.Exp(-TiltResponse * delta))  * (planarSpeed / 60f);
 
 		//UpdateHeadBob(delta, planarSpeed, grounded);
 	}
