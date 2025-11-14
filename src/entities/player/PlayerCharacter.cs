@@ -199,11 +199,6 @@ public partial class PlayerCharacter : CharacterBody3D
 		_lookController?.SetYawPitch(yaw, pitch);
 	}
 
-	public void TeleportTo(Transform3D transform)
-	{
-		GlobalTransform = transform;
-		Velocity = Vector3.Zero;
-	}
 
 	private void ApplyColor(Color color)
 	{

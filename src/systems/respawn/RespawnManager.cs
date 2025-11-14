@@ -248,6 +248,34 @@ public partial class RespawnManager : RefCounted
 		return true;
 	}
 
+	public bool TeleportEntity(CharacterBody3D character, Transform3D transform)
+	{
+		if (character == null)
+			return false;
+
+		character.GlobalTransform = transform;
+		character.Velocity = Vector3.Zero;
+		return true;
+	}
+
+	public bool TeleportEntity(CharacterBody3D character, Vector3 position)
+	{
+		if (character == null)
+			return false;
+
+		var transform = new Transform3D(character.GlobalTransform.Basis, position);
+		return TeleportEntity(character, transform);
+	}
+
+	public bool TeleportEntity(CharacterBody3D character, Vector3 position, Basis rotation)
+	{
+		if (character == null)
+			return false;
+
+		var transform = new Transform3D(rotation, position);
+		return TeleportEntity(character, transform);
+	}
+
 	public bool RespawnEntityAtBestPoint(RigidBody3D body, Node3D context)
 	{
 		if (body == null)
