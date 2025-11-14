@@ -14,6 +14,7 @@ public partial class NetworkController : Node
 	[Signal] public delegate void PlayerDisconnectedEventHandler(int playerId);
 	[Signal] public delegate void VehicleStateUpdatedEventHandler(int vehicleId, VehicleStateSnapshot snapshot);
 	[Signal] public delegate void VehicleDespawnedEventHandler(int vehicleId);
+	[Signal] public delegate void EntitySnapshotReceivedEventHandler(int entityId, byte[] data);
 
 	private partial class PeerInfo : GodotObject
 	{
@@ -98,6 +99,7 @@ private readonly struct PlayerPredictionSample
 	private readonly System.Collections.Generic.Dictionary<ulong, int> _vehicleIdByInstance = new System.Collections.Generic.Dictionary<ulong, int>();
 	private readonly System.Collections.Generic.List<VehicleStateSnapshot> _vehicleSnapshotBuffer = new System.Collections.Generic.List<VehicleStateSnapshot>();
 	private readonly System.Collections.Generic.List<PlayerPredictionSample> _playerPredictionHistory = new System.Collections.Generic.List<PlayerPredictionSample>();
+	private readonly System.Collections.Generic.List<NetworkSerializer.EntitySnapshotData> _entitySnapshotBuffer = new System.Collections.Generic.List<NetworkSerializer.EntitySnapshotData>();
 	private int _nextVehicleId = 1;
 	private bool _respawnPointsCached = false;
 	private bool _hasFallbackSpawn = false;
@@ -287,14 +289,6 @@ private readonly struct PlayerPredictionSample
 				RegisterPeer(newPeer);
 		}
 
-		//GetNode<PathFollow3D>("PathFollow3D").Progress = 0.5f;
-		var root = GetTree().CurrentScene;
-		var pathFollow3d = root.FindChild("PathFollow3D", true, false) as PathFollow3D;
-		if (pathFollow3d != null) {
-			pathFollow3d.ProgressRatio += 0.003f;
-			BroadcastSceneState(pathFollow3d.ProgressRatio);
-		}
-
 		foreach (var peerId in _peers.Keys.ToList())
 		{
 			var info = _peers[peerId];
@@ -311,6 +305,7 @@ private readonly struct PlayerPredictionSample
 		UpdateServerPlayers();
 		CheckPeerTimeouts();
 		BroadcastVehicleStates();
+		BroadcastEntitySnapshots();
 	}
 
 	private void HandleServerPacket(int peerId, byte[] packet)
@@ -750,10 +745,18 @@ private readonly struct PlayerPredictionSample
 					if (removedVehicleId != 0)
 						EmitSignal(SignalName.VehicleDespawned, removedVehicleId);
 					break;
-				case NetworkSerializer.PacketSceneState:
-					var progressRatio = NetworkSerializer.DeserializeSceneState(packet);
-					if (progressRatio >= 0f)
-						ApplySceneState(progressRatio);
+				case NetworkSerializer.PacketEntitySnapshot:
+					var entitySnapshots = NetworkSerializer.DeserializeEntitySnapshots(packet);
+					if (entitySnapshots != null)
+					{
+						foreach (var snapshot in entitySnapshots)
+							EmitSignal(SignalName.EntitySnapshotReceived, snapshot.EntityId, snapshot.Data);
+					}
+					break;
+				case NetworkSerializer.PacketEntityDespawn:
+					var despawnedEntityId = NetworkSerializer.DeserializeEntityDespawn(packet);
+					if (despawnedEntityId != 0)
+						GD.Print($"Entity {despawnedEntityId} despawned");
 					break;
 			}
 		}
@@ -987,12 +990,37 @@ private readonly struct PlayerPredictionSample
 			peer?.Peer.PutPacket(packet);
 	}
 
-	private void BroadcastSceneState(float progressRatio)
+	private void BroadcastEntitySnapshots()
 	{
 		if (_peers.Count == 0)
 			return;
-
-		var packet = NetworkSerializer.SerializeSceneState(progressRatio);
+		
+		var registry = EntityReplicationRegistry.Instance;
+		if (registry == null)
+			return;
+		
+		_entitySnapshotBuffer.Clear();
+		
+		foreach (var kvp in registry.GetAllEntities())
+		{
+			var entityId = kvp.Key;
+			var entity = kvp.Value;
+			
+			var buffer = new StreamPeerBuffer();
+			buffer.BigEndian = false;
+			entity.WriteSnapshot(buffer);
+			
+			_entitySnapshotBuffer.Add(new NetworkSerializer.EntitySnapshotData
+			{
+				EntityId = entityId,
+				Data = buffer.DataArray
+			});
+		}
+		
+		if (_entitySnapshotBuffer.Count == 0)
+			return;
+		
+		var packet = NetworkSerializer.SerializeEntitySnapshots(_entitySnapshotBuffer);
 		foreach (var peer in _peers.Values)
 			peer?.Peer.PutPacket(packet);
 	}
@@ -1101,15 +1129,5 @@ private readonly struct PlayerPredictionSample
 	private void ApplyClientInputToPlayer()
 	{
 		_playerCharacter?.SetInputState(_clientPlayerInput);
-	}
-
-	private void ApplySceneState(float progressRatio)
-	{
-		var root = GetTree().CurrentScene;
-		var pathFollow3d = root?.FindChild("PathFollow3D", true, false) as PathFollow3D;
-		if (pathFollow3d != null)
-		{
-			pathFollow3d.ProgressRatio = progressRatio;
-		}
 	}
 }

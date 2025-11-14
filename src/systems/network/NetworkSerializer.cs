@@ -9,7 +9,8 @@ public static partial class NetworkSerializer
 	public const byte PacketPlayerInput = 5;
 	public const byte PacketVehicleState = 6;
 	public const byte PacketVehicleDespawn = 7;
-	public const byte PacketSceneState = 8;
+	public const byte PacketEntitySnapshot = 8;
+	public const byte PacketEntityDespawn = 9;
 
 	public const int CarSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
 	public const int PlayerSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
@@ -235,26 +236,96 @@ public static partial class NetworkSerializer
 		return (int)buffer.GetU32();
 	}
 
-	public static byte[] SerializeSceneState(float progressRatio)
+	public static byte[] SerializeEntitySnapshots(System.Collections.Generic.IReadOnlyList<EntitySnapshotData> snapshots)
 	{
 		var buffer = new StreamPeerBuffer();
 		buffer.BigEndian = false;
-		buffer.PutU8(PacketSceneState);
-		buffer.PutFloat(progressRatio);
+		buffer.PutU8(PacketEntitySnapshot);
+		buffer.PutU16((ushort)(snapshots?.Count ?? 0));
+		
+		if (snapshots != null)
+		{
+			foreach (var snapshot in snapshots)
+			{
+				buffer.PutU32((uint)snapshot.EntityId);
+				buffer.PutU16((ushort)snapshot.Data.Length);
+				buffer.PutData(snapshot.Data);
+			}
+		}
+		
 		return buffer.DataArray;
 	}
 
-	public static float DeserializeSceneState(byte[] packet)
+	public static System.Collections.Generic.List<EntitySnapshotData> DeserializeEntitySnapshots(byte[] packet)
 	{
 		var buffer = new StreamPeerBuffer();
 		buffer.BigEndian = false;
 		buffer.DataArray = packet;
+		
+		if (buffer.GetAvailableBytes() < 3)
+			return null;
+		
+		if (buffer.GetU8() != PacketEntitySnapshot)
+			return null;
+		
+		var count = buffer.GetU16();
+		var list = new System.Collections.Generic.List<EntitySnapshotData>();
+		
+		for (var i = 0; i < count; i++)
+		{
+			if (buffer.GetAvailableBytes() < 6)
+				break;
+			
+			var entityId = (int)buffer.GetU32();
+			var dataLength = buffer.GetU16();
+			
+			if (buffer.GetAvailableBytes() < dataLength)
+				break;
+			
+			var data = buffer.GetData(dataLength);
+			var error = (Error)(int)data[0];
+			if (error == Error.Ok)
+			{
+				var bytes = data[1].AsByteArray();
+				list.Add(new EntitySnapshotData
+				{
+					EntityId = entityId,
+					Data = bytes
+				});
+			}
+		}
+		
+		return list;
+	}
+
+	public static byte[] SerializeEntityDespawn(int entityId)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.PutU8(PacketEntityDespawn);
+		buffer.PutU32((uint)entityId);
+		return buffer.DataArray;
+	}
+
+	public static int DeserializeEntityDespawn(byte[] packet)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.DataArray = packet;
+		
 		if (buffer.GetAvailableBytes() < 5)
-			return -1f;
-		var type = buffer.GetU8();
-		if (type != PacketSceneState)
-			return -1f;
-		return buffer.GetFloat();
+			return 0;
+		
+		if (buffer.GetU8() != PacketEntityDespawn)
+			return 0;
+		
+		return (int)buffer.GetU32();
+	}
+
+	public partial class EntitySnapshotData : GodotObject
+	{
+		public int EntityId { get; set; }
+		public byte[] Data { get; set; }
 	}
 
 	private static void WriteCarSnapshot(StreamPeerBuffer buffer, CarSnapshot snapshot)
