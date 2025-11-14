@@ -9,27 +9,6 @@ public partial class PlayerCharacter : CharacterBody3D
 	[Export] public NodePath CollisionShapePath { get; set; } = "Collision";
 	[Export] public bool AutoRegisterWithNetwork { get; set; } = true;
 
-	[ExportGroup("Movement")]
-	[Export] public float Gravity { get; set; } = 9.8f;
-	[Export] public float JumpVelocity { get; set; } = 3f;
-	[Export] public float GroundAcceleration { get; set; } = 40f;
-	[Export] public float GroundSpeedLimit { get; set; } = 60f;
-	[Export(PropertyHint.Range, "0.5,1,0.01")] public float GroundFriction { get; set; } = 0.9f;
-	[Export] public float AirAcceleration { get; set; } = 80f;
-	[Export(PropertyHint.Range, "0.1,20,0.1")] public float AirSpeedLimit { get; set; } = 0.8f;
-	[Export(PropertyHint.Range, "0,0.5,0.01")] public float AirDrag { get; set; } = 0f;
-
-	[ExportGroup("Look")]
-	[Export] public float MouseSensitivity { get; set; } = 0.002f;
-	[Export(PropertyHint.Range, "-1.5,-0.1,0.01")] public float MinPitch { get; set; } = -1.2f;
-	[Export(PropertyHint.Range, "0.1,1.5,0.01")] public float MaxPitch { get; set; } = 1.2f;
-	[Export] public float LookBaseFov { get; set; } = 80f;
-	[Export(PropertyHint.Range, "0.1,2,0.05")] public float LookFovSpeedScale { get; set; } = 0.8f;
-	[Export(PropertyHint.Range, "0,20,0.5")] public float LookMaxFovBoost { get; set; } = 12f;
-	[Export] public float LookHeadBobAmplitude { get; set; } = 0.02f;
-	[Export] public float LookHeadBobFrequency { get; set; } = 10f;
-	[Export] public float LookTiltDegrees { get; set; } = 6f;
-
 	private Node3D _head;
 	private Camera3D _camera;
 	private MeshInstance3D _mesh;
@@ -210,26 +189,7 @@ public partial class PlayerCharacter : CharacterBody3D
 
 	private void InitializeControllerModules()
 	{
-		var movementSettings = PlayerMovementSettings.CreateDefaults();
-		movementSettings.Gravity = Gravity;
-		movementSettings.JumpVelocity = JumpVelocity;
-		movementSettings.GroundAcceleration = GroundAcceleration;
-		movementSettings.GroundSpeedLimit = GroundSpeedLimit;
-		movementSettings.GroundFriction = Mathf.Clamp(GroundFriction, 0.1f, 1f);
-		movementSettings.AirAcceleration = AirAcceleration;
-		movementSettings.AirSpeedLimit = AirSpeedLimit;
-		movementSettings.AirDrag = AirDrag;
-		_movementController = new PlayerMovementController(movementSettings);
-
-		_lookController.MouseSensitivity = MouseSensitivity;
-		_lookController.MinPitch = MinPitch;
-		_lookController.MaxPitch = MaxPitch;
-		_lookController.BaseFov = LookBaseFov > 0f ? LookBaseFov : (_camera?.Fov ?? 75f);
-		_lookController.FovSpeedScale = LookFovSpeedScale;
-		_lookController.MaxFovBoost = LookMaxFovBoost;
-		_lookController.HeadBobAmplitude = LookHeadBobAmplitude;
-		_lookController.HeadBobFrequency = LookHeadBobFrequency;
-		_lookController.TiltAngleDegrees = LookTiltDegrees;
+		_movementController = new PlayerMovementController();
 
 		var initialYaw = _head != null ? _head.Rotation.Y : Rotation.Y;
 		var initialPitch = _camera != null ? _camera.Rotation.X : 0f;
