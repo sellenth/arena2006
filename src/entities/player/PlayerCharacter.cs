@@ -1,13 +1,14 @@
 using System.Diagnostics;
 using Godot;
 
-public partial class PlayerCharacter : CharacterBody3D
+public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 {
 	[Export] public NodePath HeadPath { get; set; } = "Head";
 	[Export] public NodePath CameraPath { get; set; } = "Head/Cam";
 	[Export] public NodePath MeshPath { get; set; } = "MeshInstance3D";
 	[Export] public NodePath CollisionShapePath { get; set; } = "Collision";
 	[Export] public bool AutoRegisterWithNetwork { get; set; } = true;
+	[Export] public int NetworkId { get; set; } = 0;
 
 	private Node3D _head;
 	private Camera3D _camera;
@@ -25,6 +26,11 @@ public partial class PlayerCharacter : CharacterBody3D
 	private bool _cameraActive = false;
 	private bool _worldActive = true;
 	private bool _managesMouseMode = false;
+	
+	private ReplicatedTransform3D _transformProperty;
+	private ReplicatedVector3 _velocityProperty;
+	private ReplicatedFloat _viewYawProperty;
+	private ReplicatedFloat _viewPitchProperty;
 
 	public PlayerCharacter()
 	{
@@ -47,17 +53,97 @@ public partial class PlayerCharacter : CharacterBody3D
 		}
 
 		InitializeControllerModules();
+		
+		InitializeReplication();
 
 		if (AutoRegisterWithNetwork)
 		{
 			_networkController = GetNodeOrNull<NetworkController>("/root/NetworkController");
 			if (_networkController != null && _networkController.IsClient)
+			{
+				RegisterAsLocalPlayer();
 				_networkController.RegisterPlayerCharacter(this);
+			}
 		}
 
 		_managesMouseMode = AutoRegisterWithNetwork && (_networkController == null || _networkController.IsClient);
 
 		ApplyColor(_playerColor);
+	}
+	
+	private void InitializeReplication()
+	{
+		_transformProperty = new ReplicatedTransform3D(
+			"Transform",
+			() => GlobalTransform,
+			(value) => ApplyTransformFromReplication(value),
+			ReplicationMode.Always,
+			positionThreshold: 0.01f,
+			rotationThreshold: Mathf.DegToRad(1.0f)
+		);
+		
+		_velocityProperty = new ReplicatedVector3(
+			"Velocity",
+			() => Velocity,
+			(value) => Velocity = value,
+			ReplicationMode.Always
+		);
+		
+		_viewYawProperty = new ReplicatedFloat(
+			"ViewYaw",
+			() => _lookController?.Yaw ?? 0f,
+			(value) => SetViewYaw(value),
+			ReplicationMode.Always
+		);
+		
+		_viewPitchProperty = new ReplicatedFloat(
+			"ViewPitch",
+			() => _lookController?.Pitch ?? 0f,
+			(value) => SetViewPitch(value),
+			ReplicationMode.Always
+		);
+	}
+	
+	private void RegisterAsLocalPlayer()
+	{
+		var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
+		if (remoteManager != null)
+		{
+			remoteManager.RegisterRemoteEntity(NetworkId, this);
+			GD.Print($"PlayerCharacter: Registered as remote with NetworkId {NetworkId}");
+		}
+		else
+		{
+			GD.PushWarning("PlayerCharacter: RemoteEntityManager not found in scene!");
+		}
+	}
+	
+	private void ApplyTransformFromReplication(Transform3D value)
+	{
+		var snapshot = new PlayerSnapshot
+		{
+			Transform = value,
+			Velocity = Velocity,
+			ViewYaw = _lookController?.Yaw ?? 0f,
+			ViewPitch = _lookController?.Pitch ?? 0f
+		};
+		QueueSnapshot(snapshot);
+	}
+	
+	private void SetViewYaw(float yaw)
+	{
+		if (_lookController != null && !_isAuthority)
+		{
+			_lookController.SetYawPitch(yaw, _lookController.Pitch);
+		}
+	}
+	
+	private void SetViewPitch(float pitch)
+	{
+		if (_lookController != null && !_isAuthority)
+		{
+			_lookController.SetYawPitch(_lookController.Yaw, pitch);
+		}
 	}
 
 	public override void _PhysicsProcess(double delta)
@@ -241,5 +327,29 @@ public partial class PlayerCharacter : CharacterBody3D
 		if (other == null)
 			return float.MaxValue;
 		return GlobalPosition.DistanceTo(other.GlobalPosition);
+	}
+	
+	public void WriteSnapshot(StreamPeerBuffer buffer)
+	{
+		_transformProperty.Write(buffer);
+		_velocityProperty.Write(buffer);
+		_viewYawProperty.Write(buffer);
+		_viewPitchProperty.Write(buffer);
+	}
+	
+	public void ReadSnapshot(StreamPeerBuffer buffer)
+	{
+		_transformProperty.Read(buffer);
+		_velocityProperty.Read(buffer);
+		_viewYawProperty.Read(buffer);
+		_viewPitchProperty.Read(buffer);
+	}
+	
+	public int GetSnapshotSizeBytes()
+	{
+		return _transformProperty.GetSizeBytes() 
+			 + _velocityProperty.GetSizeBytes() 
+			 + _viewYawProperty.GetSizeBytes() 
+			 + _viewPitchProperty.GetSizeBytes();
 	}
 }
