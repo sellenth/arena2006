@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://pgudwlq5efn0"]
+[gd_scene load_steps=25 format=3 uid="uid://pgudwlq5efn0"]
 
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/materials/black_square.tres" id="2_n38sr"]
 [ext_resource type="Material" uid="uid://dwgngqcfvi3s4" path="res://src/materials/red_square.tres" id="3_k6g81"]
@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://c7m8fswqpshy4" path="res://src/systems/ui/pause_menu.tscn" id="7_liv0r"]
 [ext_resource type="PackedScene" uid="uid://ch2s1v2av6f0p" path="res://src/systems/ui/options_menu.tscn" id="8_njg2t"]
 [ext_resource type="PackedScene" uid="uid://cukaeucupjo2e" path="res://src/systems/ui/debug_ui_controller.tscn" id="9_73xoc"]
-[ext_resource type="PackedScene" path="res://src/entities/player/player_character.tscn" id="10_player"]
+[ext_resource type="PackedScene" uid="uid://bp5wletrm4dw2" path="res://src/entities/player/player_character.tscn" id="10_player"]
 [ext_resource type="Script" uid="uid://dw3owa0i2p1f2" path="res://src/entities/player/PlayerWrapper.cs" id="11_pwrap"]
 [ext_resource type="Script" uid="uid://c3b5xve2kalg" path="res://src/systems/network/RemotePlayerManager.cs" id="12_rplayer"]
 [ext_resource type="Script" uid="uid://ygqck2ca07ti" path="res://src/systems/network/RemoteVehicleManager.cs" id="13_38sdm"]
@@ -30,12 +30,19 @@ tonemap_mode = 1
 
 [sub_resource type="Curve3D" id="Curve3D_qm2o8"]
 closed = true
-bake_interval = 0.01
 _data = {
-"points": PackedVector3Array(-8.72235, -7.4649787, 13.554188, 8.72235, 7.4649787, -13.554188, 0, 0, 0, 0, 0, 0, 0, 0, 0, -51.154, 0, -36.803, 0, 0, 0, 0, 0, 0, -127.164, 0, -66.987, 0.22123718, 0.055853307, -11.237801, -0.22123718, -0.055853307, 11.237801, -197.889, 0, -71.389, 78.73035, 0.24514776, -53.36718, -78.73035, -0.24514776, 53.36718, -213.23438, 0.84331363, -14.5049515, 0, 0, 0, 0, 0, 0, -69.784, 0, 58.398, 0, 0, 0, 0, 0, 0, 122.756, 0, 109.573, 0, 0, 0, 0, 0, 0, 219.254, 0, 79.488, 0, 0, 0, 0, 0, 0, 153.255, 0, 21.216, 35.04, 0, 0, -13.79, 0, 0, 96.962, 0, 1.608, 0, 0, 0, -12, 0, 0, 45.9237, 14.7709, 3.8857),
-"tilts": PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.32)
+"points": PackedVector3Array(-26.225464, 1.5325003, 176.31253, 26.225464, -1.5325003, -176.31253, -286.43634, -1.3658619, -157.13898, -116.639786, -0.07672596, -8.8272705, 116.639786, 0.07672596, 8.8272705, -15.189236, -2.8726215, -330.48996, -50.887177, -1.0012493, -115.192635, 50.887177, 1.0012493, 115.192635, 325.51028, -0.7812209, -89.87662, 200.06613, -1.0268545, -118.13846, -200.06613, 1.0268545, 118.13846, 184.418, 2.4034138, 276.51202, 116.17879, 0.7517357, 86.48633, -116.17879, -0.7517357, -86.48633, -183.07806, 2.4842172, 285.80838),
+"tilts": PackedFloat32Array(0.2617994, 0.2617994, 0.2617994, 0.2617994, 0.2617994)
 }
-point_count = 11
+point_count = 5
+
+[sub_resource type="Curve3D" id="Curve3D_38sdm"]
+closed = true
+_data = {
+"points": PackedVector3Array(-29.25177, 0, -106.34547, 29.25177, 0, 106.34547, -3.1953125, 0, -65.187096, 149.56317, 0, -33.457, -149.56317, 0, 33.457, -299.86258, 3.0517578e-05, 373.1105, 12.774048, 9.1552734e-05, 118.83481, -12.774048, -9.1552734e-05, -118.83481, -710.5067, 0.00012207031, 109.31046, -63.089172, 0, 13.71698, 63.089172, 0, -13.71698, -423.20462, 3.0517578e-05, -141.34988),
+"tilts": PackedFloat32Array(0, 0, 0, 0)
+}
+point_count = 4
 
 [sub_resource type="BoxMesh" id="BoxMesh_2bu5k"]
 size = Vector3(0.1, 5, 300)
@@ -56,6 +63,11 @@ _data = {
 }
 point_count = 3
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_38sdm"]
+properties/0/path = NodePath(".:progress_ratio")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
 [node name="GameRoot" type="Node3D"]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
@@ -73,16 +85,17 @@ metadata/_edit_lock_ = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, -94.2223)
 material_override = ExtResource("2_n38sr")
 use_collision = true
-size = Vector3(500, 0.5, 500)
+size = Vector3(750, 0.5, 750)
 
 [node name="Path3D" type="Path3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.394751, -55.8006)
+transform = Transform3D(1, 0, 0, 0, 0.9999622, -0.008691629, 0, 0.008691629, 0.9999622, 0, -8.51074, -55.8006)
 curve = SubResource("Curve3D_qm2o8")
 
 [node name="CSGPolygon3D" type="CSGPolygon3D" parent="Path3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20.50203, 0)
 material_override = ExtResource("3_k6g81")
 use_collision = true
-polygon = PackedVector2Array(-25, 0, 25, 1, 25, 1, 25, 0)
+polygon = PackedVector2Array(-50, 0, 50, 1, 50, 1, 50, 0)
 mode = 2
 path_node = NodePath("..")
 path_interval_type = 0
@@ -95,8 +108,15 @@ path_continuous_u = true
 path_u_distance = 1.0
 path_joined = false
 
-[node name="skyscraper1" parent="." instance=ExtResource("14_886vf")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66.4095, -23.3205, -232.403)
+[node name="Path3D2" type="Path3D" parent="."]
+transform = Transform3D(-5.9884634e-08, -1.37, 6.8412746e-15, 0.31279427, -1.3672672e-08, 1.333814, -1.333814, 5.830289e-08, 0.31279427, 374.3125, 86.03772, -516.8681)
+curve = SubResource("Curve3D_38sdm")
+
+[node name="PathFollow3D" type="PathFollow3D" parent="Path3D2"]
+transform = Transform3D(-0.9641802, 0, -0.2652109, 0, 1, 0, 0.2652109, 0, -0.9641802, -3.1953125, 0, -65.187096)
+
+[node name="skyscraper1" parent="Path3D2/PathFollow3D" instance=ExtResource("14_886vf")]
+transform = Transform3D(-0.124179244, -4.4068753e-07, 0.99225986, -3.0061244e-08, 1, 4.403629e-07, -0.99225986, 2.4855403e-08, -0.124179244, 14.207611, 3.0517578e-05, -63.70018)
 
 [node name="JumpPad" parent="." instance=ExtResource("15_l2d1b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5435, 0, -51.0122)
@@ -178,3 +198,8 @@ path_local = true
 path_continuous_u = true
 path_u_distance = 1.0
 path_joined = false
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+root_path = NodePath("../Path3D2/PathFollow3D")
+replication_interval = 1.0
+replication_config = SubResource("SceneReplicationConfig_38sdm")

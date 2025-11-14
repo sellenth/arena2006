@@ -287,6 +287,14 @@ private readonly struct PlayerPredictionSample
 				RegisterPeer(newPeer);
 		}
 
+		//GetNode<PathFollow3D>("PathFollow3D").Progress = 0.5f;
+		var root = GetTree().CurrentScene;
+		var pathFollow3d = root.FindChild("PathFollow3D", true, false) as PathFollow3D;
+		if (pathFollow3d != null) {
+
+			pathFollow3d.ProgressRatio += 0.01f;
+		}
+
 		foreach (var peerId in _peers.Keys.ToList())
 		{
 			var info = _peers[peerId];
