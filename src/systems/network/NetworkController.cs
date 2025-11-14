@@ -291,7 +291,7 @@ private readonly struct PlayerPredictionSample
 		var root = GetTree().CurrentScene;
 		var pathFollow3d = root.FindChild("PathFollow3D", true, false) as PathFollow3D;
 		if (pathFollow3d != null) {
-			pathFollow3d.ProgressRatio += 0.01f;
+			pathFollow3d.ProgressRatio += 0.003f;
 			BroadcastSceneState(pathFollow3d.ProgressRatio);
 		}
 

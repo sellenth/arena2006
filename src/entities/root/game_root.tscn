@@ -200,3 +200,5 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -443.55066, 142.31943, 189.83
 
 [node name="hut2" parent="." instance=ExtResource("14_l2d1b")]
 transform = Transform3D(-30.54626, 0, 95.22041, 0, 100, 0, -95.22041, 0, -30.54626, -711.03204, 46.61862, 384.85995)
+
+[editable path="hut2"]
