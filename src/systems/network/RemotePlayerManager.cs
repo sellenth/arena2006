@@ -74,7 +74,7 @@ public partial class RemotePlayerManager : Node3D
 		player.ConfigureAuthority(false);
 		player.SetCameraActive(false);
 		player.SetWorldActive(false);
-		player.TeleportTo(transform);
+		RespawnManager.Instance.TeleportEntity(player, transform);
 		_remotePlayers[playerId] = player;
 		return player;
 	}

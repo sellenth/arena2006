@@ -444,7 +444,8 @@ private readonly struct PlayerPredictionSample
 		info.Mode = PlayerMode.Foot;
 		info.ControlledVehicleId = 0;
 		vehicle.OccupantPeerId = 0;
-		info.PlayerCharacter.TeleportTo(new Transform3D( info.PlayerCharacter.GlobalBasis, exitTransform.Origin));
+		var transform = new Transform3D(info.PlayerCharacter.GlobalBasis, exitTransform.Origin);
+		RespawnManager.Instance.TeleportEntity(info.PlayerCharacter, transform);
 		var yaw = vehicle.Car.GlobalTransform.Basis.GetEuler().Y;
 		info.PlayerCharacter.SetYawPitch(yaw, 0f);
 		info.PlayerCharacter.SetWorldActive(true);
@@ -827,7 +828,7 @@ private readonly struct PlayerPredictionSample
 
 		var transform = ownerCar?.GlobalTransform ?? GetSpawnTransform(peerId);
 		transform.Origin += Vector3.Up * 1.2f;
-		player.TeleportTo(transform);
+		RespawnManager.Instance.TeleportEntity(player, transform);
 		return player;
 	}
 
