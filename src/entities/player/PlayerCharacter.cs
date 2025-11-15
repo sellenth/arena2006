@@ -29,11 +29,15 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private bool _registeredWithRemoteManager = false;
 	private bool _hasPendingReplicatedTransform = false;
 	private Transform3D _pendingReplicatedTransform = Transform3D.Identity;
+	private int _replicatedMode = (int)PlayerMode.Foot;
+	private int _replicatedVehicleId = 0;
 	
 	private ReplicatedTransform3D _transformProperty;
 	private ReplicatedVector3 _velocityProperty;
 	private ReplicatedFloat _viewYawProperty;
 	private ReplicatedFloat _viewPitchProperty;
+	private ReplicatedInt _modeProperty;
+	private ReplicatedInt _vehicleIdProperty;
 
 	public PlayerCharacter()
 	{
@@ -100,11 +104,25 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			ReplicationMode.Always
 		);
 		
-		_viewPitchProperty = new ReplicatedFloat(
-			"ViewPitch",
-			() => _lookController?.Pitch ?? 0f,
-			(value) => SetViewPitch(value),
-			ReplicationMode.Always
+			_viewPitchProperty = new ReplicatedFloat(
+				"ViewPitch",
+				() => _lookController?.Pitch ?? 0f,
+				(value) => SetViewPitch(value),
+				ReplicationMode.Always
+			);
+
+		_modeProperty = new ReplicatedInt(
+			"PlayerMode",
+			() => _replicatedMode,
+			value => ApplyReplicatedMode((PlayerMode)value),
+			ReplicationMode.OnChange
+		);
+
+		_vehicleIdProperty = new ReplicatedInt(
+			"VehicleId",
+			() => _replicatedVehicleId,
+			value => _replicatedVehicleId = value,
+			ReplicationMode.OnChange
 		);
 	}
 	
@@ -119,6 +137,12 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		{
 			GD.PushWarning($"PlayerCharacter ({Name}): Cannot register authority, registry missing.");
 		}
+	}
+
+	public void SetReplicatedMode(PlayerMode mode, int vehicleId)
+	{
+		_replicatedMode = (int)mode;
+		_replicatedVehicleId = vehicleId;
 	}
 
 	public void SetNetworkId(int id)
@@ -192,6 +216,16 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		{
 			_lookController.SetYawPitch(_lookController.Yaw, pitch);
 		}
+	}
+
+	private void ApplyReplicatedMode(PlayerMode mode)
+	{
+		_replicatedMode = (int)mode;
+		if (_isAuthority)
+			return;
+
+		// Toggle visibility/physics based on replicated mode
+		SetWorldActive(mode == PlayerMode.Foot);
 	}
 
 	public override void _PhysicsProcess(double delta)
@@ -383,6 +417,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_velocityProperty.Write(buffer);
 		_viewYawProperty.Write(buffer);
 		_viewPitchProperty.Write(buffer);
+		_modeProperty.Write(buffer);
+		_vehicleIdProperty.Write(buffer);
 	}
 	
 	public void ReadSnapshot(StreamPeerBuffer buffer)
@@ -391,6 +427,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_velocityProperty.Read(buffer);
 		_viewYawProperty.Read(buffer);
 		_viewPitchProperty.Read(buffer);
+		_modeProperty.Read(buffer);
+		_vehicleIdProperty.Read(buffer);
 
 		if (_hasPendingReplicatedTransform)
 		{
@@ -411,6 +449,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		return _transformProperty.GetSizeBytes() 
 			 + _velocityProperty.GetSizeBytes() 
 			 + _viewYawProperty.GetSizeBytes() 
-			 + _viewPitchProperty.GetSizeBytes();
+			 + _viewPitchProperty.GetSizeBytes()
+			 + _modeProperty.GetSizeBytes()
+			 + _vehicleIdProperty.GetSizeBytes();
 	}
 }
