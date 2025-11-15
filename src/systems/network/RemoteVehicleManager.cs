@@ -25,21 +25,11 @@ public partial class RemoteVehicleManager : Node3D
 		
 		_remoteEntityManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
 
-		if (!_networkController.IsClient)
-			return;
-
 		_fallbackVehicleScene = VehicleScene ?? GD.Load<PackedScene>("res://src/entities/vehicle/car/player_car.tscn");
-		_networkController.VehicleStateUpdated += OnVehicleStateUpdated;
-		_networkController.VehicleDespawned += OnVehicleDespawned;
 	}
 
 	public override void _ExitTree()
 	{
-		if (_networkController != null && _networkController.IsClient)
-		{
-			_networkController.VehicleStateUpdated -= OnVehicleStateUpdated;
-			_networkController.VehicleDespawned -= OnVehicleDespawned;
-		}
 	}
 
 	private void OnVehicleStateUpdated(int vehicleId, VehicleStateSnapshot snapshot)
