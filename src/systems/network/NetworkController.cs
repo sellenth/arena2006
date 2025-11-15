@@ -187,16 +187,17 @@ using System.Diagnostics;
 			_playerCharacter = player;
 			if (_role == NetworkRole.Client)
 			{
-				if (_clientId != 0)
-				{
-					_playerCharacter.SetNetworkId(GetPlayerEntityId(_clientId));
-					_playerCharacter.RegisterAsRemoteReplica();
+					if (_clientId != 0)
+					{
+						_playerCharacter.SetNetworkId(GetPlayerEntityId(_clientId));
+						_playerCharacter.RegisterAsRemoteReplica();
+					}
+					_playerCharacter.SetReplicatedMode(CurrentClientMode, _clientVehicleId);
+					player.ConfigureAuthority(true);
+					player.SetCameraActive(CurrentClientMode == PlayerMode.Foot);
+					ApplyClientInputToPlayer();
 				}
-				player.ConfigureAuthority(true);
-				player.SetCameraActive(CurrentClientMode == PlayerMode.Foot);
-				ApplyClientInputToPlayer();
 			}
-		}
 
 	public void AttachLocalVehicle(int vehicleId, RaycastCar car)
 	{
@@ -418,6 +419,7 @@ using System.Diagnostics;
 				CarSnapshot = carSnapshot,
 				PlayerSnapshot = playerSnapshot
 			};
+			info.PlayerCharacter?.SetReplicatedMode(info.Mode, info.ControlledVehicleId);
 			SendSnapshotToAll(peerId, snapshot);
 		}
 	}
@@ -439,14 +441,15 @@ using System.Diagnostics;
 		if (vehicle == null || seat == null)
 			return false;
 
-		info.PlayerRestTransform = info.PlayerCharacter.GlobalTransform;
-		info.ControlledVehicleId = vehicle.Id;
-		vehicle.OccupantPeerId = info.Id;
-		vehicle.Car?.SetOccupantPeerId(info.Id);
-		info.Mode = PlayerMode.Vehicle;
-		info.PlayerCharacter.SetWorldActive(false);
-		return true;
-	}
+			info.PlayerRestTransform = info.PlayerCharacter.GlobalTransform;
+			info.ControlledVehicleId = vehicle.Id;
+			vehicle.OccupantPeerId = info.Id;
+			vehicle.Car?.SetOccupantPeerId(info.Id);
+			info.PlayerCharacter?.SetReplicatedMode(PlayerMode.Vehicle, vehicle.Id);
+			info.Mode = PlayerMode.Vehicle;
+			info.PlayerCharacter.SetWorldActive(false);
+			return true;
+		}
 
 	private bool TryExitVehicle(PeerInfo info)
 	{
@@ -462,6 +465,7 @@ using System.Diagnostics;
 		info.ControlledVehicleId = 0;
 		vehicle.OccupantPeerId = 0;
 		vehicle.Car.SetOccupantPeerId(0);
+		info.PlayerCharacter?.SetReplicatedMode(PlayerMode.Foot, 0);
 		var transform = new Transform3D(info.PlayerCharacter.GlobalBasis, exitTransform.Origin);
 		RespawnManager.Instance.TeleportEntity(info.PlayerCharacter, transform);
 		var yaw = vehicle.Car.GlobalTransform.Basis.GetEuler().Y;
@@ -724,6 +728,7 @@ using System.Diagnostics;
 						{
 							_playerCharacter.SetNetworkId(GetPlayerEntityId(_clientId));
 							_playerCharacter.RegisterAsRemoteReplica();
+							_playerCharacter.SetReplicatedMode(CurrentClientMode, _clientVehicleId);
 						}
 					}
 					break;
@@ -861,6 +866,7 @@ using System.Diagnostics;
 			player.ConfigureAuthority(true);
 			player.SetWorldActive(false);
 			player.SetNetworkId(GetPlayerEntityId(peerId));
+			player.SetReplicatedMode(PlayerMode.Foot, 0);
 			_serverPlayerParent.AddChild(player);
 			player.RegisterAsAuthority();
 
@@ -1110,6 +1116,7 @@ using System.Diagnostics;
 
 		var snapshotMode = snapshot.Mode;
 		_clientVehicleId = snapshot.VehicleId;
+		_playerCharacter?.SetReplicatedMode(snapshotMode, snapshot.VehicleId);
 
 		if (snapshot.CarSnapshot != null)
 		{
