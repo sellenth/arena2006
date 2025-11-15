@@ -111,6 +111,14 @@ public partial class RemoteEntityManager : Node
 		if (car == null)
 			return null;
 
+		// Prevent remote vehicle cameras from stealing focus on clients
+		var cam = car.GetNodeOrNull<Camera3D>(car.CameraPath);
+		if (cam != null)
+		{
+			cam.Current = false;
+			cam.SetDeferred("current", false);
+		}
+
 		car.RegistrationMode = RaycastCar.NetworkRegistrationMode.None;
 		car.AutoRespawnOnReady = false;
 		car.Name = $"Vehicle_{entityId - VehicleEntityIdOffset}";

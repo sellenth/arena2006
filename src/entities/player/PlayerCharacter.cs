@@ -71,6 +71,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 				if (NetworkId != 0)
 					RegisterAsRemoteReplica();
 				_networkController.RegisterPlayerCharacter(this);
+				SetCameraActive(true);
 			}
 		}
 
