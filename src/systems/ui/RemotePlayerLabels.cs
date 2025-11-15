@@ -33,7 +33,7 @@ public partial class RemotePlayerLabels : Node3D
 		_vehicleManager = remoteVehiclesNode as RemoteVehicleManager;
 		_vehicleManager ??= remoteVehiclesNode?.GetNodeOrNull<RemoteVehicleManager>(".");
 
-		_networkController.PlayerStateUpdated += OnPlayerStateUpdated;
+		_networkController.EntitySnapshotReceived += OnEntitySnapshot;
 		_networkController.PlayerDisconnected += OnPlayerDisconnected;
 	}
 
@@ -41,15 +41,17 @@ public partial class RemotePlayerLabels : Node3D
 	{
 		if (_networkController != null)
 		{
-			_networkController.PlayerStateUpdated -= OnPlayerStateUpdated;
+			_networkController.EntitySnapshotReceived -= OnEntitySnapshot;
 			_networkController.PlayerDisconnected -= OnPlayerDisconnected;
 		}
 	}
 
-	private void OnPlayerStateUpdated(int playerId, PlayerStateSnapshot snapshot)
+	private void OnEntitySnapshot(int entityId, byte[] data)
 	{
-		if (snapshot == null) return;
+		if (entityId < 3000 || entityId >= 4000) // players use 3000+ IDs
+			return;
 
+		var playerId = entityId - 3000;
 		if (!_labels.ContainsKey(playerId))
 		{
 			var label = CreateLabel(playerId);
@@ -57,7 +59,10 @@ public partial class RemotePlayerLabels : Node3D
 			_labels[playerId] = label;
 		}
 
-		AttachLabelToTarget(playerId, snapshot.Mode);
+		var playerNode = _remotePlayerCharacters?.GetNodeOrNull<Node3D>($"RemotePlayer_{playerId}");
+		var target = playerNode ?? _vehicleManager?.GetVehicleNodeForPlayer(playerId);
+		if (target != null)
+			AttachLabelToTarget(playerId, playerNode != null ? PlayerMode.Foot : PlayerMode.Vehicle);
 	}
 
 	private void OnPlayerDisconnected(int playerId)

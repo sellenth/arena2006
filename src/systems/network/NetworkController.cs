@@ -924,12 +924,6 @@ using System.Diagnostics;
 		if (info.InstanceId != 0)
 			_vehicleIdByInstance.Remove(info.InstanceId);
 
-		if (_peers.Count > 0)
-		{
-			var packet = NetworkSerializer.SerializeVehicleDespawn(vehicleId);
-			foreach (var peer in _peers.Values)
-				peer?.Peer.PutPacket(packet);
-		}
 	}
 
 	private void CheckPeerTimeouts()
