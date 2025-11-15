@@ -6,34 +6,17 @@ public partial class RemotePlayerManager : Node3D
 	private const int PlayerEntityIdOffset = 3000;
 	private Dictionary<int, PlayerCharacter> _remotePlayers = new Dictionary<int, PlayerCharacter>();
 	private PackedScene _playerScene;
-	private NetworkController _networkController;
 	private RemoteEntityManager _remoteEntityManager;
 	private bool _useEntityReplication => _remoteEntityManager != null;
 
 	public override void _Ready()
 	{
 		_playerScene = GD.Load<PackedScene>("res://src/entities/player/player_character.tscn");
-		_networkController = GetNode<NetworkController>("/root/NetworkController");
 		_remoteEntityManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
-
-		if (_networkController != null)
-		{
-			_networkController.PlayerStateUpdated += OnPlayerStateUpdated;
-			_networkController.PlayerDisconnected += OnPlayerDisconnected;
-		}
-		else
-		{
-			GD.PushError("RemotePlayerManager: NetworkController not found!");
-		}
 	}
 
 	public override void _ExitTree()
 	{
-		if (_networkController != null)
-		{
-			_networkController.PlayerStateUpdated -= OnPlayerStateUpdated;
-			_networkController.PlayerDisconnected -= OnPlayerDisconnected;
-		}
 	}
 
 	private void OnPlayerStateUpdated(int playerId, PlayerStateSnapshot snapshot)

@@ -3,14 +3,11 @@ using Godot;
 public static partial class NetworkSerializer
 {
 	public const byte PacketCarInput = 1;
-	public const byte PacketPlayerState = 2;
-	public const byte PacketWelcome = 3;
-	public const byte PacketRemovePlayer = 4;
-	public const byte PacketPlayerInput = 5;
-	public const byte PacketVehicleState = 6;
-	public const byte PacketVehicleDespawn = 7;
-	public const byte PacketEntitySnapshot = 8;
-	public const byte PacketEntityDespawn = 9;
+	public const byte PacketWelcome = 2;
+	public const byte PacketRemovePlayer = 3;
+	public const byte PacketPlayerInput = 4;
+	public const byte PacketEntitySnapshot = 5;
+	public const byte PacketEntityDespawn = 6;
 
 	public const int CarSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
 	public const int PlayerSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
@@ -91,51 +88,6 @@ public static partial class NetworkSerializer
 		return state;
 	}
 
-	public static byte[] SerializePlayerState(int playerId, PlayerStateSnapshot snapshot)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.PutU8(PacketPlayerState);
-		buffer.PutU32((uint)playerId);
-		buffer.PutU8((byte)snapshot.Mode);
-		buffer.PutU32((uint)snapshot.VehicleId);
-		buffer.PutU32((uint)snapshot.LastProcessedInputTick);
-		WriteCarSnapshot(buffer, snapshot.CarSnapshot);
-		WritePlayerSnapshot(buffer, snapshot.PlayerSnapshot);
-		return buffer.DataArray;
-	}
-
-	public static PlayerStateData DeserializePlayerState(byte[] packet)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.DataArray = packet;
-		if (buffer.GetAvailableBytes() < 1) return null;
-		var packetType = buffer.GetU8();
-		if (packetType != PacketPlayerState) return null;
-		if (buffer.GetAvailableBytes() < 5) return null;
-		var data = new PlayerStateData
-		{
-			PlayerId = (int)buffer.GetU32()
-		};
-		if (buffer.GetAvailableBytes() < 1) return null;
-		var mode = (PlayerMode)buffer.GetU8();
-		if (buffer.GetAvailableBytes() < 4) return null;
-		var vehicleId = (int)buffer.GetU32();
-		if (buffer.GetAvailableBytes() < 4) return null;
-		var processedInputTick = (int)buffer.GetU32();
-		var snapshot = new PlayerStateSnapshot
-		{
-			Mode = mode,
-			VehicleId = vehicleId,
-			LastProcessedInputTick = processedInputTick,
-			CarSnapshot = ReadCarSnapshot(buffer),
-			PlayerSnapshot = ReadPlayerSnapshot(buffer)
-		};
-		data.Snapshot = snapshot;
-		return data;
-	}
-
 	public static byte[] SerializeWelcome(int peerId)
 	{
 		var buffer = new StreamPeerBuffer();
@@ -173,66 +125,6 @@ public static partial class NetworkSerializer
 		if (buffer.GetAvailableBytes() < 5) return 0;
 		var packetType = buffer.GetU8();
 		if (packetType != PacketRemovePlayer) return 0;
-		return (int)buffer.GetU32();
-	}
-
-	public static byte[] SerializeVehicleStates(System.Collections.Generic.IReadOnlyList<VehicleStateSnapshot> snapshots)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.PutU8(PacketVehicleState);
-		buffer.PutU16((ushort)(snapshots?.Count ?? 0));
-		if (snapshots != null)
-		{
-			foreach (var snapshot in snapshots)
-			{
-				WriteVehicleSnapshot(buffer, snapshot);
-			}
-		}
-		return buffer.DataArray;
-	}
-
-	public static Godot.Collections.Array<VehicleStateSnapshot> DeserializeVehicleStates(byte[] packet)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.DataArray = packet;
-		if (buffer.GetAvailableBytes() < 3)
-			return null;
-		if (buffer.GetU8() != PacketVehicleState)
-			return null;
-		var count = buffer.GetU16();
-		var list = new Godot.Collections.Array<VehicleStateSnapshot>();
-		for (var i = 0; i < count; i++)
-		{
-			if (buffer.GetAvailableBytes() < VehicleStatePayloadBytes)
-				break;
-			var snapshot = ReadVehicleSnapshot(buffer);
-			if (snapshot != null)
-				list.Add(snapshot);
-		}
-		return list;
-	}
-
-	public static byte[] SerializeVehicleDespawn(int vehicleId)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.PutU8(PacketVehicleDespawn);
-		buffer.PutU32((uint)vehicleId);
-		return buffer.DataArray;
-	}
-
-	public static int DeserializeVehicleDespawn(byte[] packet)
-	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.DataArray = packet;
-		if (buffer.GetAvailableBytes() < 5)
-			return 0;
-		var type = buffer.GetU8();
-		if (type != PacketVehicleDespawn)
-			return 0;
 		return (int)buffer.GetU32();
 	}
 

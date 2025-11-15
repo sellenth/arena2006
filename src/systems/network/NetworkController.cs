@@ -12,11 +12,8 @@ using System.Diagnostics;
 		private const int PlayerEntityIdOffset = 3000;
 		private const int VehicleEntityIdOffset = 2000;
 
-	[Signal] public delegate void PlayerStateUpdatedEventHandler(int playerId, PlayerStateSnapshot snapshot);
-	[Signal] public delegate void PlayerDisconnectedEventHandler(int playerId);
-	[Signal] public delegate void VehicleStateUpdatedEventHandler(int vehicleId, VehicleStateSnapshot snapshot);
-	[Signal] public delegate void VehicleDespawnedEventHandler(int vehicleId);
-	[Signal] public delegate void EntitySnapshotReceivedEventHandler(int entityId, byte[] data);
+		[Signal] public delegate void PlayerDisconnectedEventHandler(int playerId);
+		[Signal] public delegate void EntitySnapshotReceivedEventHandler(int entityId, byte[] data);
 
 	private partial class PeerInfo : GodotObject
 	{
@@ -90,7 +87,6 @@ using System.Diagnostics;
 	private int _clientId = 0;
 	private int _clientVehicleId = 0;
 	private int _lastAcknowledgedPlayerInputTick = 0;
-	private Godot.Collections.Dictionary<int, PlayerStateSnapshot> _remotePlayerSnapshots = new Godot.Collections.Dictionary<int, PlayerStateSnapshot>();
 	public PlayerMode CurrentClientMode { get; private set; } = PlayerMode.Foot;
 	public event Action<PlayerMode> ClientModeChanged;
 	public event Action<RaycastCar> LocalCarChanged;
@@ -102,7 +98,6 @@ using System.Diagnostics;
 	private PackedScene _playerCharacterScene;
 	private readonly System.Collections.Generic.Dictionary<int, VehicleInfo> _serverVehicles = new System.Collections.Generic.Dictionary<int, VehicleInfo>();
 	private readonly System.Collections.Generic.Dictionary<ulong, int> _vehicleIdByInstance = new System.Collections.Generic.Dictionary<ulong, int>();
-	private readonly System.Collections.Generic.List<VehicleStateSnapshot> _vehicleSnapshotBuffer = new System.Collections.Generic.List<VehicleStateSnapshot>();
 	private readonly System.Collections.Generic.List<PlayerPredictionSample> _playerPredictionHistory = new System.Collections.Generic.List<PlayerPredictionSample>();
 	private readonly System.Collections.Generic.List<NetworkSerializer.EntitySnapshotData> _entitySnapshotBuffer = new System.Collections.Generic.List<NetworkSerializer.EntitySnapshotData>();
 	private int _nextVehicleId = 1;
@@ -207,6 +202,8 @@ using System.Diagnostics;
 		_clientVehicleId = vehicleId;
 		UpdateLocalCarReference(car);
 		_car?.ConfigureForLocalDriver(true);
+		CurrentClientMode = PlayerMode.Vehicle;
+		ClientModeChanged?.Invoke(CurrentClientMode);
 		GD.Print($"NetworkController: Local client now controls vehicle {vehicleId}");
 	}
 
@@ -222,7 +219,11 @@ using System.Diagnostics;
 		}
 
 		if (_clientVehicleId == vehicleId)
+		{
 			_clientVehicleId = 0;
+			CurrentClientMode = PlayerMode.Foot;
+			ClientModeChanged?.Invoke(CurrentClientMode);
+		}
 	}
 
 
@@ -261,7 +262,6 @@ using System.Diagnostics;
 		else
 		{
 			_clientId = 0;
-			_remotePlayerSnapshots.Clear();
 			_playerPredictionHistory.Clear();
 			_lastAcknowledgedPlayerInputTick = 0;
 			CurrentClientMode = PlayerMode.Foot;
@@ -318,7 +318,6 @@ using System.Diagnostics;
 		_tick++;
 		UpdateServerPlayers();
 		CheckPeerTimeouts();
-		BroadcastVehicleStates();
 		BroadcastEntitySnapshots();
 	}
 
@@ -404,23 +403,7 @@ using System.Diagnostics;
 			if (!_peers.TryGetValue(peerId, out var info) || info == null)
 				continue;
 
-			var vehicleInfo = GetVehicleInfo(info.ControlledVehicleId);
-			var carSnapshot = vehicleInfo?.Car?.CaptureSnapshot(_tick);
-			var playerSnapshot = info.PlayerCharacter?.CaptureSnapshot(_tick);
-			info.LastCarSnapshot = carSnapshot;
-			info.LastPlayerSnapshot = playerSnapshot;
-
-			var snapshot = new PlayerStateSnapshot
-			{
-				Tick = _tick,
-				Mode = info.Mode,
-				VehicleId = info.ControlledVehicleId,
-				LastProcessedInputTick = info.PlayerInputState?.Tick ?? 0,
-				CarSnapshot = carSnapshot,
-				PlayerSnapshot = playerSnapshot
-			};
 			info.PlayerCharacter?.SetReplicatedMode(info.Mode, info.ControlledVehicleId);
-			SendSnapshotToAll(peerId, snapshot);
 		}
 	}
 
@@ -732,43 +715,12 @@ using System.Diagnostics;
 						}
 					}
 					break;
-				case NetworkSerializer.PacketPlayerState:
-					var remoteState = NetworkSerializer.DeserializePlayerState(packet);
-					if (remoteState?.Snapshot != null)
-					{
-						var remoteId = remoteState.PlayerId;
-						var remoteSnapshot = remoteState.Snapshot;
-						if (remoteId == _clientId)
-						{
-							ApplyLocalSnapshot(remoteSnapshot);
-						}
-						else
-						{
-							_remotePlayerSnapshots[remoteId] = remoteSnapshot;
-							EmitSignal(SignalName.PlayerStateUpdated, remoteId, remoteSnapshot);
-						}
-					}
-					break;
 				case NetworkSerializer.PacketRemovePlayer:
 					var removedId = NetworkSerializer.DeserializeRemovePlayer(packet);
 					if (removedId != 0)
 					{
-						_remotePlayerSnapshots.Remove(removedId);
 						EmitSignal(SignalName.PlayerDisconnected, removedId);
 					}
-					break;
-				case NetworkSerializer.PacketVehicleState:
-					var vehicleStates = NetworkSerializer.DeserializeVehicleStates(packet);
-					if (vehicleStates != null)
-					{
-						foreach (var snapshot in vehicleStates)
-							EmitSignal(SignalName.VehicleStateUpdated, snapshot.VehicleId, snapshot);
-					}
-					break;
-				case NetworkSerializer.PacketVehicleDespawn:
-					var removedVehicleId = NetworkSerializer.DeserializeVehicleDespawn(packet);
-					if (removedVehicleId != 0)
-						EmitSignal(SignalName.VehicleDespawned, removedVehicleId);
 					break;
 				case NetworkSerializer.PacketEntitySnapshot:
 					var entitySnapshots = NetworkSerializer.DeserializeEntitySnapshots(packet);
@@ -799,56 +751,6 @@ using System.Diagnostics;
 		GD.Print($"Client connected from {newPeer.GetPacketIP()}:{newPeer.GetPacketPort()} assigned id={peerId}");
 		GD.Print($"TEST_EVENT: CLIENT_CONNECTED id={peerId}");
 		newPeer.PutPacket(NetworkSerializer.SerializeWelcome(peerId));
-		SendExistingPlayerStates(peerId);
-		SendExistingVehicleStates(peerId);
-	}
-
-	private void SendExistingPlayerStates(int targetPeerId)
-	{
-		if (!_peers.ContainsKey(targetPeerId)) return;
-		var targetInfo = _peers[targetPeerId];
-		foreach (var peerId in _peers.Keys)
-		{
-			if (peerId == targetPeerId) continue;
-			var other = _peers[peerId];
-			if (other == null)
-				continue;
-			if (other.LastCarSnapshot == null && other.LastPlayerSnapshot == null)
-				continue;
-			var snapshot = new PlayerStateSnapshot
-			{
-				Tick = _tick,
-				Mode = other.Mode,
-				VehicleId = other.ControlledVehicleId,
-				LastProcessedInputTick = other.PlayerInputState?.Tick ?? 0,
-				CarSnapshot = other.LastCarSnapshot,
-				PlayerSnapshot = other.LastPlayerSnapshot
-			};
-			targetInfo.Peer.PutPacket(NetworkSerializer.SerializePlayerState(peerId, snapshot));
-		}
-	}
-
-	private void SendExistingVehicleStates(int targetPeerId)
-	{
-		if (!_peers.ContainsKey(targetPeerId))
-			return;
-
-		if (_serverVehicles.Count == 0)
-			return;
-
-		var list = new System.Collections.Generic.List<VehicleStateSnapshot>();
-		foreach (var vehicle in _serverVehicles.Values)
-		{
-			if (vehicle.LastSnapshot != null)
-				list.Add(vehicle.LastSnapshot);
-		}
-
-		if (list.Count == 0)
-			return;
-
-		var packet = NetworkSerializer.SerializeVehicleStates(list);
-		var target = _peers[targetPeerId];
-		target?.Peer.PutPacket(packet);
 	}
 
 	private PlayerCharacter SpawnServerPlayerCharacter(int peerId, RaycastCar ownerCar)
@@ -978,46 +880,6 @@ using System.Diagnostics;
 		return state;
 	}
 
-	private void SendSnapshotToAll(int playerId, PlayerStateSnapshot snapshot)
-	{
-		var packet = NetworkSerializer.SerializePlayerState(playerId, snapshot);
-		foreach (var info in _peers.Values)
-		{
-			info?.Peer.PutPacket(packet);
-		}
-	}
-
-	private void BroadcastVehicleStates()
-	{
-		if (_serverVehicles.Count == 0 || _peers.Count == 0)
-			return;
-
-		_vehicleSnapshotBuffer.Clear();
-		foreach (var vehicle in _serverVehicles.Values)
-		{
-			if (vehicle?.Car == null)
-				continue;
-			var snapshot = new VehicleStateSnapshot
-			{
-				Tick = _tick,
-				VehicleId = vehicle.Id,
-				OccupantPeerId = vehicle.OccupantPeerId,
-				Transform = vehicle.Car.GlobalTransform,
-				LinearVelocity = vehicle.Car.LinearVelocity,
-				AngularVelocity = vehicle.Car.AngularVelocity
-			};
-			vehicle.LastSnapshot = snapshot;
-			_vehicleSnapshotBuffer.Add(snapshot);
-		}
-
-		if (_vehicleSnapshotBuffer.Count == 0)
-			return;
-
-		var packet = NetworkSerializer.SerializeVehicleStates(_vehicleSnapshotBuffer);
-		foreach (var peer in _peers.Values)
-			peer?.Peer.PutPacket(packet);
-	}
-
 	private void BroadcastEntitySnapshots()
 	{
 		if (_peers.Count == 0)
@@ -1107,47 +969,6 @@ using System.Diagnostics;
 			}
 		}
 		GD.Print($"Client {peerId} removed");
-	}
-
-	private void ApplyLocalSnapshot(PlayerStateSnapshot snapshot)
-	{
-		if (snapshot == null)
-			return;
-
-		var snapshotMode = snapshot.Mode;
-		_clientVehicleId = snapshot.VehicleId;
-		_playerCharacter?.SetReplicatedMode(snapshotMode, snapshot.VehicleId);
-
-		if (snapshot.CarSnapshot != null)
-		{
-			_car?.QueueSnapshot(snapshot.CarSnapshot);
-		}
-
-		if (snapshot.PlayerSnapshot != null)
-		{
-			if (snapshotMode == PlayerMode.Foot)
-			{
-				ReconcileLocalPlayer(snapshot.PlayerSnapshot, snapshot.LastProcessedInputTick);
-			}
-			else
-			{
-				_playerCharacter?.QueueSnapshot(snapshot.PlayerSnapshot);
-			}
-		}
-
-		UpdateClientMode(snapshotMode);
-	}
-
-	private void UpdateClientMode(PlayerMode newMode)
-	{
-		if (CurrentClientMode == newMode)
-			return;
-		CurrentClientMode = newMode;
-		_playerPredictionHistory.Clear();
-		_lastAcknowledgedPlayerInputTick = 0;
-		if (newMode == PlayerMode.Foot)
-			_playerCharacter?.ClearPendingSnapshot();
-		ClientModeChanged?.Invoke(newMode);
 	}
 
 	private void ApplyClientInputToCar()
