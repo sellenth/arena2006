@@ -83,7 +83,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			case NetworkRegistrationMode.AuthoritativeVehicle:
 				if (network != null && network.IsServer)
 				{
-					RegisterAsAuthority();
+					// Let the NetworkController assign the authoritative NetworkId (2000+ range)
 					network.RegisterAuthoritativeVehicle(this);
 					_isNetworked = true;
 				}
