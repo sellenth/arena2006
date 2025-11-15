@@ -3,6 +3,7 @@ using Godot.Collections;
 
 public partial class RemotePlayerLabels : Node3D
 {
+ /*
 	[Export] public Color LabelColor { get; set; } = new Color(0.95f, 0.86f, 0.3f);
 	[Export] public float LabelHeight { get; set; } = 2.5f;
 	[Export] public float LabelPixelSize { get; set; } = 0.01f;
@@ -10,7 +11,7 @@ public partial class RemotePlayerLabels : Node3D
 	private NetworkController _networkController;
 	private Dictionary<int, Label3D> _labels = new Dictionary<int, Label3D>();
 	private Node3D _remotePlayerCharacters;
-	private RemoteVehicleManager _vehicleManager;
+	private Node3D _remoteVehicles;
 
 	public override void _Ready()
 	{
@@ -29,9 +30,7 @@ public partial class RemotePlayerLabels : Node3D
 			return;
 		}
 
-		var remoteVehiclesNode = GetNodeOrNull<Node3D>("../RemoteVehicles");
-		_vehicleManager = remoteVehiclesNode as RemoteVehicleManager;
-		_vehicleManager ??= remoteVehiclesNode?.GetNodeOrNull<RemoteVehicleManager>(".");
+		_remoteVehicles = GetNodeOrNull<Node3D>("../RemoteVehicles");
 
 		_networkController.EntitySnapshotReceived += OnEntitySnapshot;
 		_networkController.PlayerDisconnected += OnPlayerDisconnected;
@@ -60,9 +59,16 @@ public partial class RemotePlayerLabels : Node3D
 		}
 
 		var playerNode = _remotePlayerCharacters?.GetNodeOrNull<Node3D>($"RemotePlayer_{playerId}");
-		var target = playerNode ?? _vehicleManager?.GetVehicleNodeForPlayer(playerId);
-		if (target != null)
-			AttachLabelToTarget(playerId, playerNode != null ? PlayerMode.Foot : PlayerMode.Vehicle);
+		if (playerNode != null)
+		{
+			AttachLabelToTarget(playerId, PlayerMode.Foot);
+			return;
+		}
+
+		// Fallback: try to attach to a vehicle node by name (best effort)
+		var vehicleNode = _remoteVehicles?.GetNodeOrNull<Node3D>($"Vehicle_{playerId}");
+		if (vehicleNode != null)
+			AttachLabelToTarget(playerId, PlayerMode.Vehicle);
 	}
 
 	private void OnPlayerDisconnected(int playerId)
@@ -112,4 +118,5 @@ public partial class RemotePlayerLabels : Node3D
 			label.Position = new Vector3(0, LabelHeight, 0);
 		}
 	}
+	*/
 }

@@ -707,6 +707,7 @@ using System.Diagnostics;
 						_clientId = newId;
 						GD.Print($"CLIENT received welcome, assigned ID: {_clientId}");
 						GD.Print($"TEST_EVENT: CLIENT_RECEIVED_WELCOME id={_clientId}");
+
 						if (_playerCharacter != null)
 						{
 							_playerCharacter.SetNetworkId(GetPlayerEntityId(_clientId));
