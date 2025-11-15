@@ -50,12 +50,14 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 	private bool _simulateLocally = true;
 	private bool _cameraActive = false;
 	private bool _registeredWithRemoteManager = false;
+	private int _occupantPeerId = 0;
 	private bool _hasPendingReplicatedTransform = false;
 	private Transform3D _pendingReplicatedTransform = Transform3D.Identity;
 	
 	private ReplicatedTransform3D _transformProperty;
 	private ReplicatedVector3 _linearVelocityProperty;
 	private ReplicatedVector3 _angularVelocityProperty;
+	private ReplicatedInt _occupantProperty;
 
 	public override void _Ready()
 	{
@@ -115,11 +117,18 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			ReplicationMode.Always
 		);
 		
-		_angularVelocityProperty = new ReplicatedVector3(
-			"AngularVelocity",
-			() => AngularVelocity,
-			(value) => AngularVelocity = value,
-			ReplicationMode.Always
+			_angularVelocityProperty = new ReplicatedVector3(
+				"AngularVelocity",
+				() => AngularVelocity,
+				(value) => AngularVelocity = value,
+				ReplicationMode.Always
+			);
+
+		_occupantProperty = new ReplicatedInt(
+			"OccupantPeerId",
+			() => _occupantPeerId,
+			value => ApplyOccupantPeer(value),
+			ReplicationMode.OnChange
 		);
 	}
 	
@@ -128,16 +137,16 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		if (NetworkId == id)
 			return;
 
+		if (EntityReplicationRegistry.Instance != null && NetworkId != 0)
+		{
+			EntityReplicationRegistry.Instance.UnregisterEntity(NetworkId);
+		}
+
 		if (_registeredWithRemoteManager)
 		{
 			var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
 			remoteManager?.UnregisterRemoteEntity(NetworkId);
 			_registeredWithRemoteManager = false;
-		}
-
-		if (EntityReplicationRegistry.Instance != null && NetworkId != 0)
-		{
-			EntityReplicationRegistry.Instance.UnregisterEntity(NetworkId);
 		}
 
 		NetworkId = id;
@@ -162,6 +171,43 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		
 		NetworkId = assignedId;
 		GD.Print($"RaycastCar ({Name}): Registered as authority with NetworkId {NetworkId}");
+	}
+	
+	public void SetOccupantPeerId(int peerId)
+	{
+		_occupantPeerId = peerId;
+	}
+	
+	private void ApplyOccupantPeer(int peerId)
+	{
+		if (_occupantPeerId == peerId)
+			return;
+
+		_occupantPeerId = peerId;
+		var network = GetTree().Root.GetNodeOrNull<NetworkController>("/root/NetworkController");
+
+		if (network != null && network.IsClient)
+		{
+			var vehicleId = GetVehicleIdForReplication();
+			if (peerId == network.ClientPeerId)
+			{
+				network.AttachLocalVehicle(vehicleId, this);
+				SetCameraActive(true);
+			}
+			else
+			{
+				network.DetachLocalVehicle(vehicleId, this);
+				SetCameraActive(peerId != 0 && peerId == network.ClientPeerId);
+			}
+		}
+	}
+
+	private int GetVehicleIdForReplication()
+	{
+		var offset = 2000;
+		if (NetworkId >= offset)
+			return NetworkId - offset;
+		return NetworkId;
 	}
 	
 	public void RegisterAsRemoteReplica()
@@ -482,6 +528,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		_transformProperty.Write(buffer);
 		_linearVelocityProperty.Write(buffer);
 		_angularVelocityProperty.Write(buffer);
+		_occupantProperty.Write(buffer);
 	}
 	
 	public void ReadSnapshot(StreamPeerBuffer buffer)
@@ -489,6 +536,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		_transformProperty.Read(buffer);
 		_linearVelocityProperty.Read(buffer);
 		_angularVelocityProperty.Read(buffer);
+		_occupantProperty.Read(buffer);
 
 		if (_simulateLocally && _hasPendingReplicatedTransform)
 		{
@@ -507,7 +555,8 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 	{
 		return _transformProperty.GetSizeBytes() 
 			 + _linearVelocityProperty.GetSizeBytes() 
-			 + _angularVelocityProperty.GetSizeBytes();
+			 + _angularVelocityProperty.GetSizeBytes()
+			 + _occupantProperty.GetSizeBytes();
 	}
 	
 	public override void _ExitTree()
