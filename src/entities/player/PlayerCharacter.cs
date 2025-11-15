@@ -26,6 +26,9 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private bool _cameraActive = false;
 	private bool _worldActive = true;
 	private bool _managesMouseMode = false;
+	private bool _registeredWithRemoteManager = false;
+	private bool _hasPendingReplicatedTransform = false;
+	private Transform3D _pendingReplicatedTransform = Transform3D.Identity;
 	
 	private ReplicatedTransform3D _transformProperty;
 	private ReplicatedVector3 _velocityProperty;
@@ -61,7 +64,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			_networkController = GetNodeOrNull<NetworkController>("/root/NetworkController");
 			if (_networkController != null && _networkController.IsClient)
 			{
-				RegisterAsLocalPlayer();
+				if (NetworkId != 0)
+					RegisterAsRemoteReplica();
 				_networkController.RegisterPlayerCharacter(this);
 			}
 		}
@@ -104,30 +108,74 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		);
 	}
 	
-	private void RegisterAsLocalPlayer()
+	public void RegisterAsAuthority()
 	{
+		if (_isAuthority && EntityReplicationRegistry.Instance != null)
+		{
+			NetworkId = EntityReplicationRegistry.Instance.RegisterEntity(this, this);
+			GD.Print($"PlayerCharacter ({Name}): Registered as authority with NetworkId {NetworkId}");
+		}
+		else if (_isAuthority)
+		{
+			GD.PushWarning($"PlayerCharacter ({Name}): Cannot register authority, registry missing.");
+		}
+	}
+
+	public void SetNetworkId(int id)
+	{
+		if (NetworkId == id)
+			return;
+
+		if (_registeredWithRemoteManager)
+		{
+			var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
+			if (remoteManager != null)
+				remoteManager.UnregisterRemoteEntity(NetworkId);
+			_registeredWithRemoteManager = false;
+		}
+
+		NetworkId = id;
+	}
+	
+	public void RegisterAsRemoteReplica()
+	{
+		if (NetworkId == 0)
+		{
+			GD.PushWarning($"PlayerCharacter ({Name}): NetworkId is 0, cannot register remote replica.");
+			return;
+		}
+		
 		var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
 		if (remoteManager != null)
 		{
-			remoteManager.RegisterRemoteEntity(NetworkId, this);
-			GD.Print($"PlayerCharacter: Registered as remote with NetworkId {NetworkId}");
+			if (!_registeredWithRemoteManager)
+			{
+				remoteManager.RegisterRemoteEntity(NetworkId, this);
+				_registeredWithRemoteManager = true;
+				GD.Print($"PlayerCharacter ({Name}): Registered as remote with NetworkId {NetworkId}");
+			}
 		}
 		else
 		{
 			GD.PushWarning("PlayerCharacter: RemoteEntityManager not found in scene!");
 		}
 	}
+
+	public override void _ExitTree()
+	{
+		if (_registeredWithRemoteManager)
+		{
+			var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
+			remoteManager?.UnregisterRemoteEntity(NetworkId);
+			_registeredWithRemoteManager = false;
+		}
+		base._ExitTree();
+	}
 	
 	private void ApplyTransformFromReplication(Transform3D value)
 	{
-		var snapshot = new PlayerSnapshot
-		{
-			Transform = value,
-			Velocity = Velocity,
-			ViewYaw = _lookController?.Yaw ?? 0f,
-			ViewPitch = _lookController?.Pitch ?? 0f
-		};
-		QueueSnapshot(snapshot);
+		_hasPendingReplicatedTransform = true;
+		_pendingReplicatedTransform = value;
 	}
 	
 	private void SetViewYaw(float yaw)
@@ -343,6 +391,19 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_velocityProperty.Read(buffer);
 		_viewYawProperty.Read(buffer);
 		_viewPitchProperty.Read(buffer);
+
+		if (_hasPendingReplicatedTransform)
+		{
+			var snapshot = new PlayerSnapshot
+			{
+				Transform = _pendingReplicatedTransform,
+				Velocity = Velocity,
+				ViewYaw = _lookController?.Yaw ?? 0f,
+				ViewPitch = _lookController?.Pitch ?? 0f
+			};
+			QueueSnapshot(snapshot);
+			_hasPendingReplicatedTransform = false;
+		}
 	}
 	
 	public int GetSnapshotSizeBytes()

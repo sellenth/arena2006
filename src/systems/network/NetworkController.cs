@@ -5,10 +5,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 
-public partial class NetworkController : Node
-{
-	private const int DefaultPort = 45000;
-	private const int PeerTimeoutMsec = 5000;
+	public partial class NetworkController : Node
+	{
+		private const int DefaultPort = 45000;
+		private const int PeerTimeoutMsec = 5000;
+		private const int PlayerEntityIdOffset = 3000;
+		private const int VehicleEntityIdOffset = 2000;
 
 	[Signal] public delegate void PlayerStateUpdatedEventHandler(int playerId, PlayerStateSnapshot snapshot);
 	[Signal] public delegate void PlayerDisconnectedEventHandler(int playerId);
@@ -43,19 +45,22 @@ public partial class NetworkController : Node
 		}
 	}
 
-	private partial class VehicleInfo : GodotObject
+		private partial class VehicleInfo : GodotObject
+		{
+			public int Id { get; set; }
+			public RaycastCar Car { get; set; }
+			public VehicleSeat DriverSeat { get; set; }
+			public int OccupantPeerId { get; set; }
+			public VehicleStateSnapshot LastSnapshot { get; set; }
+
+			public ulong InstanceId => Car?.GetInstanceId() ?? 0;
+		}
+
+		private int GetVehicleEntityId(int vehicleId) => VehicleEntityIdOffset + vehicleId;
+		private int GetPlayerEntityId(int peerId) => PlayerEntityIdOffset + peerId;
+
+	private readonly struct PlayerPredictionSample
 	{
-		public int Id { get; set; }
-		public RaycastCar Car { get; set; }
-		public VehicleSeat DriverSeat { get; set; }
-		public int OccupantPeerId { get; set; }
-		public VehicleStateSnapshot LastSnapshot { get; set; }
-
-		public ulong InstanceId => Car?.GetInstanceId() ?? 0;
-	}
-
-private readonly struct PlayerPredictionSample
-{
 	public int Tick { get; }
 	public Transform3D Transform { get; }
 	public Vector3 Velocity { get; }
@@ -154,16 +159,19 @@ private readonly struct PlayerPredictionSample
 	}
 
 	public void RegisterAuthoritativeVehicle(RaycastCar car)
-	{
-		if (_role != NetworkRole.Server || car == null)
-			return;
-
-		var id = _nextVehicleId++;
-		var info = new VehicleInfo
 		{
-			Id = id,
-			Car = car,
-			DriverSeat = FindDriverSeat(car),
+			if (_role != NetworkRole.Server || car == null)
+				return;
+
+			var id = _nextVehicleId++;
+			var entityId = GetVehicleEntityId(id);
+			car.RegisterAsAuthority(entityId);
+
+			var info = new VehicleInfo
+			{
+				Id = id,
+				Car = car,
+				DriverSeat = FindDriverSeat(car),
 			OccupantPeerId = 0
 		};
 
@@ -175,15 +183,20 @@ private readonly struct PlayerPredictionSample
 
 	public void RegisterPlayerCharacter(PlayerCharacter player)
 	{
-		GD.Print($"NetworkController: RegisterPlayerCharacter called, role={_role}, player={player?.Name ?? "null"}");
-		_playerCharacter = player;
-		if (_role == NetworkRole.Client)
-		{
-			player.ConfigureAuthority(true);
-			player.SetCameraActive(CurrentClientMode == PlayerMode.Foot);
-			ApplyClientInputToPlayer();
+			GD.Print($"NetworkController: RegisterPlayerCharacter called, role={_role}, player={player?.Name ?? "null"}");
+			_playerCharacter = player;
+			if (_role == NetworkRole.Client)
+			{
+				if (_clientId != 0)
+				{
+					_playerCharacter.SetNetworkId(GetPlayerEntityId(_clientId));
+					_playerCharacter.RegisterAsRemoteReplica();
+				}
+				player.ConfigureAuthority(true);
+				player.SetCameraActive(CurrentClientMode == PlayerMode.Foot);
+				ApplyClientInputToPlayer();
+			}
 		}
-	}
 
 	public void AttachLocalVehicle(int vehicleId, RaycastCar car)
 	{
@@ -705,6 +718,11 @@ private readonly struct PlayerPredictionSample
 						_clientId = newId;
 						GD.Print($"CLIENT received welcome, assigned ID: {_clientId}");
 						GD.Print($"TEST_EVENT: CLIENT_RECEIVED_WELCOME id={_clientId}");
+						if (_playerCharacter != null)
+						{
+							_playerCharacter.SetNetworkId(GetPlayerEntityId(_clientId));
+							_playerCharacter.RegisterAsRemoteReplica();
+						}
 					}
 					break;
 				case NetworkSerializer.PacketPlayerState:
@@ -836,13 +854,15 @@ private readonly struct PlayerPredictionSample
 			return null;
 
 		player.AutoRegisterWithNetwork = false;
-		player.Name = $"ServerPlayer_{peerId}";
-		player.SetCameraActive(false);
-		player.ConfigureAuthority(true);
-		player.SetWorldActive(false);
-		_serverPlayerParent.AddChild(player);
+			player.Name = $"ServerPlayer_{peerId}";
+			player.SetCameraActive(false);
+			player.ConfigureAuthority(true);
+			player.SetWorldActive(false);
+			player.SetNetworkId(GetPlayerEntityId(peerId));
+			_serverPlayerParent.AddChild(player);
+			player.RegisterAsAuthority();
 
-		var transform = ownerCar?.GlobalTransform ?? GetSpawnTransform(peerId);
+			var transform = ownerCar?.GlobalTransform ?? GetSpawnTransform(peerId);
 		transform.Origin += Vector3.Up * 1.2f;
 		RespawnManager.Instance.TeleportEntity(player, transform);
 		return player;

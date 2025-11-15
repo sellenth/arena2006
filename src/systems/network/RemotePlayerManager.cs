@@ -3,14 +3,18 @@ using Godot.Collections;
 
 public partial class RemotePlayerManager : Node3D
 {
+	private const int PlayerEntityIdOffset = 3000;
 	private Dictionary<int, PlayerCharacter> _remotePlayers = new Dictionary<int, PlayerCharacter>();
 	private PackedScene _playerScene;
 	private NetworkController _networkController;
+	private RemoteEntityManager _remoteEntityManager;
+	private bool _useEntityReplication => _remoteEntityManager != null;
 
 	public override void _Ready()
 	{
 		_playerScene = GD.Load<PackedScene>("res://src/entities/player/player_character.tscn");
 		_networkController = GetNode<NetworkController>("/root/NetworkController");
+		_remoteEntityManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
 
 		if (_networkController != null)
 		{
@@ -36,6 +40,7 @@ public partial class RemotePlayerManager : Node3D
 	{
 		var playerSnapshot = snapshot?.PlayerSnapshot;
 		var hasPlayerData = playerSnapshot != null;
+		var entityId = GetPlayerEntityId(playerId);
 
 		if (!_remotePlayers.TryGetValue(playerId, out var player) || !GodotObject.IsInstanceValid(player))
 		{
@@ -43,6 +48,10 @@ public partial class RemotePlayerManager : Node3D
 				return;
 			player = SpawnRemotePlayer(playerId, playerSnapshot.Transform);
 		}
+
+		player.SetNetworkId(entityId);
+		if (_useEntityReplication)
+			player.RegisterAsRemoteReplica();
 
 		if (!hasPlayerData)
 		{
@@ -53,7 +62,8 @@ public partial class RemotePlayerManager : Node3D
 		player.SetWorldActive(snapshot.Mode == PlayerMode.Foot);
 		player.ConfigureAuthority(false);
 		player.SetCameraActive(false);
-		player.QueueSnapshot(playerSnapshot);
+		if (!_useEntityReplication)
+			player.QueueSnapshot(playerSnapshot);
 	}
 
 	private void OnPlayerDisconnected(int playerId)
@@ -78,4 +88,6 @@ public partial class RemotePlayerManager : Node3D
 		_remotePlayers[playerId] = player;
 		return player;
 	}
+
+	private int GetPlayerEntityId(int playerId) =>  PlayerEntityIdOffset + playerId;
 }

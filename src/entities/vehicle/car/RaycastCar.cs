@@ -49,6 +49,9 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 	private Camera3D _camera;
 	private bool _simulateLocally = true;
 	private bool _cameraActive = false;
+	private bool _registeredWithRemoteManager = false;
+	private bool _hasPendingReplicatedTransform = false;
+	private Transform3D _pendingReplicatedTransform = Transform3D.Identity;
 	
 	private ReplicatedTransform3D _transformProperty;
 	private ReplicatedVector3 _linearVelocityProperty;
@@ -69,7 +72,8 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			case NetworkRegistrationMode.LocalPlayer:
 				if (network != null && network.IsClient)
 				{
-					RegisterAsLocalVehicle();
+					if (NetworkId != 0)
+						RegisterAsRemoteReplica();
 					network.RegisterLocalPlayerCar(this);
 					_isNetworked = true;
 				}
@@ -119,13 +123,36 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		);
 	}
 	
-	private void RegisterAsAuthority()
+	public void SetNetworkId(int id)
+	{
+		if (NetworkId == id)
+			return;
+
+		if (_registeredWithRemoteManager)
+		{
+			var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
+			remoteManager?.UnregisterRemoteEntity(NetworkId);
+			_registeredWithRemoteManager = false;
+		}
+
+		if (EntityReplicationRegistry.Instance != null && NetworkId != 0)
+		{
+			EntityReplicationRegistry.Instance.UnregisterEntity(NetworkId);
+		}
+
+		NetworkId = id;
+	}
+	
+	public void RegisterAsAuthority(int? desiredId = null)
 	{
 		if (EntityReplicationRegistry.Instance == null)
 		{
 			GD.PushError($"RaycastCar ({Name}): EntityReplicationRegistry.Instance is NULL! Cannot register.");
 			return;
 		}
+		
+		if (desiredId.HasValue && desiredId.Value != 0)
+			SetNetworkId(desiredId.Value);
 		
 		var assignedId = EntityReplicationRegistry.Instance.RegisterEntity(this, this);
 		if (assignedId == 0)
@@ -137,13 +164,23 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		GD.Print($"RaycastCar ({Name}): Registered as authority with NetworkId {NetworkId}");
 	}
 	
-	private void RegisterAsLocalVehicle()
+	public void RegisterAsRemoteReplica()
 	{
+		if (NetworkId == 0)
+		{
+			GD.PushWarning($"RaycastCar ({Name}): NetworkId is 0, cannot register as remote.");
+			return;
+		}
+		
 		var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
 		if (remoteManager != null)
 		{
-			remoteManager.RegisterRemoteEntity(NetworkId, this);
-			GD.Print($"RaycastCar: Registered as remote with NetworkId {NetworkId}");
+			if (!_registeredWithRemoteManager)
+			{
+				remoteManager.RegisterRemoteEntity(NetworkId, this);
+				_registeredWithRemoteManager = true;
+				GD.Print($"RaycastCar: Registered as remote with NetworkId {NetworkId}");
+			}
 		}
 		else
 		{
@@ -153,8 +190,10 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 	
 	private void ApplyTransformFromReplication(Transform3D value)
 	{
-		if (_simulateLocally && _pendingSnapshot != null)
+		if (_simulateLocally)
 		{
+			_pendingReplicatedTransform = value;
+			_hasPendingReplicatedTransform = true;
 			return;
 		}
 		
@@ -450,6 +489,18 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		_transformProperty.Read(buffer);
 		_linearVelocityProperty.Read(buffer);
 		_angularVelocityProperty.Read(buffer);
+
+		if (_simulateLocally && _hasPendingReplicatedTransform)
+		{
+			var snapshot = new CarSnapshot
+			{
+				Transform = _pendingReplicatedTransform,
+				LinearVelocity = LinearVelocity,
+				AngularVelocity = AngularVelocity
+			};
+			QueueSnapshot(snapshot);
+			_hasPendingReplicatedTransform = false;
+		}
 	}
 	
 	public int GetSnapshotSizeBytes()
@@ -457,5 +508,17 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		return _transformProperty.GetSizeBytes() 
 			 + _linearVelocityProperty.GetSizeBytes() 
 			 + _angularVelocityProperty.GetSizeBytes();
+	}
+	
+	public override void _ExitTree()
+	{
+		if (_registeredWithRemoteManager)
+		{
+			var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
+			remoteManager?.UnregisterRemoteEntity(NetworkId);
+			_registeredWithRemoteManager = false;
+		}
+		
+		base._ExitTree();
 	}
 }

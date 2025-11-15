@@ -3,9 +3,11 @@ using System.Collections.Generic;
 
 public partial class RemoteVehicleManager : Node3D
 {
+	private const int VehicleEntityIdOffset = 2000;
 	[Export] public PackedScene VehicleScene { get; set; }
 
 	private NetworkController _networkController;
+	private RemoteEntityManager _remoteEntityManager;
 	private readonly Dictionary<int, RaycastCar> _vehicles = new Dictionary<int, RaycastCar>();
 	private readonly Dictionary<int, int> _vehicleOccupants = new Dictionary<int, int>();
 	private readonly Dictionary<int, int> _occupantToVehicle = new Dictionary<int, int>();
@@ -20,6 +22,8 @@ public partial class RemoteVehicleManager : Node3D
 			GD.PushError("RemoteVehicleManager: NetworkController not found!");
 			return;
 		}
+		
+		_remoteEntityManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
 
 		if (!_networkController.IsClient)
 			return;
@@ -47,7 +51,11 @@ public partial class RemoteVehicleManager : Node3D
 		if (car == null)
 			return;
 
-		car.ApplyRemoteSnapshot(snapshot);
+		car.SetNetworkId(GetVehicleEntityId(vehicleId));
+		if (_remoteEntityManager != null)
+			car.RegisterAsRemoteReplica();
+		else
+			car.ApplyRemoteSnapshot(snapshot);
 		UpdateOccupant(vehicleId, snapshot.OccupantPeerId, car);
 	}
 
@@ -92,6 +100,7 @@ public partial class RemoteVehicleManager : Node3D
 
 		car.RegistrationMode = RaycastCar.NetworkRegistrationMode.None;
 		car.AutoRespawnOnReady = false;
+		car.SetNetworkId(GetVehicleEntityId(vehicleId));
 		AddChild(car);
 		car.Name = $"Vehicle_{vehicleId}";
 		car.SetSimulationEnabled(false);
@@ -156,4 +165,6 @@ public partial class RemoteVehicleManager : Node3D
 
 		return null;
 	}
+
+	private int GetVehicleEntityId(int vehicleId) => VehicleEntityIdOffset + vehicleId;
 }
