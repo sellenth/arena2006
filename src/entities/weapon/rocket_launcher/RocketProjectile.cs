@@ -2,7 +2,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
-public partial class RocketProjectile : RigidBody3D
+    public partial class RocketProjectile : RigidBody3D, IPooledProjectile
 {
     [Export] public float Speed { get; set; } = 30.0f;
     [Export] public float ExplodeRadius { get; set; } = 6.0f;
