@@ -144,7 +144,7 @@ transform = Transform3D(1, 0, 0, 0, 1.0000002, 0, 0, 0, 1.0000002, 0, 20.502033,
 shape = SubResource("ConcavePolygonShape3D_cxv46")
 
 [node name="Path3D2" type="Path3D" parent="."]
-transform = Transform3D(-5.9884634e-08, -1.37, 6.8412746e-15, 0.31279427, -1.3672672e-08, 1.333814, -1.333814, 5.830289e-08, 0.31279427, 374.3125, 86.03772, -516.8681)
+transform = Transform3D(-5.9884634e-08, -1.37, 6.8412746e-15, 0.31279427, -1.3672672e-08, 1.333814, -1.333814, 5.830289e-08, 0.31279427, 1573.1354, 86.03772, -516.8681)
 curve = SubResource("Curve3D_38sdm")
 
 [node name="PathFollow3D" type="PathFollow3D" parent="Path3D2"]

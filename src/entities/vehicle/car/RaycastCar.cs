@@ -25,6 +25,8 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 	[Export] public bool AutoRespawnOnReady { get; set; } = true;
 	[Export] public NodePath CameraPath { get; set; } = "CameraPivot/Camera";
 	[Export] public int NetworkId { get; set; } = 0;
+	[Export] public int MaxHealth { get; set; } = 100;
+	[Export] public int MaxArmor { get; set; } = 100;
 
 	public int TotalWheels { get; private set; }
 
@@ -32,6 +34,8 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 	public float SteerInput => _smoothedSteerInput;
 	public bool HandBreak { get; set; } = false;
 	public bool IsSlipping { get; set; } = false;
+	public int Health => _health;
+	public int Armor => _armor;
 
 	private CarInputState _inputState = new CarInputState();
 	private float _smoothedSteerInput = 0.0f;
@@ -53,11 +57,15 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 	private int _occupantPeerId = 0;
 	private bool _hasPendingReplicatedTransform = false;
 	private Transform3D _pendingReplicatedTransform = Transform3D.Identity;
+	private int _health = 100;
+	private int _armor = 100;
 	
 	private ReplicatedTransform3D _transformProperty;
 	private ReplicatedVector3 _linearVelocityProperty;
 	private ReplicatedVector3 _angularVelocityProperty;
 	private ReplicatedInt _occupantProperty;
+	private ReplicatedInt _healthProperty;
+	private ReplicatedInt _armorProperty;
 
 	public override void _Ready()
 	{
@@ -96,6 +104,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		if (AutoRespawnOnReady && _simulateLocally)
 			RespawnAtManagedPoint();
 
+		ClampVitals();
 		ApplySimulationMode();
 	}
 	
@@ -120,9 +129,23 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			_angularVelocityProperty = new ReplicatedVector3(
 				"AngularVelocity",
 				() => AngularVelocity,
-				(value) => AngularVelocity = value,
-				ReplicationMode.Always
-			);
+			(value) => AngularVelocity = value,
+			ReplicationMode.Always
+		);
+
+		_healthProperty = new ReplicatedInt(
+			"Health",
+			() => _health,
+			value => SetHealth(value),
+			ReplicationMode.OnChange
+		);
+
+		_armorProperty = new ReplicatedInt(
+			"Armor",
+			() => _armor,
+			value => SetArmor(value),
+			ReplicationMode.OnChange
+		);
 
 		_occupantProperty = new ReplicatedInt(
 			"OccupantPeerId",
@@ -308,6 +331,22 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 	public Vector3 GetPointVelocity(Vector3 point)
 	{
 		return LinearVelocity + AngularVelocity.Cross(point - GlobalPosition);
+	}
+
+	private void SetHealth(int value)
+	{
+		_health = Mathf.Clamp(value, 0, MaxHealth);
+	}
+
+	private void SetArmor(int value)
+	{
+		_armor = Mathf.Clamp(value, 0, MaxArmor);
+	}
+
+	private void ClampVitals()
+	{
+		SetHealth(_health);
+		SetArmor(_armor);
 	}
 
 	public void SetInputState(CarInputState state)
@@ -528,6 +567,8 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		_transformProperty.Write(buffer);
 		_linearVelocityProperty.Write(buffer);
 		_angularVelocityProperty.Write(buffer);
+		_healthProperty.Write(buffer);
+		_armorProperty.Write(buffer);
 		_occupantProperty.Write(buffer);
 	}
 	
@@ -536,6 +577,8 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		_transformProperty.Read(buffer);
 		_linearVelocityProperty.Read(buffer);
 		_angularVelocityProperty.Read(buffer);
+		_healthProperty.Read(buffer);
+		_armorProperty.Read(buffer);
 		_occupantProperty.Read(buffer);
 
 		if (_simulateLocally && _hasPendingReplicatedTransform)
@@ -556,6 +599,8 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		return _transformProperty.GetSizeBytes() 
 			 + _linearVelocityProperty.GetSizeBytes() 
 			 + _angularVelocityProperty.GetSizeBytes()
+			 + _healthProperty.GetSizeBytes()
+			 + _armorProperty.GetSizeBytes()
 			 + _occupantProperty.GetSizeBytes();
 	}
 	

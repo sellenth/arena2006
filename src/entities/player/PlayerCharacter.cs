@@ -9,12 +9,16 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	[Export] public NodePath CollisionShapePath { get; set; } = "Collision";
 	[Export] public bool AutoRegisterWithNetwork { get; set; } = true;
 	[Export] public int NetworkId { get; set; } = 0;
+	[Export] public int MaxHealth { get; set; } = 100;
+	[Export] public int MaxArmor { get; set; } = 100;
 
 	private Node3D _head;
 	private Camera3D _camera;
 	private MeshInstance3D _mesh;
 	private CollisionShape3D _collisionShape;
 	private NetworkController _networkController;
+	private int _health = 100;
+	private int _armor = 100;
 
 	private readonly PlayerInputState _inputState = new PlayerInputState();
 	private readonly PlayerLookController _lookController = new PlayerLookController();
@@ -38,6 +42,10 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private ReplicatedFloat _viewPitchProperty;
 	private ReplicatedInt _modeProperty;
 	private ReplicatedInt _vehicleIdProperty;
+	private ReplicatedInt _healthProperty;
+	private ReplicatedInt _armorProperty;
+	public int Health => _health;
+	public int Armor => _armor;
 
 	public PlayerCharacter()
 	{
@@ -62,6 +70,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		InitializeControllerModules();
 		
 		InitializeReplication();
+
+		ClampVitals();
 
 		if (AutoRegisterWithNetwork)
 		{
@@ -123,6 +133,20 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			"VehicleId",
 			() => _replicatedVehicleId,
 			value => _replicatedVehicleId = value,
+			ReplicationMode.OnChange
+		);
+
+		_healthProperty = new ReplicatedInt(
+			"Health",
+			() => _health,
+			value => SetHealth(value),
+			ReplicationMode.OnChange
+		);
+
+		_armorProperty = new ReplicatedInt(
+			"Armor",
+			() => _armor,
+			value => SetArmor(value),
 			ReplicationMode.OnChange
 		);
 	}
@@ -400,6 +424,22 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_lookController?.ApplyQueuedLook();
 	}
 
+	private void SetHealth(int value)
+	{
+		_health = Mathf.Clamp(value, 0, MaxHealth);
+	}
+
+	private void SetArmor(int value)
+	{
+		_armor = Mathf.Clamp(value, 0, MaxArmor);
+	}
+
+	private void ClampVitals()
+	{
+		SetHealth(_health);
+		SetArmor(_armor);
+	}
+
 	public Vector3 GetViewDirection()
 	{
 		return _lookController?.GetViewDirection(this) ?? -GlobalTransform.Basis.Z;
@@ -420,6 +460,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_viewPitchProperty.Write(buffer);
 		_modeProperty.Write(buffer);
 		_vehicleIdProperty.Write(buffer);
+		_healthProperty.Write(buffer);
+		_armorProperty.Write(buffer);
 	}
 	
 	public void ReadSnapshot(StreamPeerBuffer buffer)
@@ -430,6 +472,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_viewPitchProperty.Read(buffer);
 		_modeProperty.Read(buffer);
 		_vehicleIdProperty.Read(buffer);
+		_healthProperty.Read(buffer);
+		_armorProperty.Read(buffer);
 
 		if (_hasPendingReplicatedTransform)
 		{
@@ -452,6 +496,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			 + _viewYawProperty.GetSizeBytes() 
 			 + _viewPitchProperty.GetSizeBytes()
 			 + _modeProperty.GetSizeBytes()
-			 + _vehicleIdProperty.GetSizeBytes();
+			 + _vehicleIdProperty.GetSizeBytes()
+			 + _healthProperty.GetSizeBytes()
+			 + _armorProperty.GetSizeBytes();
 	}
 }
