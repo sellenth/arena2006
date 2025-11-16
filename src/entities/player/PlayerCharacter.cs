@@ -44,11 +44,23 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private ReplicatedInt _vehicleIdProperty;
 	private ReplicatedInt _healthProperty;
 	private ReplicatedInt _armorProperty;
+	private ReplicatedInt _weaponIdProperty;
+	private ReplicatedInt _weaponMagProperty;
+	private ReplicatedInt _weaponReserveProperty;
+	private ReplicatedInt _weaponFireSeqProperty;
+	private ReplicatedInt _weaponReloadMsProperty;
+	private ReplicatedInt _weaponReloadingProperty;
 	public int Health => _health;
 	public int Armor => _armor;
 	private WeaponInventory _weaponInventory;
 	private WeaponController _weaponController;
 	private AmmoUI _ammoUi;
+	private int _repWeaponId = (int)WeaponType.None;
+	private int _repWeaponMag = 0;
+	private int _repWeaponReserve = 0;
+	private int _repWeaponFireSeq = 0;
+	private int _repWeaponReloadMs = 0;
+	private int _repWeaponReloading = 0;
 
 	public PlayerCharacter()
 	{
@@ -208,13 +220,55 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			ReplicationMode.OnChange
 		);
 
-		_armorProperty = new ReplicatedInt(
-			"Armor",
-			() => _armor,
-			value => SetArmor(value),
-			ReplicationMode.OnChange
-		);
-	}
+			_armorProperty = new ReplicatedInt(
+				"Armor",
+				() => _armor,
+				value => SetArmor(value),
+				ReplicationMode.OnChange
+			);
+
+			_weaponIdProperty = new ReplicatedInt(
+				"WeaponId",
+				() => (int)GetEquippedWeaponId(),
+				value => _repWeaponId = value,
+				ReplicationMode.OnChange
+			);
+
+			_weaponMagProperty = new ReplicatedInt(
+				"WeaponMag",
+				() => GetEquippedMagazine(),
+				value => _repWeaponMag = value,
+				ReplicationMode.Always
+			);
+
+			_weaponReserveProperty = new ReplicatedInt(
+				"WeaponReserve",
+				() => GetEquippedReserve(),
+				value => _repWeaponReserve = value,
+				ReplicationMode.Always
+			);
+
+			_weaponFireSeqProperty = new ReplicatedInt(
+				"WeaponFireSeq",
+				() => GetEquippedFireSequence(),
+				value => OnReplicatedFireSequence(value),
+				ReplicationMode.Always
+			);
+
+			_weaponReloadMsProperty = new ReplicatedInt(
+				"WeaponReloadMs",
+				() => GetEquippedReloadMs(),
+				value => _repWeaponReloadMs = value,
+				ReplicationMode.Always
+			);
+
+			_weaponReloadingProperty = new ReplicatedInt(
+				"WeaponReloading",
+				() => GetEquippedReloadingFlag(),
+				value => _repWeaponReloading = value,
+				ReplicationMode.Always
+			);
+		}
 	
 	public void RegisterAsAuthority()
 	{
@@ -470,6 +524,56 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_lookController.Initialize(_head, _camera, initialYaw, initialPitch);
 	}
 
+	private WeaponType GetEquippedWeaponId()
+	{
+		return _weaponInventory?.EquippedType ?? WeaponType.None;
+	}
+
+	private int GetEquippedMagazine()
+	{
+		return _weaponInventory?.Equipped?.Magazine ?? 0;
+	}
+
+	private int GetEquippedReserve()
+	{
+		return _weaponInventory?.Equipped?.Reserve ?? 0;
+	}
+
+	private int GetEquippedFireSequence()
+	{
+		return _weaponController?.GetFireSequence() ?? 0;
+	}
+
+	private int GetEquippedReloadMs()
+	{
+		if (_weaponInventory?.Equipped == null)
+			return 0;
+		return _weaponInventory.Equipped.IsReloading
+			? Mathf.Max(0, (int)(_weaponInventory.Equipped.ReloadEndTimeMs - Time.GetTicksMsec()))
+			: 0;
+	}
+
+	private int GetEquippedReloadingFlag()
+	{
+		return _weaponInventory?.Equipped?.IsReloading == true ? 1 : 0;
+	}
+
+	private void OnReplicatedFireSequence(int value)
+	{
+		if (_isAuthority)
+		{
+			_weaponFireSeqProperty.MarkClean();
+			return;
+		}
+
+		if (value != _repWeaponFireSeq)
+		{
+			_weaponController?.PlayRemoteFireFx((WeaponType)_repWeaponId);
+		}
+
+		_repWeaponFireSeq = value;
+	}
+
 	private void SimulateMovement(float delta)
 	{
 		if (_movementController == null)
@@ -562,6 +666,12 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_vehicleIdProperty.Write(buffer);
 		_healthProperty.Write(buffer);
 		_armorProperty.Write(buffer);
+		_weaponIdProperty.Write(buffer);
+		_weaponMagProperty.Write(buffer);
+		_weaponReserveProperty.Write(buffer);
+		_weaponFireSeqProperty.Write(buffer);
+		_weaponReloadMsProperty.Write(buffer);
+		_weaponReloadingProperty.Write(buffer);
 	}
 	
 	public void ReadSnapshot(StreamPeerBuffer buffer)
@@ -574,6 +684,12 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_vehicleIdProperty.Read(buffer);
 		_healthProperty.Read(buffer);
 		_armorProperty.Read(buffer);
+		_weaponIdProperty.Read(buffer);
+		_weaponMagProperty.Read(buffer);
+		_weaponReserveProperty.Read(buffer);
+		_weaponFireSeqProperty.Read(buffer);
+		_weaponReloadMsProperty.Read(buffer);
+		_weaponReloadingProperty.Read(buffer);
 
 		if (_hasPendingReplicatedTransform)
 		{
@@ -598,6 +714,12 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			 + _modeProperty.GetSizeBytes()
 			 + _vehicleIdProperty.GetSizeBytes()
 			 + _healthProperty.GetSizeBytes()
-			 + _armorProperty.GetSizeBytes();
+			 + _armorProperty.GetSizeBytes()
+			 + _weaponIdProperty.GetSizeBytes()
+			 + _weaponMagProperty.GetSizeBytes()
+			 + _weaponReserveProperty.GetSizeBytes()
+			 + _weaponFireSeqProperty.GetSizeBytes()
+			 + _weaponReloadMsProperty.GetSizeBytes()
+			 + _weaponReloadingProperty.GetSizeBytes();
 	}
 }
