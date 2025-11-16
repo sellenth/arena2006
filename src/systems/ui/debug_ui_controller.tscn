@@ -35,6 +35,10 @@ offset_top = 10.0
 offset_right = 143.0
 offset_bottom = 103.0
 
+[node name="FramerateLabel" type="Label" parent="CanvasLayer/TOP"]
+layout_mode = 2
+text = "FPS: "
+
 [node name="AllForcesCB" type="CheckBox" parent="CanvasLayer/TOP"]
 unique_name_in_owner = true
 visible = false
