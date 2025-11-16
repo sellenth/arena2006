@@ -74,6 +74,7 @@ using System.Diagnostics;
 	private RaycastCar _car;
 	private PlayerCharacter _playerCharacter;
 	private int _tick = 0;
+	private int _lastDamageTick = 0;
 
 	private UdpServer _udpServer;
 	private Godot.Collections.Dictionary<int, PeerInfo> _peers = new Godot.Collections.Dictionary<int, PeerInfo>();
@@ -317,6 +318,7 @@ using System.Diagnostics;
 
 		_tick++;
 		UpdateServerPlayers();
+		ApplyPeriodicTestDamage();
 		CheckPeerTimeouts();
 		BroadcastEntitySnapshots();
 	}
@@ -404,6 +406,32 @@ using System.Diagnostics;
 				continue;
 
 			info.PlayerCharacter?.SetReplicatedMode(info.Mode, info.ControlledVehicleId);
+		}
+	}
+
+	private void ApplyPeriodicTestDamage()
+	{
+		if (_tick - _lastDamageTick < Engine.PhysicsTicksPerSecond)
+			return;
+
+		_lastDamageTick = _tick;
+
+		foreach (var peer in _peers.Values)
+		{
+			if (peer == null)
+				continue;
+
+			if (peer.Mode == PlayerMode.Vehicle)
+			{
+				var vehicle = GetVehicleInfo(peer.ControlledVehicleId);
+				if (vehicle?.Car != null)
+				{
+					vehicle.Car.ApplyDamage(1);
+					continue;
+				}
+			}
+
+			peer.PlayerCharacter?.ApplyDamage(1);
 		}
 	}
 
