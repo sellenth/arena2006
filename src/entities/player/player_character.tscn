@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://bp5wletrm4dw2"]
+[gd_scene load_steps=6 format=3 uid="uid://bp5wletrm4dw2"]
 
 [ext_resource type="Script" uid="uid://dpian2gawtw4a" path="res://src/entities/player/PlayerCharacter.cs" id="1_qj4xw"]
+[ext_resource type="Script" uid="uid://dfsnhvsmrh8yr" path="res://src/systems/ui/CrosshairUI.cs" id="2_b8iv8"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v2uir"]
 resource_local_to_scene = true
@@ -34,3 +35,12 @@ transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 2.1
 
 [node name="Cam" type="Camera3D" parent="Head"]
 fov = 100.0
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_b8iv8")

@@ -11,6 +11,7 @@ public partial class DebugUiController : Node
 	private CheckBox _pullForcesCB;
 	private CheckBox _handBreakCB;
 	private CheckBox _slippingCB;
+	private Label _frameRateLabel;
 	private Label _timeScaleLabel;
 	private Label _gameModeLabel;
 	private Label _speedLabel;
@@ -39,6 +40,7 @@ public partial class DebugUiController : Node
 		_pullForcesCB = canvasLayer.GetNode<CheckBox>("TOP/PullForcesCB");
 		_handBreakCB = canvasLayer.GetNode<CheckBox>("TOP/HandBreakCB");
 		_slippingCB = canvasLayer.GetNode<CheckBox>("TOP/SlippingCB");
+		_frameRateLabel = canvasLayer.GetNode<Label>("TOP/FramerateLabel");
 		_timeScaleLabel = canvasLayer.GetNode<Label>("TOP/TimeScaleLabel");
 		_gameModeLabel = canvasLayer.GetNode<Label>("TOP/GameModeLabel");
 		_speedLabel = canvasLayer.GetNode<Label>("RIGHT_TOP/SpeedLabel");
@@ -84,9 +86,10 @@ public partial class DebugUiController : Node
 			_healthLabel.Text = $"Health: {_car.Health}/{_car.MaxHealth}";
 			_armorLabel.Text = $"Armor: {_car.Armor}/{_car.MaxArmor}";
 		}
-		
+
+		_frameRateLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
 		_timeScaleLabel.Text = $"Time Scale: {Engine.TimeScale:F2}";
-		
+
 		if (GameModeManager.Instance != null && GameModeManager.Instance.ActiveMode != null)
 		{
 			_gameModeLabel.Text = $"Game Mode: {GameModeManager.Instance.ActiveMode.DisplayName}";
