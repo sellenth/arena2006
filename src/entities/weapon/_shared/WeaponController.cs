@@ -17,16 +17,20 @@ public partial class WeaponController : Node
 	private int _fireSequence = 0;
 	private PlayerInputState _lastInput = new PlayerInputState();
 	private long _ownerPeerId = 0;
+	private Node _poolRoot;
+	private readonly System.Collections.Generic.Dictionary<string, ProjectilePool> _pools = new();
 
 	public override void _Ready()
 	{
 		_player = GetParent() as PlayerCharacter ?? GetOwner() as PlayerCharacter;
 		_inventory = GetNodeOrNull<WeaponInventory>(InventoryPath);
-		_gameMode = GetNodeOrNull<GameModeManager>("/root/GameModeManager");
-		_network = GetNodeOrNull<NetworkController>("/root/NetworkController");
-		_ownerPeerId = _network?.ClientPeerId ?? 0;
-		SetPhysicsProcess(true);
-	}
+			_gameMode = GetNodeOrNull<GameModeManager>("/root/GameModeManager");
+			_network = GetNodeOrNull<NetworkController>("/root/NetworkController");
+			_ownerPeerId = _network?.ClientPeerId ?? 0;
+			_poolRoot = new Node { Name = "ProjectilePools" };
+			AddChild(_poolRoot);
+			SetPhysicsProcess(true);
+		}
 
 	public override void _PhysicsProcess(double delta)
 	{
@@ -246,9 +250,16 @@ public partial class WeaponController : Node
 		var spawnTransform = ResolveProjectileTransform(def);
 		var direction = -spawnTransform.Basis.Z;
 
-		var projectileNode = def.ProjectileScene.Instantiate<Node>();
+		var pool = GetOrCreatePool(def);
 		var parent = GetProjectileParent();
-		parent?.AddChild(projectileNode);
+		var projectileNode = pool != null
+			? pool.Rent<Node>(parent)
+			: def.ProjectileScene.Instantiate<Node>();
+
+		if (projectileNode != null && projectileNode.GetParent() == null && parent != null)
+		{
+			parent.AddChild(projectileNode);
+		}
 
 		if (projectileNode is Node3D node3D)
 		{
@@ -257,17 +268,26 @@ public partial class WeaponController : Node
 
 		if (projectileNode is RocketProjectile rocket)
 		{
+			ApplyRocketConfig(def, rocket);
 			var speed = rocket.Speed;
 			var velocity = direction * speed;
 			rocket.Initialize(_fireSequence, _ownerPeerId, true, spawnTransform.Origin, velocity);
 			rocket.RegisterCollisionException(_player);
+			if (pool != null)
+			{
+				rocket.ReturnToPool = pool.Return;
+			}
 		}
 		else if (projectileNode is MachineGunProjectile bullet)
 		{
-			var speed = 120.0f;
+			var speed = ApplyBulletConfig(def, bullet);
 			var velocity = direction * speed;
 			bullet.Initialize(_fireSequence, _ownerPeerId, true, spawnTransform.Origin, spawnTransform.Basis, velocity, def.Damage);
 			bullet.RegisterCollisionException(_player);
+			if (pool != null)
+			{
+				bullet.ReturnToPool = pool.Return;
+			}
 		}
 	}
 
@@ -278,6 +298,66 @@ public partial class WeaponController : Node
 			return GetNodeOrNull(ProjectileParentPath);
 		}
 		return GetTree().CurrentScene;
+	}
+
+	private ProjectilePool GetOrCreatePool(WeaponDefinition def)
+	{
+		if (def?.ProjectileScene == null)
+			return null;
+
+		var key = def.ProjectileScene.ResourcePath;
+		if (string.IsNullOrEmpty(key))
+		{
+			key = def.Id.ToString();
+		}
+
+		if (_pools.TryGetValue(key, out var existing) && existing != null)
+			return existing;
+
+		var pool = new ProjectilePool
+		{
+			Name = $"Pool_{def.Id}",
+			ProjectileScene = def.ProjectileScene,
+			PrewarmCount = def.ProjectilePoolPrewarm
+		};
+
+		_poolRoot?.AddChild(pool);
+		_pools[key] = pool;
+		return pool;
+	}
+
+	private void ApplyRocketConfig(WeaponDefinition def, RocketProjectile rocket)
+	{
+		if (def?.ProjectileConfig == null || rocket == null)
+			return;
+
+		rocket.Speed = def.ProjectileConfig.Speed;
+		rocket.Lifetime = def.ProjectileConfig.LifetimeSec;
+		rocket.ExplodeRadius = def.ProjectileConfig.ExplosionRadius;
+		rocket.ArmDelaySec = def.ProjectileConfig.ArmDelaySec;
+		rocket.GravityScale = def.ProjectileConfig.GravityScale;
+	}
+
+	private float ApplyBulletConfig(WeaponDefinition def, MachineGunProjectile bullet)
+	{
+		if (def?.ProjectileConfig == null || bullet == null)
+			return 120.0f;
+
+		bullet.Lifetime = def.ProjectileConfig.LifetimeSec;
+		return def.ProjectileConfig.Speed;
+	}
+
+	public int GetFireSequence() => _fireSequence;
+
+	public void PlayRemoteFireFx(WeaponType type)
+	{
+		if (_player == null || _inventory == null)
+			return;
+		var def = _inventory.Get(type)?.Definition ?? _inventory.Equipped?.Definition;
+		if (def == null)
+			return;
+		SpawnMuzzleFx(def);
+		PlayAudio(def.FireAudio, _player.GlobalPosition);
 	}
 }
 

@@ -7,6 +7,7 @@ public partial class WeaponDefinition : Resource
 	[Export] public PackedScene? WorldScene { get; set; }
 	[Export] public PackedScene? ViewScene { get; set; }
 	[Export] public PackedScene? ProjectileScene { get; set; }
+	[Export] public ProjectileDefinition? ProjectileConfig { get; set; }
 	[Export] public Transform3D ProjectileSpawn { get; set; } = Transform3D.Identity;
 	[Export] public int MagazineSize { get; set; } = 1;
 	[Export] public int MaxReserveAmmo { get; set; } = 0;
@@ -18,6 +19,7 @@ public partial class WeaponDefinition : Resource
 	[Export] public bool AllowHoldToFire { get; set; } = true;
 	[Export] public float EquipTimeSec { get; set; } = 0.2f;
 	[Export] public float UnequipTimeSec { get; set; } = 0.2f;
+	[Export] public int ProjectilePoolPrewarm { get; set; } = 4;
 	[Export] public RecoilProfile? Recoil { get; set; }
 	[Export] public MuzzleFxSet? MuzzleFx { get; set; }
 	[Export] public WeaponAudioSet? FireAudio { get; set; }

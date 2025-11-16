@@ -26,7 +26,7 @@ public partial class ProjectilePool : Node
 		}
 	}
 
-	public T Rent<T>() where T : Node
+	public T Rent<T>(Node parent = null) where T : Node
 	{
 		Node instance = null;
 		if (_pool.Count > 0)
@@ -44,9 +44,14 @@ public partial class ProjectilePool : Node
 			pooled.ResetToPoolState();
 		}
 
-		if (instance is Node3D node3D && node3D.GetParent() == null)
+		if (parent == null)
 		{
-			GetTree().CurrentScene?.AddChild(node3D);
+			parent = GetTree().CurrentScene;
+		}
+
+		if (instance is Node3D node3D && node3D.GetParent() == null && parent != null)
+		{
+			parent.AddChild(node3D);
 		}
 
 		return instance as T;
