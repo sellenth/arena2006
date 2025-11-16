@@ -19,10 +19,15 @@ offset_top = -40.0
 offset_right = 67.0
 grow_vertical = 0
 
-[node name="OffsetLabel" type="Label" parent="CanvasLayer/BOTTOM"]
+[node name="HealthLabel" type="Label" parent="CanvasLayer/BOTTOM"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Offset: "
+text = "Health: "
+
+[node name="ArmorLabel" type="Label" parent="CanvasLayer/BOTTOM"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Armor: "
 
 [node name="TOP" type="VBoxContainer" parent="CanvasLayer"]
 offset_left = 10.0

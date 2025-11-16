@@ -349,6 +349,25 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		SetArmor(_armor);
 	}
 
+	public void ApplyDamage(int amount)
+	{
+		if (amount <= 0)
+			return;
+
+		var remaining = amount;
+		if (_armor > 0)
+		{
+			var armorDamage = Mathf.Min(_armor, remaining);
+			SetArmor(_armor - armorDamage);
+			remaining -= armorDamage;
+		}
+
+		if (remaining > 0)
+		{
+			SetHealth(_health - remaining);
+		}
+	}
+
 	public void SetInputState(CarInputState state)
 	{
 		_inputState.CopyFrom(state);

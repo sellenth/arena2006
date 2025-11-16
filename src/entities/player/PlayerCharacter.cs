@@ -440,6 +440,25 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		SetArmor(_armor);
 	}
 
+	public void ApplyDamage(int amount)
+	{
+		if (amount <= 0)
+			return;
+
+		var remaining = amount;
+		if (_armor > 0)
+		{
+			var armorDamage = Mathf.Min(_armor, remaining);
+			SetArmor(_armor - armorDamage);
+			remaining -= armorDamage;
+		}
+
+		if (remaining > 0)
+		{
+			SetHealth(_health - remaining);
+		}
+	}
+
 	public Vector3 GetViewDirection()
 	{
 		return _lookController?.GetViewDirection(this) ?? -GlobalTransform.Basis.Z;
