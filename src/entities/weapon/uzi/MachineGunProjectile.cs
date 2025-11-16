@@ -1,7 +1,7 @@
 using Godot;
 using System;
 
-public partial class MachineGunProjectile : Node3D
+public partial class MachineGunProjectile : Node3D, IPooledProjectile
 {
     [Export] public float Lifetime { get; set; } = 1.2f;
     [Export] public uint CollisionMask { get; set; } = 3;

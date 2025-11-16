@@ -1,0 +1,26 @@
+[gd_resource type="Resource" load_steps=5 format=3 uid="uid://w_rlauncher_def"]
+
+[ext_resource type="Script" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="1"]
+[ext_resource type="PackedScene" path="res://src/entities/weapon/rocket_launcher/rocket_launcher.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://src/entities/weapon/rocket_launcher/rocket_projectile.tscn" id="3"]
+[ext_resource type="Resource" path="res://src/entities/weapon/rocket_launcher/projectile_definition.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+Id = 0
+DisplayName = "Rocket Launcher"
+WorldScene = ExtResource("2")
+ViewScene = ExtResource("2")
+ProjectileScene = ExtResource("3")
+ProjectileConfig = ExtResource("4")
+ProjectileSpawn = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 1.8)
+MagazineSize = 1
+MaxReserveAmmo = 14
+FireCooldownSec = 1.0
+ReloadDurationSec = 1.2
+Damage = 100.0
+IsAutomatic = false
+ConsumeAmmoPerShot = true
+AllowHoldToFire = false
+EquipTimeSec = 0.35
+UnequipTimeSec = 0.35

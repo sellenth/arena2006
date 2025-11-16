@@ -46,6 +46,9 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private ReplicatedInt _armorProperty;
 	public int Health => _health;
 	public int Armor => _armor;
+	private WeaponInventory _weaponInventory;
+	private WeaponController _weaponController;
+	private AmmoUI _ammoUi;
 
 	public PlayerCharacter()
 	{
@@ -88,6 +91,68 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_managesMouseMode = AutoRegisterWithNetwork && (_networkController == null || _networkController.IsClient);
 
 		ApplyColor(_playerColor);
+
+		EnsureWeaponSystems();
+	}
+	
+	private void EnsureWeaponSystems()
+	{
+		_weaponInventory = GetNodeOrNull<WeaponInventory>("WeaponInventory");
+		if (_weaponInventory == null)
+		{
+			_weaponInventory = new WeaponInventory { Name = "WeaponInventory" };
+			AddChild(_weaponInventory);
+		}
+
+		if (_weaponInventory.StartingWeapons.Count == 0)
+		{
+			var rocketDefPath = "res://src/entities/weapon/rocket_launcher/weapon_definition.tres";
+			if (ResourceLoader.Exists(rocketDefPath))
+			{
+				var rocketDef = ResourceLoader.Load<WeaponDefinition>(rocketDefPath);
+				if (rocketDef != null)
+				{
+					_weaponInventory.StartingWeapons.Add(rocketDef);
+				}
+			}
+		}
+
+		_weaponController = GetNodeOrNull<WeaponController>("WeaponController");
+		if (_weaponController == null)
+		{
+			_weaponController = new WeaponController { Name = "WeaponController" };
+			AddChild(_weaponController);
+		}
+
+		ConnectAmmoUi();
+	}
+
+	private void ConnectAmmoUi()
+	{
+		if (_weaponInventory == null)
+			return;
+
+		if (_ammoUi == null)
+		{
+			_ammoUi = FindAmmoUi();
+		}
+
+		if (_ammoUi != null)
+		{
+			_weaponInventory.AmmoChanged -= _ammoUi.UpdateAmmo;
+			_weaponInventory.AmmoChanged += _ammoUi.UpdateAmmo;
+			_weaponInventory.EmitAmmo();
+		}
+	}
+
+	private AmmoUI FindAmmoUi()
+	{
+		var scene = GetTree()?.CurrentScene;
+		if (scene == null)
+			return null;
+		// Search by name to avoid hard-coded paths.
+		var node = scene.FindChild("AmmoUI", recursive: true, owned: false);
+		return node as AmmoUI;
 	}
 	
 	private void InitializeReplication()
@@ -212,6 +277,11 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 	public override void _ExitTree()
 	{
+		if (_weaponInventory != null && _ammoUi != null)
+		{
+			_weaponInventory.AmmoChanged -= _ammoUi.UpdateAmmo;
+		}
+
 		if (_registeredWithRemoteManager)
 		{
 			var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
@@ -290,6 +360,9 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			MoveInput = Input.GetVector("move_left", "move_right", "move_forward", "move_backward"),
 			Jump = Input.IsActionPressed("jump"),
 			Interact = Input.IsActionJustPressed("interact"),
+			PrimaryFire = InputMap.HasAction("fire") && Input.IsActionPressed("fire"),
+			PrimaryFireJustPressed = InputMap.HasAction("fire") && Input.IsActionJustPressed("fire"),
+			Reload = (InputMap.HasAction("reload") && Input.IsActionJustPressed("reload")) || Input.IsKeyPressed(Key.R),
 			ViewYaw = _lookController?.Yaw ?? 0f,
 			ViewPitch = _lookController?.Pitch ?? 0f
 		};
@@ -306,6 +379,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		{
 			SetYawPitch(state.ViewYaw, state.ViewPitch);
 		}
+		
+		_weaponController?.SetInput(_inputState);
 	}
 
 	public PlayerSnapshot CaptureSnapshot(int tick)
@@ -336,6 +411,11 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_simulateLocally = isAuthority;
 		SetPhysicsProcess(_worldActive);
 	}
+	
+	public bool HasAuthority()
+	{
+		return _isAuthority;
+	}
 
 	public void SetCameraActive(bool active)
 	{
@@ -358,6 +438,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			_collisionShape.Disabled = !active;
 		}
 		SetPhysicsProcess(active);
+		_weaponController?.SetPhysicsProcess(active);
 	}
 
 	public void SetPlayerColor(Color color)
