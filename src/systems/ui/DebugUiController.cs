@@ -14,6 +14,8 @@ public partial class DebugUiController : Node
 	private Label _frameRateLabel;
 	private Label _timeScaleLabel;
 	private Label _gameModeLabel;
+	private Label _weaponLabel;
+	private Label _ammoLabel;
 	private Label _speedLabel;
 	private ProgressBar _motorRatio;
 	private Label _accelLabel;
@@ -43,6 +45,8 @@ public partial class DebugUiController : Node
 		_frameRateLabel = canvasLayer.GetNode<Label>("TOP/FramerateLabel");
 		_timeScaleLabel = canvasLayer.GetNode<Label>("TOP/TimeScaleLabel");
 		_gameModeLabel = canvasLayer.GetNode<Label>("TOP/GameModeLabel");
+		_weaponLabel = canvasLayer.GetNode<Label>("TOP/WeaponLabel");
+		_ammoLabel = canvasLayer.GetNode<Label>("TOP/AmmoLabel");
 		_speedLabel = canvasLayer.GetNode<Label>("RIGHT_TOP/SpeedLabel");
 		_motorRatio = canvasLayer.GetNode<ProgressBar>("RIGHT_TOP/MotorRatio");
 		_accelLabel = canvasLayer.GetNode<Label>("RIGHT_TOP/AccelLabel");
@@ -89,6 +93,17 @@ public partial class DebugUiController : Node
 
 		_frameRateLabel.Text = $"FPS: {Engine.GetFramesPerSecond()}";
 		_timeScaleLabel.Text = $"Time Scale: {Engine.TimeScale:F2}";
+
+		var weaponInventory = _player?.GetNodeOrNull<WeaponInventory>("WeaponInventory");
+		var weaponType = weaponInventory?.EquippedType ?? WeaponType.None;
+		var mag = weaponInventory?.Equipped?.Magazine ?? 0;
+		var reserve = weaponInventory?.Equipped?.Reserve ?? 0;
+		var magSize = weaponInventory?.Equipped?.Definition?.MagazineSize ?? 0;
+		_weaponLabel.Text = $"Weapon: {weaponType.ToString()}";
+		if (_ammoLabel != null)
+		{
+			_ammoLabel.Text = $"Ammo: {mag}/{magSize} | Total: {mag + reserve}";
+		}
 
 		if (GameModeManager.Instance != null && GameModeManager.Instance.ActiveMode != null)
 		{

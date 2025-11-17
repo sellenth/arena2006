@@ -11,6 +11,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	[Export] public int NetworkId { get; set; } = 0;
 	[Export] public int MaxHealth { get; set; } = 100;
 	[Export] public int MaxArmor { get; set; } = 100;
+	public long OwnerPeerId => GetOwnerPeerId();
 
 	private Node3D _head;
 	private Camera3D _camera;
@@ -377,6 +378,15 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		SetWorldActive(mode == PlayerMode.Foot);
 	}
 
+	public long GetOwnerPeerId()
+	{
+		if (NetworkId >= 3000 && NetworkId < 4000)
+		{
+			return NetworkId - 3000;
+		}
+		return 0;
+	}
+
 	public override void _PhysicsProcess(double delta)
 	{
 		if (!_worldActive)
@@ -568,7 +578,9 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 		if (value != _repWeaponFireSeq)
 		{
+			var ownerPeerId = GetOwnerPeerId();
 			_weaponController?.PlayRemoteFireFx((WeaponType)_repWeaponId);
+			_weaponController?.SpawnRemoteProjectile((WeaponType)_repWeaponId, ownerPeerId, value);
 		}
 
 		_repWeaponFireSeq = value;
@@ -642,6 +654,21 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		{
 			SetHealth(_health - remaining);
 		}
+	}
+
+	public void ApplyExternalImpulse(Vector3 impulse)
+	{
+		if (impulse == Vector3.Zero)
+			return;
+
+		Velocity += impulse;
+		_movementController?.Reset();
+	}
+
+	public void ApplyLaunchVelocity(Vector3 velocity)
+	{
+		Velocity += velocity;
+		_movementController?.Reset();
 	}
 
 	public Vector3 GetViewDirection()

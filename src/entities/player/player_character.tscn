@@ -1,7 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://bp5wletrm4dw2"]
+[gd_scene load_steps=9 format=3 uid="uid://bp5wletrm4dw2"]
 
 [ext_resource type="Script" uid="uid://dpian2gawtw4a" path="res://src/entities/player/PlayerCharacter.cs" id="1_qj4xw"]
 [ext_resource type="Script" uid="uid://dfsnhvsmrh8yr" path="res://src/systems/ui/CrosshairUI.cs" id="2_b8iv8"]
+[ext_resource type="Script" uid="uid://cdpug6k574ola" path="res://src/entities/weapon/_shared/WeaponInventory.cs" id="3_qfbsq"]
+[ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="4_jwpyx"]
+[ext_resource type="Resource" uid="uid://b778nq68itor2" path="res://src/entities/weapon/rocket_launcher/weapon_definition.tres" id="5_4dfh7"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v2uir"]
 resource_local_to_scene = true
@@ -16,7 +19,6 @@ radius = 0.25
 height = 1.8
 
 [node name="PlayerCharacter" type="CharacterBody3D"]
-collision_layer = 0
 floor_stop_on_slope = false
 floor_block_on_wall = false
 script = ExtResource("1_qj4xw")
@@ -44,3 +46,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_b8iv8")
+
+[node name="WeaponInventory" type="Node3D" parent="."]
+script = ExtResource("3_qfbsq")
+StartingWeapons = Array[ExtResource("4_jwpyx")]([ExtResource("5_4dfh7")])

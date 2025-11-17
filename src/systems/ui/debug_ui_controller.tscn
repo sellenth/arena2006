@@ -83,6 +83,14 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="WeaponLabel" type="Label" parent="CanvasLayer/TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Weapon: "
+
+[node name="AmmoLabel" type="Label" parent="CanvasLayer/TOP"]
+layout_mode = 2
+
 [node name="RIGHT_TOP" type="VBoxContainer" parent="CanvasLayer"]
 offset_left = 954.0
 offset_top = 10.0

@@ -62,6 +62,21 @@ public partial class ProjectilePool : Node
 		if (node == null)
 			return;
 
+		// Godot disallows removing collision objects during physics callbacks; defer return when invoked from physics.
+		if (Engine.IsInPhysicsFrame() && node.GetParent() != null)
+		{
+			CallDeferred(nameof(DeferredReturn), node);
+			return;
+		}
+
+		DeferredReturn(node);
+	}
+
+	private void DeferredReturn(Node node)
+	{
+		if (node == null)
+			return;
+
 		if (node.GetParent() != null)
 		{
 			node.GetParent().RemoveChild(node);

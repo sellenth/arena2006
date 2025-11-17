@@ -95,8 +95,12 @@ public sealed class PlayerLookController
 
 	public Vector3 GetViewDirection(Node3D fallback)
 	{
+		if (_camera != null)
+			return -_camera.GlobalTransform.Basis.Z;
+
 		if (_head != null)
 			return -_head.GlobalTransform.Basis.Z;
+
 		return fallback != null ? -fallback.GlobalTransform.Basis.Z : Vector3.Forward;
 	}
 

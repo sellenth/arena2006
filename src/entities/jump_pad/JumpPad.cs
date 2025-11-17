@@ -64,7 +64,14 @@ public partial class JumpPad : StaticBody3D
 
         var launchNormal = GetLaunchNormal();
 
-        if (body is CharacterBody3D character)
+        if (body is PlayerCharacter player)
+        {
+            var launchVelocity = launchNormal * CharacterUpwardVelocity;
+            player.ApplyLaunchVelocity(launchVelocity);
+            GD.Print($"[JumpPad] Boosted PlayerCharacter '{body.Name}' to v={launchVelocity}");
+            applied = true;
+        }
+        else if (body is CharacterBody3D character)
         {
             var launchVelocity = launchNormal * CharacterUpwardVelocity;
             character.Velocity = launchVelocity;
