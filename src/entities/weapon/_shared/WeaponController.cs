@@ -5,6 +5,7 @@ public partial class WeaponController : Node
 {
 	[Export] public NodePath InventoryPath { get; set; } = "../WeaponInventory";
 	[Export] public NodePath ProjectileParentPath { get; set; } = "";
+	[Export] public bool IgnoreGameModeWeapons { get; set; } = true;
 
 	private WeaponInventory _inventory;
 	private PlayerCharacter _player;
@@ -24,13 +25,13 @@ public partial class WeaponController : Node
 	{
 		_player = GetParent() as PlayerCharacter ?? GetOwner() as PlayerCharacter;
 		_inventory = GetNodeOrNull<WeaponInventory>(InventoryPath);
-			_gameMode = GetNodeOrNull<GameModeManager>("/root/GameModeManager");
-			_network = GetNodeOrNull<NetworkController>("/root/NetworkController");
-			_ownerPeerId = _network?.ClientPeerId ?? 0;
-			_poolRoot = new Node { Name = "ProjectilePools" };
-			AddChild(_poolRoot);
-			SetPhysicsProcess(true);
-		}
+		_gameMode = GetNodeOrNull<GameModeManager>("/root/GameModeManager");
+		_network = GetNodeOrNull<NetworkController>("/root/NetworkController");
+		_ownerPeerId = _network?.ClientPeerId ?? 0;
+		_poolRoot = new Node { Name = "ProjectilePools" };
+		AddChild(_poolRoot);
+		SetPhysicsProcess(true);
+	}
 
 	public override void _PhysicsProcess(double delta)
 	{
@@ -86,7 +87,7 @@ public partial class WeaponController : Node
 
 	private bool WeaponsAllowed()
 	{
-		if (_gameMode == null)
+		if (IgnoreGameModeWeapons || _gameMode == null)
 			return true;
 		return _gameMode.WeaponsEnabled;
 	}
@@ -137,7 +138,7 @@ public partial class WeaponController : Node
 		}
 
 		_fireSequence++;
-		SpawnProjectile(instance.Definition);
+		SpawnProjectile(instance.Definition, true, _fireSequence, ResolveProjectileTransform(instance.Definition), _ownerPeerId);
 		PlayAudio(instance.Definition.FireAudio, _player?.GlobalPosition ?? Vector3.Zero);
 		SpawnMuzzleFx(instance.Definition);
 		_inventory?.EmitAmmo();
@@ -242,12 +243,11 @@ public partial class WeaponController : Node
 		return new Transform3D(basis, origin) * spawn;
 	}
 
-	private void SpawnProjectile(WeaponDefinition def)
+	private void SpawnProjectile(WeaponDefinition def, bool serverAuthority, int fireSequence, Transform3D spawnTransform, long ownerPeerId)
 	{
 		if (def == null || def.ProjectileScene == null || _player == null)
 			return;
-
-		var spawnTransform = ResolveProjectileTransform(def);
+		_fireSequence = Math.Max(_fireSequence, fireSequence);
 		var direction = -spawnTransform.Basis.Z;
 
 		var pool = GetOrCreatePool(def);
@@ -271,7 +271,7 @@ public partial class WeaponController : Node
 			ApplyRocketConfig(def, rocket);
 			var speed = rocket.Speed;
 			var velocity = direction * speed;
-			rocket.Initialize(_fireSequence, _ownerPeerId, true, spawnTransform.Origin, velocity);
+			rocket.Initialize(fireSequence, ownerPeerId, serverAuthority, spawnTransform.Origin, velocity);
 			rocket.RegisterCollisionException(_player);
 			if (pool != null)
 			{
@@ -282,7 +282,7 @@ public partial class WeaponController : Node
 		{
 			var speed = ApplyBulletConfig(def, bullet);
 			var velocity = direction * speed;
-			bullet.Initialize(_fireSequence, _ownerPeerId, true, spawnTransform.Origin, spawnTransform.Basis, velocity, def.Damage);
+			bullet.Initialize(fireSequence, ownerPeerId, serverAuthority, spawnTransform.Origin, spawnTransform.Basis, velocity, def.Damage);
 			bullet.RegisterCollisionException(_player);
 			if (pool != null)
 			{
@@ -336,6 +336,10 @@ public partial class WeaponController : Node
 		rocket.ExplodeRadius = def.ProjectileConfig.ExplosionRadius;
 		rocket.ArmDelaySec = def.ProjectileConfig.ArmDelaySec;
 		rocket.GravityScale = def.ProjectileConfig.GravityScale;
+		rocket.ExplosionDamage = def.ProjectileConfig.Damage;
+		rocket.SelfDamageScale = def.ProjectileConfig.SelfDamageScale;
+		rocket.KnockbackImpulse = def.ProjectileConfig.KnockbackImpulse;
+		rocket.KnockbackUpBias = def.ProjectileConfig.KnockbackUpBias;
 	}
 
 	private float ApplyBulletConfig(WeaponDefinition def, MachineGunProjectile bullet)
@@ -358,6 +362,19 @@ public partial class WeaponController : Node
 			return;
 		SpawnMuzzleFx(def);
 		PlayAudio(def.FireAudio, _player.GlobalPosition);
+	}
+
+	public void SpawnRemoteProjectile(WeaponType type, long ownerPeerId, int fireSequence)
+	{
+		if (_inventory == null)
+			return;
+
+		var def = _inventory.Get(type)?.Definition ?? _inventory.Equipped?.Definition;
+		if (def == null)
+			return;
+
+		var spawnTransform = ResolveProjectileTransform(def);
+		SpawnProjectile(def, serverAuthority: false, fireSequence: fireSequence, spawnTransform: spawnTransform, ownerPeerId: ownerPeerId);
 	}
 }
 

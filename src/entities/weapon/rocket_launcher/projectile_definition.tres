@@ -1,13 +1,9 @@
-[gd_resource type="Resource" load_steps=2 format=3 uid="uid://rocket_proj_def"]
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://53maa486k4ky"]
 
-[ext_resource type="Script" path="res://src/entities/weapon/_shared/ProjectileDefinition.cs" id="1"]
+[ext_resource type="Script" uid="uid://chhigb78hn2p5" path="res://src/entities/weapon/_shared/ProjectileDefinition.cs" id="1"]
 
 [resource]
 script = ExtResource("1")
-Speed = 30.0
-LifetimeSec = 6.0
-GravityScale = 0.0
 ExplosionRadius = 6.0
 Damage = 120.0
 ArmDelaySec = 0.05
-SelfDamageScale = 1.0

@@ -7,6 +7,10 @@ using System.Collections.Generic;
     [Export] public float Speed { get; set; } = 30.0f;
     [Export] public float ExplodeRadius { get; set; } = 6.0f;
     [Export] public float Lifetime { get; set; } = 6.0f;
+    [Export] public float ExplosionDamage { get; set; } = 100.0f;
+    [Export] public float SelfDamageScale { get; set; } = 1.0f;
+    [Export] public float KnockbackImpulse { get; set; } = 24.0f;
+    [Export] public float KnockbackUpBias { get; set; } = 0.6f;
 
     [ExportGroup("Audio")]
     [Export] public AudioStream ExplosionSfx { get; set; }
@@ -94,8 +98,8 @@ using System.Collections.Generic;
             LookAt(GlobalPosition + initialVelocity.Normalized(), Vector3.Up);
         }
 
-        // On clients (non-authority visuals), freeze physics so we can set transforms from network updates
-        Freeze = !ServerAuthority;
+        // Let non-authority visuals simulate movement locally; collisions are already disabled when not server authority.
+        Freeze = false;
         Sleeping = false;
 
         LinearVelocity = initialVelocity;
@@ -135,7 +139,14 @@ using System.Collections.Generic;
         // Ignore collisions with other rockets to reduce chain popping
         if (body is RocketProjectile) return;
         // Optionally ignore immediate collision with owner (could add owner tagging via groups)
-        ServerExplode();
+        if (ServerAuthority)
+        {
+            ServerExplode();
+        }
+        else
+        {
+            ClientExplodeFx();
+        }
     }
 
     private void ServerExplode()
@@ -145,6 +156,8 @@ using System.Collections.Generic;
         LinearVelocity = Vector3.Zero;
         AngularVelocity = Vector3.Zero;
         SetPhysicsProcess(false);
+
+        ApplyExplosionDamageAndImpulse();
 
         OnServerExploded?.Invoke(RocketId, GlobalPosition);
         // Server doesn't need local SFX; the clients handle audio/FX when told to destroy
@@ -193,7 +206,7 @@ using System.Collections.Generic;
     {
         if (FlightLoopSfx == null)
         {
-            FlightLoopSfx = GD.Load<AudioStream>("res://sounds/rocket_loop.mp3");
+            FlightLoopSfx = GD.Load<AudioStream>("res://src/entities/weapon/rocket_launcher/rocket_loop.mp3");
         }
         if (FlightLoopSfx == null) return;
 
@@ -213,7 +226,7 @@ using System.Collections.Generic;
     {
         if (ExplosionSfx == null)
         {
-            ExplosionSfx = GD.Load<AudioStream>("res://sounds/explosion.mp3");
+            ExplosionSfx = GD.Load<AudioStream>("res://src/entities/weapon/rocket_launcher/explosion.mp3");
         }
         if (ExplosionSfx == null) return;
 
@@ -304,15 +317,9 @@ using System.Collections.Generic;
             _flightPlayer = null;
         }
 
-        if (ServerAuthority)
-        {
-            SetContactMonitorSafe(true);
-            MaxContactsReported = 16;
-        }
-        else
-        {
-            SetContactMonitorSafe(false);
-        }
+        // Clients also need contact events to drive explosion FX locally.
+        SetContactMonitorSafe(true);
+        MaxContactsReported = 16;
     }
 
     private void SetContactMonitorSafe(bool enabled)
@@ -361,36 +368,92 @@ using System.Collections.Generic;
 
     private void UpdateAuthoritySignals()
     {
-        if (ServerAuthority)
+        // Keep collision callbacks active for both authority and proxies so clients can trigger local FX.
+        if (!_connectedRigidBodySignal)
         {
-            if (!_connectedRigidBodySignal)
-            {
-                BodyEntered += HandleBodyEntered;
-                _connectedRigidBodySignal = true;
-            }
-            if (_hitArea != null)
-            {
-                if (!_connectedHitAreaSignal)
-                {
-                    _hitArea.BodyEntered += HandleBodyEntered;
-                    _connectedHitAreaSignal = true;
-                }
-                SetHitAreaMonitoring(true);
-            }
+            BodyEntered += HandleBodyEntered;
+            _connectedRigidBodySignal = true;
         }
-        else
+        if (_hitArea != null)
         {
-            if (_connectedRigidBodySignal)
+            if (!_connectedHitAreaSignal)
             {
-                BodyEntered -= HandleBodyEntered;
-                _connectedRigidBodySignal = false;
+                _hitArea.BodyEntered += HandleBodyEntered;
+                _connectedHitAreaSignal = true;
             }
-            if (_connectedHitAreaSignal && _hitArea != null)
+            SetHitAreaMonitoring(true);
+        }
+    }
+
+    private void ApplyExplosionDamageAndImpulse()
+    {
+        var world = GetWorld3D();
+        if (world == null) return;
+
+        var space = world.DirectSpaceState;
+        if (space == null) return;
+
+        var shape = new SphereShape3D { Radius = ExplodeRadius };
+        var query = new PhysicsShapeQueryParameters3D
+        {
+            Shape = shape,
+            Transform = new Transform3D(Basis.Identity, GlobalPosition),
+            CollisionMask = CollisionMask,
+            CollideWithAreas = false,
+            CollideWithBodies = true
+        };
+
+        var results = space.IntersectShape(query, 32);
+        if (results == null || results.Count == 0) return;
+
+        var processed = new HashSet<ulong>();
+        foreach (var result in results)
+        {
+            if (!result.TryGetValue("collider", out Variant colliderVar)) continue;
+            var collider = colliderVar.AsGodotObject() as Node;
+            if (collider == null) continue;
+            if (collider == this) continue;
+            var id = collider.GetInstanceId();
+            if (processed.Contains(id)) continue;
+            processed.Add(id);
+
+            var target3D = collider as Node3D ?? collider.GetParent() as Node3D;
+            var targetPos = target3D?.GlobalPosition ?? GlobalPosition;
+            var distance = GlobalPosition.DistanceTo(targetPos);
+            if (distance > ExplodeRadius) continue;
+
+            var falloff = 1f - Mathf.Clamp(distance / ExplodeRadius, 0f, 1f);
+            if (falloff <= 0f) continue;
+
+            var damage = ExplosionDamage * falloff;
+            if (damage <= 0.5f) continue;
+
+            var dir = targetPos - GlobalPosition;
+            if (dir.LengthSquared() < 0.001f)
             {
-                _hitArea.BodyEntered -= HandleBodyEntered;
-                _connectedHitAreaSignal = false;
+                dir = Vector3.Up;
             }
-            SetHitAreaMonitoring(false);
+            var knockbackDir = (dir.Normalized() + Vector3.Up * KnockbackUpBias).Normalized();
+            var knockback = knockbackDir * (KnockbackImpulse * falloff);
+
+            if (collider is PlayerCharacter player)
+            {
+                var scaledDamage = damage;
+                if (OwnerPeerId != 0 && player.OwnerPeerId == OwnerPeerId)
+                {
+                    scaledDamage *= SelfDamageScale;
+                }
+                player.ApplyDamage(Mathf.RoundToInt(scaledDamage));
+                player.ApplyExternalImpulse(knockback);
+            }
+            else if (collider is CharacterBody3D character)
+            {
+                character.Velocity += knockback;
+            }
+            else if (collider is RigidBody3D rigid)
+            {
+                rigid.ApplyImpulse(knockback);
+            }
         }
     }
 

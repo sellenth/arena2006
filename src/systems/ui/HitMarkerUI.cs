@@ -15,7 +15,7 @@ public partial class HitMarkerUI : Control
     [Export] public float MinPitch { get; set; } = 0.65f;
     [Export] public float MaxPitch { get; set; } = 1.45f;
     [Export] public float BaseVolumeDb { get; set; } = -4.0f;
-    [Export(PropertyHint.File, "*.ogg,*.wav,*.mp3")] public string AudioPath { get; set; } = "res://sounds/hitmarker/impactGeneric_light_002.ogg";
+    [Export(PropertyHint.File, "*.ogg,*.wav,*.mp3")] public string AudioPath { get; set; } = "res://src/entities/hitmarker/impactGeneric_light_002.ogg";
     [Export] public Color HitColor { get; set; } = new(1f, 1f, 1f, 0.95f);
     [Export] public Color KillColor { get; set; } = new(1f, 0.3f, 0.2f, 1f);
 
