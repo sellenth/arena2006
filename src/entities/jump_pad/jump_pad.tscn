@@ -28,7 +28,6 @@ mesh = SubResource("BoxMesh_visual")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("BoxShape3D_pad")
-disabled = true
 
 [node name="DetectionArea" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
