@@ -15,7 +15,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 
 # Install Godot
 RUN wget https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_mono_linux_x86_64.zip -O godot.zip
-RUN unzip godot.zip && mv Godot_v4.5.1-stable_mono_linux_x86_64 /usr/local/bin/godot &&  mv GodotSharp /usr/local/bin/godot/GodotSharp && rm godot.zip
+RUN unzip godot.zip && mv Godot_v4.5.1-stable_mono_linux_x86_64 /usr/local/bin/godot && rm godot.zip
 ENV GODOT_VERSION="4.5.1"
 
 ADD setup_editor_settings_version.sh /opt/scripts/setup_editor_settings_version.sh
