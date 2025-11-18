@@ -18,11 +18,8 @@ steps:
   # ==================================================================================================
   - name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
     id: 'build-csharp'
-    args:
-      - 'dotnet'
-      - 'build'
-      - 'Arena2006.csproj'
-    entrypoint: 'bash'
+    entrypoint: 'dotnet'
+    args: ['build', 'Arena2006.csproj']
     dir: '/workspace'
 
   # ==================================================================================================
