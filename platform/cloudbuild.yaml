@@ -1,0 +1,128 @@
+steps:
+  # ==================================================================================================
+  #  1. Build the custom builder image that includes Godot, .NET 8, and zsh
+  # ==================================================================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-builder'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/godot-builder:latest'
+      - '.'
+      - '-f'
+      - 'platform/Dockerfile.builder'
+    entrypoint: 'docker'
+
+  # ==================================================================================================
+  #  2. Build the C# project
+  # ==================================================================================================
+  - name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
+    id: 'build-csharp'
+    args:
+      - 'dotnet'
+      - 'build'
+      - 'Arena2006.csproj'
+    entrypoint: 'bash'
+    dir: '/workspace'
+
+  # ==================================================================================================
+  #  3. Import the project into Godot to generate necessary files
+  # ==================================================================================================
+  - name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
+    id: 'godot-import'
+    args:
+      - '-c'
+      - 'godot --headless --path . --editor --quit'
+    entrypoint: 'bash'
+    dir: '/workspace'
+
+  # ==================================================================================================
+  #  4. Run integration tests
+  # ==================================================================================================
+  #- name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
+  #  id: 'run-tests'
+  #  args:
+  #    - '-c'
+  #    - 'zsh tests/run_test.sh tests/test_client_car_spawn.sh && zsh tests/run_test.sh tests/test_client_car_respawn.sh'
+  #  entrypoint: 'bash'
+  #  dir: '/workspace'
+
+  # ==================================================================================================
+  #  5. Export Linux server and client
+  # ==================================================================================================
+  - name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
+    id: 'export-builds'
+    args:
+      - '-c'
+      - |
+        mkdir -p build/linux_server build/linux_client
+        godot --headless --path . --export-release "Linux Server"
+        godot --headless --path . --export-release "Linux Client"
+    entrypoint: 'bash'
+    dir: '/workspace'
+
+
+  # ==================================================================================================
+  #  9. Upload the client build to a GCS bucket
+  # ==================================================================================================
+  - name: 'gcr.io/cloud-builders/gsutil'
+    id: 'upload-client-build'
+    args:
+      - 'cp'
+      - '-r'
+      - 'build/linux_client/*'
+      - 'gs://${_GCS_BUCKET_NAME}/$COMMIT_SHA/'
+    dir: '/workspace'
+
+  # ==================================================================================================
+  #  6. Dockerize the server build and push to GCR
+  # ==================================================================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'docker-build-server'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/arena2006-server:$COMMIT_SHA'
+      - '.'
+      - '-f'
+      - 'Dockerfile'
+    dir: 'build/linux_server'
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'docker-push-server'
+    args: ['push', 'gcr.io/$PROJECT_ID/arena2006-server:$COMMIT_SHA']
+
+  # ==================================================================================================
+  #  7. Substitute Project ID in Kubernetes manifests
+  # ==================================================================================================
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'substitute-project-id'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        sed -i "s/YOUR_PROJECT_ID/$PROJECT_ID/g" platform/deployment.yaml
+
+  # ==================================================================================================
+  #  8. Deploy the server to GKE
+  # ==================================================================================================
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: 'gke-deploy'
+    entrypoint: gcloud
+    args:
+      - "deploy"
+      - "apply"
+      - "--file=platform/deployment.yaml"
+      - "--file=platform/service.yaml"
+      - "--project=$PROJECT_ID"
+      - "--cluster=${_GKE_CLUSTER_NAME}"
+      - "--region=${_GKE_CLUSTER_LOCATION}"
+      - "--namespace=default"
+      - "--image=gcr.io/$PROJECT_ID/arena2006-server:$COMMIT_SHA"
+
+# ==================================================================================================
+#  Artifacts Configuration
+# ==================================================================================================
+artifacts:
+  objects:
+    location: 'gs://${_GCS_BUCKET_NAME}/builds/$COMMIT_SHA/'
+    paths: ['build/linux_client/*']

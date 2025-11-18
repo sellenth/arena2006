@@ -1,18 +1,11 @@
-[gd_scene load_steps=9 format=3 uid="uid://bp5wletrm4dw2"]
+[gd_scene load_steps=8 format=3 uid="uid://bp5wletrm4dw2"]
 
 [ext_resource type="Script" uid="uid://dpian2gawtw4a" path="res://src/entities/player/PlayerCharacter.cs" id="1_qj4xw"]
 [ext_resource type="Script" uid="uid://dfsnhvsmrh8yr" path="res://src/systems/ui/CrosshairUI.cs" id="2_b8iv8"]
 [ext_resource type="Script" uid="uid://cdpug6k574ola" path="res://src/entities/weapon/_shared/WeaponInventory.cs" id="3_qfbsq"]
 [ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="4_jwpyx"]
 [ext_resource type="Resource" uid="uid://b778nq68itor2" path="res://src/entities/weapon/rocket_launcher/weapon_definition.tres" id="5_4dfh7"]
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v2uir"]
-resource_local_to_scene = true
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_2in2a"]
-top_radius = 0.25
-bottom_radius = 0.25
-height = 1.8
+[ext_resource type="PackedScene" uid="uid://dl6x545r7pbrg" path="res://src/entities/player/quechan/practicing01_complete.blend" id="6_4dfh7"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_s6pao"]
 radius = 0.25
@@ -22,14 +15,10 @@ height = 1.8
 floor_stop_on_slope = false
 floor_block_on_wall = false
 script = ExtResource("1_qj4xw")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-material_overlay = SubResource("StandardMaterial3D_v2uir")
-mesh = SubResource("CylinderMesh_2in2a")
+MeshPath = NodePath("")
 
 [node name="Collision" type="CollisionShape3D" parent="."]
-transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0, 0.9, 0)
+transform = Transform3D(-4.3711402e-08, 0, 1, 0, 1, 0, -1, 0, -4.3711402e-08, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_s6pao")
 
 [node name="Head" type="Node3D" parent="."]
@@ -37,6 +26,9 @@ transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 2.1
 
 [node name="Cam" type="Camera3D" parent="Head"]
 fov = 100.0
+
+[node name="practicing01_complete" parent="Head" instance=ExtResource("6_4dfh7")]
+transform = Transform3D(-1.4, 0, -1.2239191e-07, 0, 1.4, 0, 1.2239191e-07, 0, -1.4, 0, -2.12948, 0)
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 3
