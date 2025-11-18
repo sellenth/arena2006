@@ -18,7 +18,7 @@ RUN wget https://github.com/godotengine/godot/releases/download/4.5.1-stable/God
 RUN unzip godot.zip && mv Godot_v4.5.1-stable_mono_linux_x86_64 /usr/local/bin/godot && rm godot.zip
 ENV GODOT_VERSION="4.5.1"
 
-ADD setup_editor_settings_version.sh /opt/scripts/setup_editor_settings_version.sh
+ADD platform/setup_editor_settings_version.sh /opt/scripts/setup_editor_settings_version.sh
 RUN bash /opt/scripts/setup_editor_settings_version.sh
 
 # Install .NET 8 SDK
@@ -30,9 +30,9 @@ ENV PATH="/usr/share/dotnet:${PATH}"
 # install blender and also setup blender's path in editor settings so that you can use the inbuilt blender importer
 ENV BLENDER_VERSION="4.5.1"
 
-ADD install_blender.sh /opt/scripts/install_blender.sh
+ADD platform/install_blender.sh /opt/scripts/install_blender.sh
 RUN bash /opt/scripts/install_blender.sh
 
 ENV PATH="/opt/blender:${PATH}"
-ADD setup_blender_editor_path.sh /opt/scripts/setup_blender_editor_path.sh
+ADD platform/setup_blender_editor_path.sh /opt/scripts/setup_blender_editor_path.sh
 RUN bash /opt/scripts/setup_blender_editor_path.sh
