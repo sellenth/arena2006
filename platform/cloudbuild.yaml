@@ -126,3 +126,6 @@ artifacts:
   objects:
     location: 'gs://${_GCS_BUCKET_NAME}/builds/$COMMIT_SHA/'
     paths: ['build/linux_client/*']
+
+options:
+  logging: CLOUD_LOGGING_ONLY
