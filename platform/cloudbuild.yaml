@@ -9,6 +9,21 @@ steps:
     args: ['build', 'Arena2006.csproj']
     dir: '/workspace'
 
+  # ==================================================================================================
+  #  5. Export Linux server and client
+  # ==================================================================================================
+  - name: 'witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono'
+    id: 'export-builds'
+    args:
+      - '-c'
+      - |
+        mkdir -p build/linux_server build/linux_client build/windows_client
+  #      godot --headless --path . --export-release "Linux Server"
+  #      godot --headless --path . --export-release "Linux Client"
+  #      godot --headless --path . --export-release "Windows Client"
+    entrypoint: 'bash'
+    dir: '/workspace'
+
   - name: "witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono"
     id: "godot-import-check"
     entrypoint: godot
@@ -42,20 +57,6 @@ steps:
   #  entrypoint: 'bash'
   #  dir: '/workspace'
 
-  # ==================================================================================================
-  #  5. Export Linux server and client
-  # ==================================================================================================
-  - name: 'witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono'
-    id: 'export-builds'
-    args:
-      - '-c'
-      - |
-        mkdir -p build/linux_server build/linux_client build/windows_client
-        godot --headless --path . --export-release "Linux Server"
-  #      godot --headless --path . --export-release "Linux Client"
-  #      godot --headless --path . --export-release "Windows Client"
-    entrypoint: 'bash'
-    dir: '/workspace'
 
 
   # ==================================================================================================
