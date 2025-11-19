@@ -42,13 +42,13 @@ steps:
   # ==================================================================================================
   #  3. Import the project into Godot to generate necessary files
   # ==================================================================================================
-  - name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
-    id: 'godot-import'
-    args:
-      - '-c'
-      - 'godot -v --headless --path . --editor --quit'
-    entrypoint: 'bash'
-    dir: '/workspace'
+  # - name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
+  #   id: 'godot-import'
+  #   args:
+  #     - '-c'
+  #     - 'godot -v --headless --path . --editor --quit'
+  #   entrypoint: 'bash'
+  #   dir: '/workspace'
 
   # ==================================================================================================
   #  4. Run integration tests
