@@ -9,6 +9,15 @@ steps:
     args: ['build', 'Arena2006.csproj']
     dir: '/workspace'
 
+  - name: "witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono"
+    id: "godot-import-check"
+    entrypoint: godot
+    args: ["-v", "--headless", "--path", ".", "--editor", "--quit"]
+    dir: "/workspace"
+    env:
+      - HOME=/root
+      - GODOT_USER_HOME=/workspace/.godot
+
   # ==================================================================================================
   #  3. Import the project into Godot to generate necessary files
   # ==================================================================================================
@@ -117,3 +126,4 @@ artifacts:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
