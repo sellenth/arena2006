@@ -46,7 +46,7 @@ steps:
     id: 'godot-import'
     args:
       - '-c'
-      - 'godot --headless --path . --editor --quit'
+      - 'godot -v --headless --path . --editor --quit'
     entrypoint: 'bash'
     dir: '/workspace'
 
