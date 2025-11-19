@@ -12,13 +12,15 @@ steps:
   # ==================================================================================================
   #  3. Import the project into Godot to generate necessary files
   # ==================================================================================================
-  # - name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
-  #   id: 'godot-import'
-  #   args:
-  #     - '-c'
-  #     - 'godot -v --headless --path . --editor --quit'
-  #   entrypoint: 'bash'
-  #   dir: '/workspace'
+  - name: 'witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono'
+    id: 'godot-import'
+    args:
+      - '-c'
+      - |
+        godot --headless -e --import
+        godot -v --headless --path . --editor --quit
+    entrypoint: 'bash'
+    dir: '/workspace'
 
   # ==================================================================================================
   #  4. Run integration tests
@@ -115,3 +117,4 @@ artifacts:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+  machineType: 'N1_HIGHCPU_8'
