@@ -3,6 +3,8 @@ FROM ubuntu:22.04
 # Install dependencies
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     wget \
+    curl \
+    ca-certificates \
     unzip \
     zsh \
     xorg \
@@ -14,7 +16,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 
 
 # Install Godot
-RUN wget https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_mono_linux_x86_64.zip -O godot.zip \
+RUN curl -L https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_mono_linux_x86_64.zip -o godot.zip \
     && unzip godot.zip \
     && mv Godot_v4.5.1-stable_mono_linux_x86_64/Godot_*_x86_64 /usr/local/bin/godot \
     && chmod +x /usr/local/bin/godot \
