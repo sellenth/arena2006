@@ -1,39 +1,9 @@
 steps:
-  # ==================================================================================================
-  #  0. Pull the latest builder image to use as cache
-  # ==================================================================================================
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'pull-builder'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        docker pull gcr.io/$PROJECT_ID/godot-builder:latest || exit 0
-
-  # ==================================================================================================
-  #  1. Build the custom builder image that includes Godot, .NET 8, and zsh
-  # ==================================================================================================
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'build-builder'
-    args:
-      - 'build'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/godot-builder:latest'
-      - '--cache-from'
-      - 'gcr.io/$PROJECT_ID/godot-builder:latest'
-      - '.'
-      - '-f'
-      - 'platform/Dockerfile.builder'
-    entrypoint: 'docker'
-
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'push-builder'
-    args: ['push', 'gcr.io/$PROJECT_ID/godot-builder:latest']
 
   # ==================================================================================================
   #  2. Build the C# project
   # ==================================================================================================
-  - name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
+  - name: 'witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono'
     id: 'build-csharp'
     entrypoint: 'dotnet'
     args: ['build', 'Arena2006.csproj']
@@ -64,7 +34,7 @@ steps:
   # ==================================================================================================
   #  5. Export Linux server and client
   # ==================================================================================================
-  - name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
+  - name: 'witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono'
     id: 'export-builds'
     args:
       - '-c'
