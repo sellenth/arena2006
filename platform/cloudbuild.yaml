@@ -46,7 +46,7 @@ steps:
     id: 'godot-import'
     args:
       - '-c'
-      - 'timeout 120s godot --headless --path . --editor --quit || [ $? -eq 124 ]'
+      - 'godot --headless --path . --editor --quit'
     entrypoint: 'bash'
     dir: '/workspace'
 
@@ -71,8 +71,8 @@ steps:
       - |
         mkdir -p build/linux_server build/linux_client build/windows_client
         godot --headless --path . --export-release "Linux Server"
-        godot --headless --path . --export-release "Linux Client"
-        godot --headless --path . --export-release "Windows Client"
+  #      godot --headless --path . --export-release "Linux Client"
+  #      godot --headless --path . --export-release "Windows Client"
     entrypoint: 'bash'
     dir: '/workspace'
 
