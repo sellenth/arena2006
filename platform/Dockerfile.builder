@@ -24,6 +24,14 @@ RUN curl -L https://github.com/godotengine/godot/releases/download/4.5.1-stable/
     && rm -rf Godot_v4.5.1-stable_mono_linux_x86_64 godot.zip
 ENV GODOT_VERSION="4.5.1"
 
+# Install Godot export templates
+RUN mkdir -p /tmp/godot_templates && \
+    curl -L https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_mono_export_templates.tpz -o /tmp/godot_templates/templates.tpz && \
+    unzip -q /tmp/godot_templates/templates.tpz -d /tmp/godot_templates && \
+    mkdir -p /root/.local/share/Godot/export_templates/${GODOT_VERSION}.stable.mono && \
+    cp -r /tmp/godot_templates/templates/* /root/.local/share/Godot/export_templates/${GODOT_VERSION}.stable.mono/ && \
+    rm -rf /tmp/godot_templates
+
 ADD platform/setup_editor_settings_version.sh /opt/scripts/setup_editor_settings_version.sh
 RUN bash /opt/scripts/setup_editor_settings_version.sh
 

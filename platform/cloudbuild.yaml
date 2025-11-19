@@ -72,6 +72,7 @@ steps:
         mkdir -p build/linux_server build/linux_client
         godot --headless --path . --export-release "Linux Server"
         godot --headless --path . --export-release "Linux Client"
+        godot --headless --path . --export-release "Windows Client"
     entrypoint: 'bash'
     dir: '/workspace'
 
@@ -85,6 +86,7 @@ steps:
       - 'cp'
       - '-r'
       - 'build/linux_client/*'
+      - 'build/windows_client/*'
       - 'gs://${_GCS_BUCKET_NAME}/$COMMIT_SHA/'
     dir: '/workspace'
 
