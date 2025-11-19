@@ -69,7 +69,7 @@ steps:
     args:
       - '-c'
       - |
-        mkdir -p build/linux_server build/linux_client
+        mkdir -p build/linux_server build/linux_client build/windows_client
         godot --headless --path . --export-release "Linux Server"
         godot --headless --path . --export-release "Linux Client"
         godot --headless --path . --export-release "Windows Client"
