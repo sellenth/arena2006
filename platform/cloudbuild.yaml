@@ -26,6 +26,10 @@ steps:
       - 'platform/Dockerfile.builder'
     entrypoint: 'docker'
 
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-builder'
+    args: ['push', 'gcr.io/$PROJECT_ID/godot-builder:latest']
+
   # ==================================================================================================
   #  2. Build the C# project
   # ==================================================================================================
