@@ -46,7 +46,7 @@ steps:
     id: 'godot-import'
     args:
       - '-c'
-      - 'timeout 60s godot --headless --path . --editor --quit || [ $? -eq 124 ]'
+      - 'timeout 120s godot --headless --path . --editor --quit || [ $? -eq 124 ]'
     entrypoint: 'bash'
     dir: '/workspace'
 
