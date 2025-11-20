@@ -112,23 +112,20 @@ steps:
       - '-c'
       - |
         sed -i "s/YOUR_PROJECT_ID/$PROJECT_ID/g" platform/deployment.yaml
+        sed -i "s|arena2006-server:latest|arena2006-server:$COMMIT_SHA|g" platform/deployment.yaml
 
   # ==================================================================================================
   #  8. Deploy the server to GKE
   # ==================================================================================================
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     id: 'gke-deploy'
-    entrypoint: gcloud
+    entrypoint: bash
     args:
-      - "deploy"
-      - "apply"
-      - "--file=platform/deployment.yaml"
-      - "--file=platform/service.yaml"
-      - "--project=$PROJECT_ID"
-      - "--cluster=${_GKE_CLUSTER_NAME}"
-      - "--region=${_GKE_CLUSTER_LOCATION}"
-      - "--namespace=default"
-      - "--image=gcr.io/$PROJECT_ID/arena2006-server:$COMMIT_SHA"
+      - '-c'
+      - |
+        gcloud container clusters get-credentials "${_GKE_CLUSTER_NAME}" --region "${_GKE_CLUSTER_LOCATION}" --project "$PROJECT_ID" \
+        || gcloud container clusters get-credentials "${_GKE_CLUSTER_NAME}" --zone "${_GKE_CLUSTER_LOCATION}" --project "$PROJECT_ID"
+        kubectl apply -f platform/deployment.yaml -f platform/service.yaml --namespace=default
 
 # ==================================================================================================
 #  Artifacts Configuration
