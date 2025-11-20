@@ -1,0 +1,4 @@
+FROM witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono
+COPY . /app
+WORKDIR /app
+CMD ["./Arena2006_server.x86_64"]

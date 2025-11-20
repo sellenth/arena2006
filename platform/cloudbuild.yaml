@@ -95,7 +95,7 @@ steps:
       - '-t'
       - 'gcr.io/$PROJECT_ID/arena2006-server:$COMMIT_SHA'
       - '-f'
-      - 'platform/Dockerfile.builder'
+      - 'platform/Dockerfile.server'
       - 'build/linux_server'
     dir: '/workspace'
   - name: 'gcr.io/cloud-builders/docker'
