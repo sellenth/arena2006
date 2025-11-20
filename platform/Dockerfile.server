@@ -1,0 +1,8 @@
+FROM witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono
+
+WORKDIR /app
+COPY . /app
+
+# Run the exported binary in headless server mode (default port is set in code).
+ENTRYPOINT ["/app/Arena2006_server.x86_64"]
+CMD ["--headless", "--server"]

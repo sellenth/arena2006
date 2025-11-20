@@ -1,40 +1,50 @@
 steps:
-  # ==================================================================================================
-  #  1. Build the custom builder image that includes Godot, .NET 8, and zsh
-  # ==================================================================================================
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'build-builder'
-    args:
-      - 'build'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/godot-builder:latest'
-      - '.'
-      - '-f'
-      - 'platform/Dockerfile.builder'
-    entrypoint: 'docker'
 
   # ==================================================================================================
   #  2. Build the C# project
   # ==================================================================================================
-  - name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
+  - name: 'witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono'
     id: 'build-csharp'
+    entrypoint: 'dotnet'
+    args: ['build', 'Arena2006.csproj']
+    dir: '/workspace'
+
+  # ==================================================================================================
+  #  5. Export Linux server and client
+  # ==================================================================================================
+  - name: 'witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono'
+    id: 'make-folders'
     args:
-      - 'dotnet'
-      - 'build'
-      - 'Arena2006.csproj'
+      - '-c'
+      - |
+        mkdir -p build/linux_server build/linux_client build/windows_client
     entrypoint: 'bash'
     dir: '/workspace'
+
+  - name: "witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono"
+    id: "godot-import-check"
+    entrypoint: godot
+    args: ["-v", "--headless", "--path", ".", "--editor", "--quit"]
+    dir: "/workspace"
+    env:
+      - HOME=/root
+      - GODOT_USER_HOME=/workspace/.godot
 
   # ==================================================================================================
   #  3. Import the project into Godot to generate necessary files
   # ==================================================================================================
-  - name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
+  - name: 'witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono'
     id: 'godot-import'
     args:
       - '-c'
-      - 'godot --headless --path . --editor --quit'
+      - |
+        godot --headless -e --import
+        godot -v --headless --path . --editor --quit
     entrypoint: 'bash'
     dir: '/workspace'
+    env:
+      - HOME=/root
+      - GODOT_USER_HOME=/workspace/.godot
 
   # ==================================================================================================
   #  4. Run integration tests
@@ -47,19 +57,19 @@ steps:
   #  entrypoint: 'bash'
   #  dir: '/workspace'
 
-  # ==================================================================================================
-  #  5. Export Linux server and client
-  # ==================================================================================================
-  - name: 'gcr.io/$PROJECT_ID/godot-builder:latest'
+  - name: 'witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono'
     id: 'export-builds'
     args:
       - '-c'
       - |
-        mkdir -p build/linux_server build/linux_client
         godot --headless --path . --export-release "Linux Server"
         godot --headless --path . --export-release "Linux Client"
+        godot --headless --path . --export-release "Windows Client"
     entrypoint: 'bash'
     dir: '/workspace'
+    env:
+      - HOME=/root
+      - GODOT_USER_HOME=/workspace/.godot
 
 
   # ==================================================================================================
@@ -71,6 +81,7 @@ steps:
       - 'cp'
       - '-r'
       - 'build/linux_client/*'
+      - 'build/windows_client/*'
       - 'gs://${_GCS_BUCKET_NAME}/$COMMIT_SHA/'
     dir: '/workspace'
 
@@ -83,10 +94,10 @@ steps:
       - 'build'
       - '-t'
       - 'gcr.io/$PROJECT_ID/arena2006-server:$COMMIT_SHA'
-      - '.'
       - '-f'
-      - 'Dockerfile'
-    dir: 'build/linux_server'
+      - 'platform/Dockerfile.server'
+      - 'build/linux_server'
+    dir: '/workspace'
   - name: 'gcr.io/cloud-builders/docker'
     id: 'docker-push-server'
     args: ['push', 'gcr.io/$PROJECT_ID/arena2006-server:$COMMIT_SHA']
@@ -101,23 +112,20 @@ steps:
       - '-c'
       - |
         sed -i "s/YOUR_PROJECT_ID/$PROJECT_ID/g" platform/deployment.yaml
+        sed -i "s|arena2006-server:latest|arena2006-server:$COMMIT_SHA|g" platform/deployment.yaml
 
   # ==================================================================================================
   #  8. Deploy the server to GKE
   # ==================================================================================================
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     id: 'gke-deploy'
-    entrypoint: gcloud
+    entrypoint: bash
     args:
-      - "deploy"
-      - "apply"
-      - "--file=platform/deployment.yaml"
-      - "--file=platform/service.yaml"
-      - "--project=$PROJECT_ID"
-      - "--cluster=${_GKE_CLUSTER_NAME}"
-      - "--region=${_GKE_CLUSTER_LOCATION}"
-      - "--namespace=default"
-      - "--image=gcr.io/$PROJECT_ID/arena2006-server:$COMMIT_SHA"
+      - '-c'
+      - |
+        gcloud container clusters get-credentials "${_GKE_CLUSTER_NAME}" --region "${_GKE_CLUSTER_LOCATION}" --project "$PROJECT_ID" \
+        || gcloud container clusters get-credentials "${_GKE_CLUSTER_NAME}" --zone "${_GKE_CLUSTER_LOCATION}" --project "$PROJECT_ID"
+        kubectl apply -f platform/deployment.yaml -f platform/service.yaml --namespace=default
 
 # ==================================================================================================
 #  Artifacts Configuration
@@ -129,3 +137,4 @@ artifacts:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
