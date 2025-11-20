@@ -12,6 +12,7 @@ using System.Diagnostics;
 		private const int PlayerEntityIdOffset = 3000;
 		private const int VehicleEntityIdOffset = 2000;
 		private const float PlayerSpawnJitterRadius = 5.0f;
+		private const float KillPlaneY = -200.0f;
 
 		[Signal] public delegate void PlayerDisconnectedEventHandler(int playerId);
 		[Signal] public delegate void EntitySnapshotReceivedEventHandler(int entityId, byte[] data);
@@ -410,6 +411,8 @@ using System.Diagnostics;
 					break;
 			}
 		}
+
+		EnforceKillPlane();
 
 		foreach (var peerId in _peers.Keys.ToList())
 		{
@@ -870,6 +873,66 @@ using System.Diagnostics;
 		offset = offset.Normalized() * _spawnRng.RandfRange(0.0f, PlayerSpawnJitterRadius);
 		transform.Origin += offset;
 		return transform;
+	}
+
+	private void EnforceKillPlane()
+	{
+		foreach (var kvp in _peers.ToList())
+		{
+			var info = kvp.Value;
+			if (info?.PlayerCharacter == null)
+				continue;
+
+			// Players in vehicles are handled by the vehicle check below.
+			if (info.Mode != PlayerMode.Foot)
+				continue;
+
+			if (info.PlayerCharacter.GlobalTransform.Origin.Y < KillPlaneY)
+			{
+				NotifyPlayerKilled(info.PlayerCharacter, 0);
+			}
+		}
+
+		var manager = RespawnManager.Instance;
+		foreach (var vehicle in _serverVehicles.Values)
+		{
+			var car = vehicle?.Car;
+			if (car == null)
+				continue;
+
+			if (car.GlobalTransform.Origin.Y >= KillPlaneY)
+				continue;
+
+			if (vehicle.OccupantPeerId != 0 && _peers.TryGetValue(vehicle.OccupantPeerId, out var occupantInfo) && occupantInfo != null)
+			{
+				vehicle.OccupantPeerId = 0;
+				car.SetOccupantPeerId(0);
+				occupantInfo.ControlledVehicleId = 0;
+				occupantInfo.Mode = PlayerMode.Foot;
+				if (occupantInfo.PlayerCharacter != null)
+				{
+					occupantInfo.PlayerCharacter.SetWorldActive(true);
+					NotifyPlayerKilled(occupantInfo.PlayerCharacter, 0);
+				}
+			}
+
+			var fallback = car.GlobalTransform;
+			fallback.Origin += Vector3.Up * 4.0f;
+			if (manager != null)
+			{
+				var success = manager.RespawnEntityAtBestPoint(car, car);
+				if (!success)
+				{
+					manager.RespawnEntity(car, RespawnManager.RespawnRequest.Create(fallback));
+				}
+			}
+			else
+			{
+				car.GlobalTransform = fallback;
+				car.LinearVelocity = Vector3.Zero;
+				car.AngularVelocity = Vector3.Zero;
+			}
+		}
 	}
 
 	private int FindPeerIdForPlayer(PlayerCharacter player)
