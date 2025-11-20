@@ -94,10 +94,10 @@ steps:
       - 'build'
       - '-t'
       - 'gcr.io/$PROJECT_ID/arena2006-server:$COMMIT_SHA'
-      - '.'
       - '-f'
-      - 'Dockerfile'
-    dir: 'build/linux_server'
+      - 'platform/Dockerfile.builder'
+      - 'build/linux_server'
+    dir: '/workspace'
   - name: 'gcr.io/cloud-builders/docker'
     id: 'docker-push-server'
     args: ['push', 'gcr.io/$PROJECT_ID/arena2006-server:$COMMIT_SHA']
