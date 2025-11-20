@@ -443,7 +443,7 @@ using System.Collections.Generic;
                 {
                     scaledDamage *= SelfDamageScale;
                 }
-                player.ApplyDamage(Mathf.RoundToInt(scaledDamage));
+                player.ApplyDamage(Mathf.RoundToInt(scaledDamage), OwnerPeerId);
                 player.ApplyExternalImpulse(knockback);
             }
             else if (collider is CharacterBody3D character)

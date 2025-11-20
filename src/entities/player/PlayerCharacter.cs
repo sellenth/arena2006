@@ -20,6 +20,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private NetworkController _networkController;
 	private int _health = 100;
 	private int _armor = 100;
+	private bool _isDead = false;
+	private long _lastHitByPeerId = 0;
 
 	private readonly PlayerInputState _inputState = new PlayerInputState();
 	private readonly PlayerLookController _lookController = new PlayerLookController();
@@ -77,6 +79,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_camera = GetNodeOrNull<Camera3D>(CameraPath);
 		_mesh = GetNodeOrNull<MeshInstance3D>(MeshPath);
 		_collisionShape = GetNodeOrNull<CollisionShape3D>(CollisionShapePath);
+		_networkController = GetNodeOrNull<NetworkController>("/root/NetworkController");
 
 		if (_head == null || _camera == null)
 		{
@@ -91,7 +94,6 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 		if (AutoRegisterWithNetwork)
 		{
-			_networkController = GetNodeOrNull<NetworkController>("/root/NetworkController");
 			if (_networkController != null && _networkController.IsClient)
 			{
 				if (NetworkId != 0)
@@ -637,9 +639,23 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		SetArmor(_armor);
 	}
 
-	public void ApplyDamage(int amount)
+	private bool ShouldProcessDamage()
+	{
+		// In networked games the server is authoritative over damage.
+		if (_networkController == null)
+			return true;
+		return _networkController.IsServer;
+	}
+
+	public void ApplyDamage(int amount, long instigatorPeerId = 0)
 	{
 		if (amount <= 0)
+			return;
+
+		if (_isDead)
+			return;
+
+		if (!ShouldProcessDamage())
 			return;
 
 		var remaining = amount;
@@ -653,6 +669,63 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		if (remaining > 0)
 		{
 			SetHealth(_health - remaining);
+		}
+
+		if (instigatorPeerId != 0)
+			_lastHitByPeerId = instigatorPeerId;
+
+		if (_health <= 0 && _armor <= 0)
+		{
+			var killerPeerId = instigatorPeerId != 0 ? instigatorPeerId : _lastHitByPeerId;
+			HandleDeath(killerPeerId);
+		}
+	}
+
+	private void HandleDeath(long instigatorPeerId)
+	{
+		if (_isDead)
+			return;
+
+		_isDead = true;
+		SetHealth(0);
+		SetArmor(0);
+		Velocity = Vector3.Zero;
+		_movementController?.Reset();
+		SetWorldActive(false);
+
+		if (_networkController != null && _networkController.IsServer)
+		{
+			_networkController.NotifyPlayerKilled(this, instigatorPeerId);
+		}
+		else
+		{
+			RespawnLocally();
+		}
+	}
+
+	private void RespawnLocally()
+	{
+		var transform = GlobalTransform;
+		transform.Origin += Vector3.Up * 1.5f;
+		ForceRespawn(transform);
+	}
+
+	public void ForceRespawn(Transform3D transform)
+	{
+		_isDead = false;
+		_lastHitByPeerId = 0;
+		Velocity = Vector3.Zero;
+		_movementController?.Reset();
+		SetWorldActive(true);
+		SetHealth(MaxHealth);
+		SetArmor(MaxArmor);
+		if (RespawnManager.Instance != null)
+		{
+			RespawnManager.Instance.TeleportEntity(this, transform);
+		}
+		else
+		{
+			GlobalTransform = transform;
 		}
 	}
 

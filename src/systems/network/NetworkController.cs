@@ -14,6 +14,7 @@ using System.Diagnostics;
 
 		[Signal] public delegate void PlayerDisconnectedEventHandler(int playerId);
 		[Signal] public delegate void EntitySnapshotReceivedEventHandler(int entityId, byte[] data);
+		[Signal] public delegate void ScoreboardUpdatedEventHandler(Godot.Collections.Array scoreboard);
 
 	private partial class PeerInfo : GodotObject
 	{
@@ -28,6 +29,8 @@ using System.Diagnostics;
 		public PlayerMode Mode { get; set; } = PlayerMode.Foot;
 		public Transform3D PlayerRestTransform { get; set; } = Transform3D.Identity;
 		public int ControlledVehicleId { get; set; }
+		public int Kills { get; set; }
+		public int Deaths { get; set; }
 
 		public PeerInfo(int peerId, PacketPeerUdp peerRef)
 		{
@@ -97,10 +100,13 @@ using System.Diagnostics;
 	public RaycastCar LocalCar => _car;
 
 	private PackedScene _playerCharacterScene;
+	private PackedScene _scoreboardUiScene;
+	private ScoreboardUI _scoreboardUi;
 	private readonly System.Collections.Generic.Dictionary<int, VehicleInfo> _serverVehicles = new System.Collections.Generic.Dictionary<int, VehicleInfo>();
 	private readonly System.Collections.Generic.Dictionary<ulong, int> _vehicleIdByInstance = new System.Collections.Generic.Dictionary<ulong, int>();
 	private readonly System.Collections.Generic.List<PlayerPredictionSample> _playerPredictionHistory = new System.Collections.Generic.List<PlayerPredictionSample>();
 	private readonly System.Collections.Generic.List<NetworkSerializer.EntitySnapshotData> _entitySnapshotBuffer = new System.Collections.Generic.List<NetworkSerializer.EntitySnapshotData>();
+	private Godot.Collections.Array _latestScoreboard = new Godot.Collections.Array();
 	private int _nextVehicleId = 1;
 	private bool _respawnPointsCached = false;
 	private bool _hasFallbackSpawn = false;
@@ -114,6 +120,7 @@ using System.Diagnostics;
 	public override void _Ready()
 	{
 		_playerCharacterScene = GD.Load<PackedScene>("res://src/entities/player/player_character.tscn");
+		_scoreboardUiScene = GD.Load<PackedScene>("res://src/systems/ui/scoreboard_ui.tscn");
 		Engine.PhysicsTicksPerSecond = 60;
 		_role = CmdLineArgsManager.GetNetworkRole();
 		InitializeTestInputScript();
@@ -128,6 +135,7 @@ using System.Diagnostics;
 				break;
 		}
 
+		InitializeScoreboardUi();
 		SetPhysicsProcess(_role != NetworkRole.None);
 	}
 
@@ -742,6 +750,8 @@ using System.Diagnostics;
 							_playerCharacter.RegisterAsRemoteReplica();
 							_playerCharacter.SetReplicatedMode(CurrentClientMode, _clientVehicleId);
 						}
+
+						SetScoreboardSnapshot(GetScoreboardSnapshot());
 					}
 					break;
 				case NetworkSerializer.PacketRemovePlayer:
@@ -764,6 +774,13 @@ using System.Diagnostics;
 					if (despawnedEntityId != 0)
 						GD.Print($"Entity {despawnedEntityId} despawned");
 					break;
+				case NetworkSerializer.PacketScoreboard:
+					var scoreboard = NetworkSerializer.DeserializeScoreboard(packet);
+					if (scoreboard != null)
+					{
+						SetScoreboardSnapshot(ToGodotScoreboard(scoreboard));
+					}
+					break;
 			}
 		}
 	}
@@ -780,6 +797,10 @@ using System.Diagnostics;
 		GD.Print($"Client connected from {newPeer.GetPacketIP()}:{newPeer.GetPacketPort()} assigned id={peerId}");
 		GD.Print($"TEST_EVENT: CLIENT_CONNECTED id={peerId}");
 		newPeer.PutPacket(NetworkSerializer.SerializeWelcome(peerId));
+		if (IsServer)
+		{
+			BroadcastScoreboard(BuildScoreboardEntries());
+		}
 	}
 
 	private PlayerCharacter SpawnServerPlayerCharacter(int peerId, RaycastCar ownerCar)
@@ -829,6 +850,48 @@ using System.Diagnostics;
 		return _hasFallbackSpawn ? _fallbackSpawnTransform : Transform3D.Identity;
 	}
 
+	private int FindPeerIdForPlayer(PlayerCharacter player)
+	{
+		if (player == null)
+			return 0;
+
+		if (player.OwnerPeerId != 0)
+			return (int)player.OwnerPeerId;
+
+		foreach (var kvp in _peers)
+		{
+			if (kvp.Value?.PlayerCharacter == player)
+				return kvp.Key;
+		}
+
+		return 0;
+	}
+
+	public void NotifyPlayerKilled(PlayerCharacter victim, long killerPeerId)
+	{
+		if (!IsServer || victim == null)
+			return;
+
+		var victimPeerId = FindPeerIdForPlayer(victim);
+
+		if (victimPeerId != 0 && _peers.TryGetValue(victimPeerId, out var victimInfo) && victimInfo != null)
+		{
+			victimInfo.Deaths++;
+		}
+
+		if (killerPeerId != 0 && killerPeerId != victimPeerId && _peers.TryGetValue((int)killerPeerId, out var killerInfo) && killerInfo != null)
+		{
+			killerInfo.Kills++;
+		}
+
+		var scoreboard = BuildScoreboardEntries();
+		BroadcastScoreboard(scoreboard);
+
+		var spawn = GetSpawnTransform(victimPeerId);
+		spawn.Origin += Vector3.Up * 1.2f;
+		victim.ForceRespawn(spawn);
+	}
+
 	private void EnsureRespawnPointsCached()
 	{
 		if (_respawnPointsCached)
@@ -866,6 +929,96 @@ using System.Diagnostics;
 			_fallbackSpawnTransform = carSpawn.GlobalTransform;
 			_hasFallbackSpawn = true;
 		}
+	}
+
+	private void InitializeScoreboardUi()
+	{
+		if (_scoreboardUiScene == null || _scoreboardUi != null)
+			return;
+
+		var instance = _scoreboardUiScene.Instantiate<ScoreboardUI>();
+		if (instance == null)
+			return;
+
+		AddChild(instance);
+		_scoreboardUi = instance;
+		_scoreboardUi.ApplyScoreboard(GetScoreboardSnapshot());
+	}
+
+	private System.Collections.Generic.List<NetworkSerializer.ScoreboardEntry> BuildScoreboardEntries()
+	{
+		return _peers.Values
+			.Where(p => p != null)
+			.Select(p => new NetworkSerializer.ScoreboardEntry
+			{
+				Id = p.Id,
+				Kills = p.Kills,
+				Deaths = p.Deaths
+			})
+			.OrderByDescending(p => p.Kills)
+			.ThenBy(p => p.Deaths)
+			.ThenBy(p => p.Id)
+			.ToList();
+	}
+
+	private Godot.Collections.Array ToGodotScoreboard(System.Collections.Generic.IEnumerable<NetworkSerializer.ScoreboardEntry> entries)
+	{
+		var array = new Godot.Collections.Array();
+		if (entries == null)
+			return array;
+
+		foreach (var entry in entries)
+		{
+			var row = new Godot.Collections.Dictionary
+			{
+				{ "id", entry.Id },
+				{ "kills", entry.Kills },
+				{ "deaths", entry.Deaths }
+			};
+			array.Add(row);
+		}
+
+		return array;
+	}
+
+	private Godot.Collections.Array CloneScoreboard(Godot.Collections.Array source)
+	{
+		var clone = new Godot.Collections.Array();
+		if (source == null)
+			return clone;
+
+		foreach (var item in source)
+			clone.Add(item);
+
+		return clone;
+	}
+
+	private void BroadcastScoreboard(System.Collections.Generic.List<NetworkSerializer.ScoreboardEntry> entries)
+	{
+		var scoreboardArray = ToGodotScoreboard(entries);
+		SetScoreboardSnapshot(scoreboardArray);
+
+		if (!IsServer || _peers.Count == 0)
+			return;
+
+		var packet = NetworkSerializer.SerializeScoreboard(entries);
+		foreach (var peer in _peers.Values)
+			peer?.Peer?.PutPacket(packet);
+	}
+
+	private void SetScoreboardSnapshot(Godot.Collections.Array scoreboard)
+	{
+		_latestScoreboard = CloneScoreboard(scoreboard);
+		EmitSignal(SignalName.ScoreboardUpdated, CloneScoreboard(_latestScoreboard));
+		if (_scoreboardUi != null)
+		{
+			_scoreboardUi.ApplyScoreboard(_latestScoreboard);
+		}
+	}
+
+	public Godot.Collections.Array GetScoreboardSnapshot()
+	{
+		return CloneScoreboard(_latestScoreboard);
 	}
 
 	private enum TestInputMode
@@ -990,6 +1143,10 @@ using System.Diagnostics;
 			{
 				other?.Peer.PutPacket(packet);
 			}
+		}
+		if (IsServer)
+		{
+			BroadcastScoreboard(BuildScoreboardEntries());
 		}
 		GD.Print($"Client {peerId} removed");
 	}
