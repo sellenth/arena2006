@@ -20,5 +20,5 @@ spec:
       - name: arena2006-server
         image: gcr.io/YOUR_PROJECT_ID/arena2006-server:latest
         ports:
-        - containerPort: 7777
+        - containerPort: 45000
           protocol: UDP
