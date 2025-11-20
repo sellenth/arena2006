@@ -11,6 +11,7 @@ using System.Diagnostics;
 		private const int PeerTimeoutMsec = 5000;
 		private const int PlayerEntityIdOffset = 3000;
 		private const int VehicleEntityIdOffset = 2000;
+		private const float PlayerSpawnJitterRadius = 5.0f;
 
 		[Signal] public delegate void PlayerDisconnectedEventHandler(int playerId);
 		[Signal] public delegate void EntitySnapshotReceivedEventHandler(int entityId, byte[] data);
@@ -116,11 +117,13 @@ using System.Diagnostics;
 	private const int MaxPredictionHistory = 256;
 	private const float PlayerSnapDistance = 2.5f;
 	private const float PlayerSmallCorrectionBlend = 0.25f;
+	private readonly RandomNumberGenerator _spawnRng = new RandomNumberGenerator();
 
 	public override void _Ready()
 	{
 		_playerCharacterScene = GD.Load<PackedScene>("res://src/entities/player/player_character.tscn");
 		_scoreboardUiScene = GD.Load<PackedScene>("res://src/systems/ui/scoreboard_ui.tscn");
+		_spawnRng.Randomize();
 		Engine.PhysicsTicksPerSecond = 60;
 		_role = CmdLineArgsManager.GetNetworkRole();
 		InitializeTestInputScript();
@@ -845,9 +848,28 @@ using System.Diagnostics;
 			query.FallbackTransform = _fallbackSpawnTransform;
 
 		if (manager.TryGetBestSpawnTransform(query, out var transform))
+			return ApplySpawnJitter(transform);
+
+		var fallback = _hasFallbackSpawn ? _fallbackSpawnTransform : Transform3D.Identity;
+		return ApplySpawnJitter(fallback);
+	}
+
+	private Transform3D ApplySpawnJitter(Transform3D transform)
+	{
+		if (PlayerSpawnJitterRadius <= 0.0f)
 			return transform;
 
-		return _hasFallbackSpawn ? _fallbackSpawnTransform : Transform3D.Identity;
+		var offset = new Vector3(
+			_spawnRng.RandfRange(-1.0f, 1.0f),
+			0.0f,
+			_spawnRng.RandfRange(-1.0f, 1.0f));
+
+		if (offset.LengthSquared() < 0.0001f)
+			offset = new Vector3(1.0f, 0.0f, 0.0f);
+
+		offset = offset.Normalized() * _spawnRng.RandfRange(0.0f, PlayerSpawnJitterRadius);
+		transform.Origin += offset;
+		return transform;
 	}
 
 	private int FindPeerIdForPlayer(PlayerCharacter player)

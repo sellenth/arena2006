@@ -42,9 +42,13 @@ public partial class WeaponInstance : RefCounted
 
 	public int ReloadFromReserve()
 	{
-		if (!CanReload || Definition == null)
+		if (Definition == null)
 			return 0;
+
 		var missing = Mathf.Max(Definition.MagazineSize - Magazine, 0);
+		if (missing == 0 || Reserve <= 0)
+			return 0;
+
 		var moved = Mathf.Clamp(missing, 0, Reserve);
 		Magazine += moved;
 		Reserve -= moved;
