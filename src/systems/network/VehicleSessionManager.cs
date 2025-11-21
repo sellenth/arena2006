@@ -9,6 +9,17 @@ public partial class VehicleSessionManager : GodotObject
 
 	public int GetVehicleEntityId(int vehicleId) => NetworkConfig.VehicleEntityIdOffset + vehicleId;
 
+	public void SetWorldBoundsManager(WorldBoundsManager worldBoundsManager)
+	{
+		foreach (var vehicle in _serverVehicles.Values)
+		{
+			if (vehicle.Car != null)
+			{
+				worldBoundsManager?.RegisterVehicle(vehicle.Car);
+			}
+		}
+	}
+
 	public void RegisterVehicle(RaycastCar car)
 	{
 		if (car == null)
@@ -29,6 +40,7 @@ public partial class VehicleSessionManager : GodotObject
 		_serverVehicles[id] = info;
 		_vehicleIdByInstance[car.GetInstanceId()] = id;
 		car.TreeExiting += () => OnServerVehicleExiting(id);
+		WorldBoundsManager.Instance?.RegisterVehicle(car);
 		GD.Print($"VehicleSessionManager: Server vehicle registered id={id} name={car.Name}");
 	}
 

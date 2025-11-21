@@ -17,12 +17,23 @@ public partial class ServerNetworkManager : GodotObject
 	private VehicleSessionManager _vehicleManager;
 	private PlayerSpawnManager _spawnManager;
 	private ScoreboardManager _scoreboardManager;
+	private WorldBoundsManager _worldBoundsManager;
 
 	public void SetManagers(VehicleSessionManager vehicleManager, PlayerSpawnManager spawnManager, ScoreboardManager scoreboardManager)
 	{
 		_vehicleManager = vehicleManager;
 		_spawnManager = spawnManager;
 		_scoreboardManager = scoreboardManager;
+	}
+
+	public void SetWorldBoundsManager(WorldBoundsManager worldBoundsManager)
+	{
+		_worldBoundsManager = worldBoundsManager;
+		if (_worldBoundsManager != null)
+		{
+			_worldBoundsManager.PlayerOutOfBounds += OnPlayerOutOfBounds;
+			_worldBoundsManager.VehicleOutOfBounds += OnVehicleOutOfBounds;
+		}
 	}
 
 	public void Initialize(Node3D carParent, Node3D playerParent)
@@ -70,7 +81,6 @@ public partial class ServerNetworkManager : GodotObject
 
 		_tick++;
 		UpdateServerPlayers();
-		ApplyPeriodicTestDamage();
 		CheckPeerTimeouts();
 		BroadcastEntitySnapshots();
 	}
@@ -152,8 +162,6 @@ public partial class ServerNetworkManager : GodotObject
 			}
 		}
 
-		EnforceKillPlane();
-
 		foreach (var peerId in _peers.Keys.ToList())
 		{
 			if (!_peers.TryGetValue(peerId, out var info) || info == null)
@@ -163,37 +171,12 @@ public partial class ServerNetworkManager : GodotObject
 		}
 	}
 
-	private void ApplyPeriodicTestDamage()
-	{
-		if (_tick - _lastDamageTick < Engine.PhysicsTicksPerSecond)
-			return;
-
-		_lastDamageTick = _tick;
-
-		foreach (var peer in _peers.Values)
-		{
-			if (peer == null)
-				continue;
-
-			if (peer.Mode == PlayerMode.Vehicle)
-			{
-				var vehicle = _vehicleManager.GetVehicleInfo(peer.ControlledVehicleId);
-				if (vehicle?.Car != null)
-				{
-					vehicle.Car.ApplyDamage(1);
-					continue;
-				}
-			}
-
-			peer.PlayerCharacter?.ApplyDamage(1);
-		}
-	}
-
 	private void EnsureServerEntities(int peerId, PeerInfo info)
 	{
 		if (info.PlayerCharacter == null)
 		{
 			info.PlayerCharacter = SpawnServerPlayerCharacter(peerId, null);
+			_worldBoundsManager?.RegisterPlayer(info.PlayerCharacter);
 		}
 	}
 
@@ -207,63 +190,60 @@ public partial class ServerNetworkManager : GodotObject
 		return player;
 	}
 
-	private void EnforceKillPlane()
+	private void OnPlayerOutOfBounds(PlayerCharacter player)
 	{
-		foreach (var kvp in _peers.ToList())
+		if (player == null)
+			return;
+
+		var peerId = FindPeerIdForPlayer(player);
+		if (peerId == 0)
+			return;
+
+		if (!_peers.TryGetValue(peerId, out var info) || info == null)
+			return;
+
+		if (info.Mode == PlayerMode.Foot)
 		{
-			var info = kvp.Value;
-			if (info?.PlayerCharacter == null)
-				continue;
+			NotifyPlayerKilled(player, 0);
+		}
+	}
 
-			if (info.Mode != PlayerMode.Foot)
-				continue;
+	private void OnVehicleOutOfBounds(RaycastCar vehicle)
+	{
+		if (vehicle == null)
+			return;
 
-			if (info.PlayerCharacter.GlobalTransform.Origin.Y < NetworkConfig.KillPlaneY)
+		var vehicleInfo = FindVehicleInfo(vehicle);
+		if (vehicleInfo == null)
+			return;
+
+		if (vehicleInfo.OccupantPeerId != 0 && _peers.TryGetValue(vehicleInfo.OccupantPeerId, out var occupantInfo) && occupantInfo != null)
+		{
+			vehicleInfo.OccupantPeerId = 0;
+			vehicle.SetOccupantPeerId(0);
+			occupantInfo.ControlledVehicleId = 0;
+			occupantInfo.Mode = PlayerMode.Foot;
+			if (occupantInfo.PlayerCharacter != null)
 			{
-				NotifyPlayerKilled(info.PlayerCharacter, 0);
+				occupantInfo.PlayerCharacter.SetWorldActive(true);
+				NotifyPlayerKilled(occupantInfo.PlayerCharacter, 0);
 			}
 		}
 
-		var manager = RespawnManager.Instance;
+		_worldBoundsManager?.RespawnVehicle(vehicle);
+	}
+
+	private VehicleInfo FindVehicleInfo(RaycastCar car)
+	{
+		if (car == null)
+			return null;
+
 		foreach (var vehicle in _vehicleManager.GetAllVehicles())
 		{
-			var car = vehicle?.Car;
-			if (car == null)
-				continue;
-
-			if (car.GlobalTransform.Origin.Y >= NetworkConfig.KillPlaneY)
-				continue;
-
-			if (vehicle.OccupantPeerId != 0 && _peers.TryGetValue(vehicle.OccupantPeerId, out var occupantInfo) && occupantInfo != null)
-			{
-				vehicle.OccupantPeerId = 0;
-				car.SetOccupantPeerId(0);
-				occupantInfo.ControlledVehicleId = 0;
-				occupantInfo.Mode = PlayerMode.Foot;
-				if (occupantInfo.PlayerCharacter != null)
-				{
-					occupantInfo.PlayerCharacter.SetWorldActive(true);
-					NotifyPlayerKilled(occupantInfo.PlayerCharacter, 0);
-				}
-			}
-
-			var fallback = car.GlobalTransform;
-			fallback.Origin += Vector3.Up * 4.0f;
-			if (manager != null)
-			{
-				var success = manager.RespawnEntityAtBestPoint(car, car);
-				if (!success)
-				{
-					manager.RespawnEntity(car, RespawnManager.RespawnRequest.Create(fallback));
-				}
-			}
-			else
-			{
-				car.GlobalTransform = fallback;
-				car.LinearVelocity = Vector3.Zero;
-				car.AngularVelocity = Vector3.Zero;
-			}
+			if (vehicle.Car == car)
+				return vehicle;
 		}
+		return null;
 	}
 
 	private int FindPeerIdForPlayer(PlayerCharacter player)
@@ -318,6 +298,7 @@ public partial class ServerNetworkManager : GodotObject
 		var info = new PeerInfo(peerId, newPeer);
 		_peers[peerId] = info;
 		info.PlayerCharacter = SpawnServerPlayerCharacter(peerId, null);
+		_worldBoundsManager?.RegisterPlayer(info.PlayerCharacter);
 		GD.Print($"Client connected from {newPeer.GetPacketIP()}:{newPeer.GetPacketPort()} assigned id={peerId}");
 		GD.Print($"TEST_EVENT: CLIENT_CONNECTED id={peerId}");
 		newPeer.PutPacket(NetworkSerializer.SerializeWelcome(peerId));

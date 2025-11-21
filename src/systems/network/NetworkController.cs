@@ -87,6 +87,8 @@ public partial class NetworkController : Node
 
 		_serverManager.Initialize(carParent, playerParent);
 		_spawnManager.CacheSpawnPoints(GetTree(), carParent);
+		_serverManager.SetWorldBoundsManager(WorldBoundsManager.Instance);
+		_vehicleManager.SetWorldBoundsManager(WorldBoundsManager.Instance);
 	}
 
 	private void StartClient()
