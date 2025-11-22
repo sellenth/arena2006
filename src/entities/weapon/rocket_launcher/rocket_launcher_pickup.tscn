@@ -1,0 +1,28 @@
+[gd_scene load_steps=6 format=3 uid="uid://be48cty1sdkl8"]
+
+[ext_resource type="Script" uid="uid://b8s7nhqsmu2ks" path="res://src/entities/weapon/_shared/WeaponPickup.cs" id="1"]
+[ext_resource type="PackedScene" uid="uid://c1is6kaw2brf1" path="res://src/entities/weapon/rocket_launcher/rocket_launcher.tscn" id="2"]
+[ext_resource type="Resource" uid="uid://b778nq68itor2" path="res://src/entities/weapon/rocket_launcher/weapon_definition.tres" id="3"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_rps5j"]
+radius = 1.5
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_uk6ec"]
+radius = 0.122558594
+height = 0.64245605
+
+[node name="RocketLauncherPickup" type="RigidBody3D"]
+
+[node name="PickupArea" type="Area3D" parent="."]
+script = ExtResource("1")
+Weapon = ExtResource("3")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PickupArea"]
+shape = SubResource("SphereShape3D_rps5j")
+
+[node name="RocketLauncherModel" parent="PickupArea" instance=ExtResource("2")]
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, -0.040285975, 0.015056014)
+shape = SubResource("CapsuleShape3D_uk6ec")

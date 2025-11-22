@@ -115,7 +115,7 @@ public partial class PlayerSpawnManager : GodotObject
 
 		var transform = Transform3D.Identity;
 		transform.Origin += Vector3.Up * 1.2f;
-		transform.Origin.X = 500.0f;
+		transform.Origin.X = 100.0f;
 		transform = ApplySpawnJitter(transform);
 		RespawnManager.Instance.TeleportEntity(player, transform);
 		return player;
