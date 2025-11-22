@@ -59,36 +59,40 @@ public static partial class NetworkSerializer
 		var buffer = new StreamPeerBuffer();
 		buffer.BigEndian = false;
 		buffer.PutU8(PacketPlayerInput);
-		buffer.PutU32((uint)state.Tick);
-		buffer.PutFloat(state.MoveInput.X);
-		buffer.PutFloat(state.MoveInput.Y);
-		buffer.PutU8((byte)(state.Jump ? 1 : 0));
-		buffer.PutU8((byte)(state.PrimaryFire ? 1 : 0));
-		buffer.PutU8((byte)(state.PrimaryFireJustPressed ? 1 : 0));
-		buffer.PutU8((byte)(state.Reload ? 1 : 0));
-		buffer.PutU8((byte)(state.Interact ? 1 : 0));
-		buffer.PutFloat(state.ViewYaw);
+                buffer.PutU32((uint)state.Tick);
+                buffer.PutFloat(state.MoveInput.X);
+                buffer.PutFloat(state.MoveInput.Y);
+                buffer.PutU8((byte)(state.Jump ? 1 : 0));
+                buffer.PutU8((byte)(state.Sprint ? 1 : 0));
+                buffer.PutU8((byte)(state.Crouch ? 1 : 0));
+                buffer.PutU8((byte)(state.PrimaryFire ? 1 : 0));
+                buffer.PutU8((byte)(state.PrimaryFireJustPressed ? 1 : 0));
+                buffer.PutU8((byte)(state.Reload ? 1 : 0));
+                buffer.PutU8((byte)(state.Interact ? 1 : 0));
+                buffer.PutFloat(state.ViewYaw);
 		buffer.PutFloat(state.ViewPitch);
 		return buffer.DataArray;
 	}
 
 	public static PlayerInputState DeserializePlayerInput(byte[] packet)
 	{
-		var buffer = new StreamPeerBuffer();
-		buffer.BigEndian = false;
-		buffer.DataArray = packet;
-		if (buffer.GetAvailableBytes() < 1) return null;
-		var packetType = buffer.GetU8();
-		if (packetType != PacketPlayerInput) return null;
-		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1 + 1 + 1 + 4 + 4) return null;
-		var state = new PlayerInputState
-		{
-			Tick = (int)buffer.GetU32(),
-			MoveInput = new Vector2(buffer.GetFloat(), buffer.GetFloat()),
-			Jump = buffer.GetU8() == 1,
-			PrimaryFire = buffer.GetU8() == 1,
-			PrimaryFireJustPressed = buffer.GetU8() == 1,
-			Reload = buffer.GetU8() == 1,
+                var buffer = new StreamPeerBuffer();
+                buffer.BigEndian = false;
+                buffer.DataArray = packet;
+                if (buffer.GetAvailableBytes() < 1) return null;
+                var packetType = buffer.GetU8();
+                if (packetType != PacketPlayerInput) return null;
+                if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 4) return null;
+                var state = new PlayerInputState
+                {
+                        Tick = (int)buffer.GetU32(),
+                        MoveInput = new Vector2(buffer.GetFloat(), buffer.GetFloat()),
+                        Jump = buffer.GetU8() == 1,
+                        Sprint = buffer.GetU8() == 1,
+                        Crouch = buffer.GetU8() == 1,
+                        PrimaryFire = buffer.GetU8() == 1,
+                        PrimaryFireJustPressed = buffer.GetU8() == 1,
+                        Reload = buffer.GetU8() == 1,
 			Interact = buffer.GetU8() == 1,
 			ViewYaw = buffer.GetFloat(),
 			ViewPitch = buffer.GetFloat()

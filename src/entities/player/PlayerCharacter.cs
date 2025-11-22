@@ -23,12 +23,13 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private bool _isDead = false;
 	private long _lastHitByPeerId = 0;
 
-	private readonly PlayerInputState _inputState = new PlayerInputState();
-	private readonly PlayerLookController _lookController = new PlayerLookController();
-	private PlayerMovementController _movementController;
-	private readonly PlayerReconciliationController _reconciliation = new PlayerReconciliationController();
-	private Color _playerColor = Colors.Red;
-	private bool _isAuthority = true;
+        private readonly PlayerInputState _inputState = new PlayerInputState();
+        private readonly PlayerLookController _lookController = new PlayerLookController();
+        private PlayerMovementController _movementController;
+        private Vector3 _lastWallNormal = Vector3.Zero;
+        private readonly PlayerReconciliationController _reconciliation = new PlayerReconciliationController();
+        private Color _playerColor = Colors.Red;
+        private bool _isAuthority = true;
 	private bool _simulateLocally = true;
 	private bool _cameraActive = false;
 	private bool _worldActive = true;
@@ -400,11 +401,16 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			SimulateMovement(deltaFloat);
 		}
 
-		ApplySnapshotCorrection(deltaFloat);
+                ApplySnapshotCorrection(deltaFloat);
 
-		ApplyPendingLookInput();
-		_lookController?.Update(deltaFloat, Velocity, IsOnFloor());
-	}
+                ApplyPendingLookInput();
+                _lookController?.Update(
+                        deltaFloat,
+                        Velocity,
+                        IsOnFloor(),
+                        _movementController?.State ?? PlayerMovementStateKind.Airborne,
+                        _movementController?.LastWallNormal ?? Vector3.Zero);
+        }
 
 	public override void _UnhandledInput(InputEvent @event)
 	{
@@ -421,13 +427,15 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	{
 		ApplyPendingLookInput();
 
-		var state = new PlayerInputState
-		{
-			MoveInput = Input.GetVector("move_left", "move_right", "move_forward", "move_backward"),
-			Jump = Input.IsActionPressed("jump"),
-			Interact = Input.IsActionJustPressed("interact"),
-			PrimaryFire = InputMap.HasAction("fire") && Input.IsActionPressed("fire"),
-			PrimaryFireJustPressed = InputMap.HasAction("fire") && Input.IsActionJustPressed("fire"),
+                var state = new PlayerInputState
+                {
+                        MoveInput = Input.GetVector("move_left", "move_right", "move_forward", "move_backward"),
+                        Jump = Input.IsActionPressed("jump"),
+                        Sprint = InputMap.HasAction("sprint") && Input.IsActionPressed("sprint"),
+                        Crouch = InputMap.HasAction("crouch") && Input.IsActionPressed("crouch"),
+                        Interact = Input.IsActionJustPressed("interact"),
+                        PrimaryFire = InputMap.HasAction("fire") && Input.IsActionPressed("fire"),
+                        PrimaryFireJustPressed = InputMap.HasAction("fire") && Input.IsActionJustPressed("fire"),
 			Reload = (InputMap.HasAction("reload") && Input.IsActionJustPressed("reload")) || Input.IsKeyPressed(Key.R),
 			ViewYaw = _lookController?.Yaw ?? 0f,
 			ViewPitch = _lookController?.Pitch ?? 0f
@@ -590,28 +598,60 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 	private void SimulateMovement(float delta)
 	{
-		if (_movementController == null)
-			return;
+                if (_movementController == null)
+                        return;
 
-		var basis = _head?.GlobalTransform.Basis ?? GlobalTransform.Basis;
-		var context = new PlayerMovementContext(Velocity, _inputState.MoveInput, _inputState.Jump, false, IsOnFloor(), basis);
-		Velocity = _movementController.Step(context, delta);
-		MoveAndSlide();
+                var basis = _head?.GlobalTransform.Basis ?? GlobalTransform.Basis;
+                var onWall = (IsOnWallOnly() || !_lastWallNormal.IsZeroApprox()) && !IsOnFloor();
+                var context = new PlayerMovementContext(
+                        Velocity,
+                        _inputState.MoveInput,
+                        _inputState.Jump,
+                        _inputState.Sprint,
+                        _inputState.Crouch,
+                        IsOnFloor(),
+                        onWall,
+                        _lastWallNormal,
+                        basis);
+                Velocity = _movementController.Step(context, delta);
+                MoveAndSlide();
+                CacheWallNormalFromCollisions();
 
-		if (GetSlideCollisionCount() > 0 && !IsOnFloor())
-		{
-			var collision = GetLastSlideCollision();
-			if (collision != null)
+                if (GetSlideCollisionCount() > 0 && !IsOnFloor())
+                {
+                        var collision = GetLastSlideCollision();
+                        if (collision != null)
 			{
 				Velocity = Velocity.Slide(collision.GetNormal());
 			}
 		}
 
-		if (_networkController != null && _networkController.IsClient && _simulateLocally)
-		{
-			_networkController.RecordLocalPlayerPrediction(_inputState.Tick, GlobalTransform, Velocity);
-		}
-	}
+                if (_networkController != null && _networkController.IsClient && _simulateLocally)
+                {
+                        _networkController.RecordLocalPlayerPrediction(_inputState.Tick, GlobalTransform, Velocity);
+                }
+        }
+
+        private void CacheWallNormalFromCollisions()
+        {
+                _lastWallNormal = Vector3.Zero;
+
+                var collisionCount = GetSlideCollisionCount();
+                for (var i = 0; i < collisionCount; i++)
+                {
+                        var collision = GetSlideCollision(i);
+                        if (collision == null)
+                                continue;
+
+                        var normal = collision.GetNormal();
+                        var verticalDot = Mathf.Abs(normal.Dot(Vector3.Up));
+                        if (verticalDot < 0.7f)
+                        {
+                                _lastWallNormal = normal;
+                                break;
+                        }
+                }
+        }
 
 	private void ApplySnapshotCorrection(float delta)
 	{
@@ -712,13 +752,14 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 	public void ForceRespawn(Transform3D transform)
 	{
-		_isDead = false;
-		_lastHitByPeerId = 0;
-		Velocity = Vector3.Zero;
-		_movementController?.Reset();
-		SetWorldActive(true);
-		SetHealth(MaxHealth);
-		SetArmor(MaxArmor);
+                _isDead = false;
+                _lastHitByPeerId = 0;
+                Velocity = Vector3.Zero;
+                _movementController?.Reset();
+                _lastWallNormal = Vector3.Zero;
+                SetWorldActive(true);
+                SetHealth(MaxHealth);
+                SetArmor(MaxArmor);
 		if (RespawnManager.Instance != null)
 		{
 			RespawnManager.Instance.TeleportEntity(this, transform);

@@ -6,10 +6,20 @@ public sealed class PlayerLookController
 	public float MinPitch { get; set; } = -1.2f;
 	public float MaxPitch { get; set; } = 1.2f;
 
-	public float BaseFov { get; set; } = 75f;
-	public float FovSpeedScale { get; set; } = 0.8f;
-	public float MaxFovBoost { get; set; } = 12f;
-	public float FovLerpRate { get; set; } = 12f;
+        public float BaseFov { get; set; } = 75f;
+        public float FovSpeedScale { get; set; } = 0.8f;
+        public float MaxFovBoost { get; set; } = 12f;
+        public float FovLerpRate { get; set; } = 12f;
+
+        public float SlideFovBoost { get; set; } = 6f;
+        public float SlideTiltDegrees { get; set; } = 6f;
+        public float SlideCameraDrop { get; set; } = 0.1f;
+
+        public float WallRunFovBoost { get; set; } = 10f;
+        public float WallRunTiltDegrees { get; set; } = 14f;
+        public float WallRunCameraShift { get; set; } = 0.08f;
+
+        public float StateEffectResponse { get; set; } = 10f;
 
 	public float TiltAngleDegrees { get; set; } = 6f;
 	public float TiltResponse { get; set; } = 8f;
@@ -22,16 +32,18 @@ public sealed class PlayerLookController
 	public float Yaw { get; private set; }
 	public float Pitch { get; private set; }
 
-	private Node3D _head;
-	private Camera3D _camera;
-	private Vector2 _pendingLookDelta = Vector2.Zero;
-	private Vector3 _cameraBaseLocalPos = Vector3.Zero;
-	private Vector3 _cameraBobOffset = Vector3.Zero;
-	private float _cameraTiltRad = 0f;
-	private float _headBobTime = 0f;
-	private float _baseFov = 75f;
-	private float _currentFov;
-	private float _targetFov;
+        private Node3D _head;
+        private Camera3D _camera;
+        private Vector2 _pendingLookDelta = Vector2.Zero;
+        private Vector3 _cameraBaseLocalPos = Vector3.Zero;
+        private Vector3 _cameraBobOffset = Vector3.Zero;
+        private Vector3 _stateCameraOffset = Vector3.Zero;
+        private float _cameraTiltRad = 0f;
+        private float _stateTiltRad = 0f;
+        private float _headBobTime = 0f;
+        private float _baseFov = 75f;
+        private float _currentFov;
+        private float _targetFov;
 
 	public void Initialize(Node3D head, Camera3D camera, float initialYaw, float initialPitch)
 	{
@@ -87,11 +99,16 @@ public sealed class PlayerLookController
 		_pendingLookDelta = Vector2.Zero;
 	}
 
-	public void Update(float delta, Vector3 velocity, bool grounded)
-	{
-		UpdateCameraEffects(delta, velocity, grounded);
-		ApplyViewToNodes();
-	}
+        public void Update(
+                float delta,
+                Vector3 velocity,
+                bool grounded,
+                PlayerMovementStateKind movementState = PlayerMovementStateKind.Airborne,
+                Vector3 wallNormal = default)
+        {
+                UpdateCameraEffects(delta, velocity, grounded, movementState, wallNormal);
+                ApplyViewToNodes();
+        }
 
 	public Vector3 GetViewDirection(Node3D fallback)
 	{
@@ -104,31 +121,61 @@ public sealed class PlayerLookController
 		return fallback != null ? -fallback.GlobalTransform.Basis.Z : Vector3.Forward;
 	}
 
-	private void UpdateCameraEffects(float delta, Vector3 velocity, bool grounded)
-	{
-		if (_camera == null)
-			return;
+        private void UpdateCameraEffects(
+                float delta,
+                Vector3 velocity,
+                bool grounded,
+                PlayerMovementStateKind movementState,
+                Vector3 wallNormal)
+        {
+                if (_camera == null)
+                        return;
 
-		var planarVelocity = new Vector3(velocity.X, 0f, velocity.Z);
-		var planarSpeed = planarVelocity.Length();
-		var targetFov = BaseFov + Mathf.Clamp(planarSpeed * FovSpeedScale, 0f, MaxFovBoost);
-		var lerp = 1f - Mathf.Exp(-FovLerpRate * delta);
-		_currentFov = Mathf.Lerp(_currentFov, targetFov, lerp);
-		_targetFov = targetFov;
-		_camera.Fov = _currentFov;
+                var planarVelocity = new Vector3(velocity.X, 0f, velocity.Z);
+                var planarSpeed = planarVelocity.Length();
+                var stateOffset = Vector3.Zero;
+                var movementTilt = 0f;
+                var targetFov = BaseFov + Mathf.Clamp(planarSpeed * FovSpeedScale, 0f, MaxFovBoost);
+
+                switch (movementState)
+                {
+                        case PlayerMovementStateKind.Sliding:
+                                targetFov += SlideFovBoost;
+                                stateOffset = Vector3.Down * SlideCameraDrop;
+                                movementTilt = Mathf.DegToRad(SlideTiltDegrees) * Mathf.Clamp(planarSpeed / 12f, 0f, 1f);
+                                break;
+                        case PlayerMovementStateKind.WallRunning when !wallNormal.IsZeroApprox():
+                                targetFov += WallRunFovBoost;
+                                stateOffset = -wallNormal.Normalized() * WallRunCameraShift;
+                                var wallSide = wallNormal.Cross(Vector3.Up).Normalized();
+                                var alongWall = planarVelocity.Normalized();
+                                var tiltDir = wallSide.Dot(alongWall);
+                                movementTilt = Mathf.DegToRad(WallRunTiltDegrees) * Mathf.Clamp(tiltDir, -1f, 1f);
+                                break;
+                }
+                var lerp = 1f - Mathf.Exp(-FovLerpRate * delta);
+                _currentFov = Mathf.Lerp(_currentFov, targetFov, lerp);
+                _targetFov = targetFov;
+                _camera.Fov = _currentFov;
 
 		var referenceRight = _head?.GlobalTransform.Basis.X ?? Vector3.Right;
 		var strafe = 0f;
 
-		if (!referenceRight.IsZeroApprox())
-			strafe = planarVelocity.Dot(referenceRight.Normalized());
+                if (!referenceRight.IsZeroApprox())
+                        strafe = planarVelocity.Dot(referenceRight.Normalized());
 
-		var normalizedStrafe = Mathf.Clamp(-strafe * 0.1f, -1f, 1f);
-		var tiltTarget = Mathf.DegToRad(normalizedStrafe * TiltAngleDegrees);
-		_cameraTiltRad = Mathf.Lerp(_cameraTiltRad, tiltTarget, 1f - Mathf.Exp(-TiltResponse * delta))  * (planarSpeed / 60f);
+                var normalizedStrafe = Mathf.Clamp(-strafe * 0.1f, -1f, 1f);
+                var tiltTarget = Mathf.DegToRad(normalizedStrafe * TiltAngleDegrees);
+                var tiltLerp = 1f - Mathf.Exp(-TiltResponse * delta);
+                var speedScale = Mathf.Clamp(planarSpeed / 60f, 0f, 1f);
+                _cameraTiltRad = Mathf.Lerp(_cameraTiltRad, tiltTarget * speedScale, tiltLerp);
 
-		//UpdateHeadBob(delta, planarSpeed, grounded);
-	}
+                var stateLerp = 1f - Mathf.Exp(-StateEffectResponse * delta);
+                _stateTiltRad = Mathf.Lerp(_stateTiltRad, movementTilt, stateLerp);
+                _stateCameraOffset = _stateCameraOffset.Lerp(stateOffset, stateLerp);
+
+                //UpdateHeadBob(delta, planarSpeed, grounded);
+        }
 
 	private void UpdateHeadBob(float delta, float planarSpeed, bool grounded)
 	{
@@ -157,14 +204,14 @@ public sealed class PlayerLookController
 			_head.Rotation = headRot;
 		}
 
-		if (_camera != null)
-		{
-			var camRot = _camera.Rotation;
-			camRot.X = Pitch;
-			camRot.Z = _cameraTiltRad;
-			_camera.Rotation = camRot;
-			_camera.Position = _cameraBaseLocalPos + _cameraBobOffset;
-			_camera.Fov = _currentFov;
-		}
-	}
+                if (_camera != null)
+                {
+                        var camRot = _camera.Rotation;
+                        camRot.X = Pitch;
+                        camRot.Z = _cameraTiltRad + _stateTiltRad;
+                        _camera.Rotation = camRot;
+                        _camera.Position = _cameraBaseLocalPos + _cameraBobOffset + _stateCameraOffset;
+                        _camera.Fov = _currentFov;
+                }
+        }
 }
