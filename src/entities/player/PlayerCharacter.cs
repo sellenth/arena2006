@@ -7,13 +7,14 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	[Export] public NodePath HeadPath { get; set; } = "Head";
 	[Export] public NodePath CameraPath { get; set; } = "Head/Cam";
 	[Export] public NodePath MeshPath { get; set; } = "MeshInstance3D";
+	[Export] public NodePath AnimationPlayerPath { get; set; } = "Body/AnimationPlayer";
 	[Export] public NodePath CollisionShapePath { get; set; } = "Collision";
 	[Export] public bool AutoRegisterWithNetwork { get; set; } = true;
 	[Export] public int NetworkId { get; set; } = 0;
 	[Export] public int MaxHealth { get; set; } = 100;
 	[Export] public int MaxArmor { get; set; } = 100;
 	[Export] public float StandingHeight { get; set; } = 1.8f;
-	[Export] public float CrouchHeight { get; set; } = 1.0f;
+	[Export] public float CrouchHeight { get; set; } = 1.3f;
 	[Export] public float CrouchTransitionSpeed { get; set; } = 10f;
 	public long OwnerPeerId => GetOwnerPeerId();
 
@@ -31,6 +32,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private readonly PlayerLookController _lookController = new PlayerLookController();
 	private PlayerMovementController _movementController;
 	private readonly PlayerReconciliationController _reconciliation = new PlayerReconciliationController();
+	private readonly PlayerAnimationController _animationController = new PlayerAnimationController();
 	private bool _wasWallRunning = false;
 	private bool _wallRunJumpLock = false;
 	private float _wallRunTime = 0f;
@@ -98,6 +100,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_mesh = GetNodeOrNull<MeshInstance3D>(MeshPath);
 		_collisionShape = GetNodeOrNull<CollisionShape3D>(CollisionShapePath);
 		_networkController = GetNodeOrNull<NetworkController>("/root/NetworkController");
+		_animationController.Initialize(this, AnimationPlayerPath);
 
 		if (_head == null || _camera == null)
 		{
@@ -445,6 +448,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 		ApplyPendingLookInput();
 		_lookController?.Update(deltaFloat, Velocity, IsOnFloor());
+		UpdateAnimations();
 	}
 
 	public override void _UnhandledInput(InputEvent @event)
@@ -464,7 +468,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 		var state = new PlayerInputState
 		{
-			MoveInput = Input.GetVector("move_left", "move_right", "move_forward", "move_backward"),
+			MoveInput = Input.GetVector("move_right", "move_left", "move_backward", "move_forward"),
 			Jump = Input.IsActionPressed("jump"),
 			Interact = Input.IsActionJustPressed("interact"),
 			Crouch = InputMap.HasAction("crouch") && Input.IsActionPressed("crouch"),
@@ -1017,6 +1021,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		SetWorldActive(true);
 		SetHealth(MaxHealth);
 		SetArmor(MaxArmor);
+		_animationController.ResetToIdle();
 		if (RespawnManager.Instance != null)
 		{
 			RespawnManager.Instance.TeleportEntity(this, transform);
@@ -1025,6 +1030,14 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		{
 			GlobalTransform = transform;
 		}
+	}
+
+	private void UpdateAnimations()
+	{
+		var state = _isAuthority
+			? _movementController?.State ?? PlayerMovementStateKind.Airborne
+			: (PlayerMovementStateKind)_replicatedMovementState;
+		_animationController.Update(Velocity, state, _isDead || _health <= 0);
 	}
 
 	public void ApplyExternalImpulse(Vector3 impulse)

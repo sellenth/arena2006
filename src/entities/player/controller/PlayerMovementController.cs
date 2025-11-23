@@ -69,7 +69,7 @@ public sealed class PlayerMovementSettings
 	public float SlideEnterSpeed = 5f;
 	public float SlideExitSpeed = 2.5f;
 	public float SlideFriction = 0.985f;
-	public float SlideMaxDuration = 1.25f;
+	public float SlideMaxDuration = .4f;
 
 	public float AirAcceleration = 80f;
 	public float AirSpeedLimit = 0.8f;
@@ -177,12 +177,12 @@ public sealed class PlayerMovementController
 		if (input == Vector2.Zero)
 			return Vector3.Zero;
 
-		var forward = -basis.Z;
+		var forward = basis.Z;
 		forward.Y = 0f;
 		if (!forward.IsZeroApprox())
 			forward = forward.Normalized();
 
-		var right = -basis.X;
+		var right = basis.X;
 		right.Y = 0f;
 		if (!right.IsZeroApprox())
 			right = right.Normalized();
