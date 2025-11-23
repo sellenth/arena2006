@@ -16,6 +16,7 @@ albedo_color = Color(1, 1, 1, 0)
 [node name="PlayerCharacter" type="CharacterBody3D"]
 floor_stop_on_slope = false
 floor_block_on_wall = false
+floor_snap_length = 0.5
 script = ExtResource("1_qj4xw")
 MeshPath = NodePath("")
 
