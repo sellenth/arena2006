@@ -12,6 +12,9 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	[Export] public int NetworkId { get; set; } = 0;
 	[Export] public int MaxHealth { get; set; } = 100;
 	[Export] public int MaxArmor { get; set; } = 100;
+	[Export] public float StandingHeight { get; set; } = 1.8f;
+	[Export] public float CrouchHeight { get; set; } = 1.0f;
+	[Export] public float CrouchTransitionSpeed { get; set; } = 10f;
 	public long OwnerPeerId => GetOwnerPeerId();
 
 	private Node3D _head;
@@ -74,6 +77,9 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private int _repWeaponFireSeq = 0;
 	private int _repWeaponReloadMs = 0;
 	private int _repWeaponReloading = 0;
+	private float _currentCapsuleHeight = 1.8f;
+	private CapsuleShape3D _capsuleShape;
+	private float _standingHeadHeight = 1.75f;
 
 	public PlayerCharacter()
 	{
@@ -94,6 +100,18 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		if (_head == null || _camera == null)
 		{
 			Debug.Assert(false, "head or camera not found :o");
+		}
+
+		if (_collisionShape?.Shape is CapsuleShape3D capsule)
+		{
+			_capsuleShape = capsule;
+			_currentCapsuleHeight = capsule.Height;
+			StandingHeight = capsule.Height;
+		}
+
+		if (_head != null)
+		{
+			_standingHeadHeight = _head.Position.Y;
 		}
 
 		InitializeControllerModules();
@@ -407,6 +425,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		var deltaFloat = (float)delta;
 		if (_simulateLocally)
 		{
+			UpdateCapsuleHeight(deltaFloat);
 			SimulateMovement(deltaFloat);
 		}
 
@@ -544,9 +563,9 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	{
 		_movementController = new PlayerMovementController();
 
-		var initialYaw = _head != null ? _head.Rotation.Y : Rotation.Y;
+		var initialYaw = Rotation.Y;
 		var initialPitch = _camera != null ? _camera.Rotation.X : 0f;
-		_lookController.Initialize(_head, _camera, initialYaw, initialPitch);
+		_lookController.Initialize(this, _head, _camera, initialYaw, initialPitch);
 	}
 
 	private WeaponType GetEquippedWeaponId()
@@ -599,6 +618,36 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		}
 
 		_repWeaponFireSeq = value;
+	}
+
+	private void UpdateCapsuleHeight(float delta)
+	{
+		if (_capsuleShape == null || _collisionShape == null)
+			return;
+
+		var state = _movementController?.State;
+		var isCrouched = state == PlayerMovementStateKind.Crouching || state == PlayerMovementStateKind.Sliding;
+		var targetHeight = isCrouched ? CrouchHeight : StandingHeight;
+
+		if (Mathf.Abs(_currentCapsuleHeight - targetHeight) > 0.001f)
+		{
+			var blend = Mathf.Clamp(delta * CrouchTransitionSpeed, 0f, 1f);
+			_currentCapsuleHeight = Mathf.Lerp(_currentCapsuleHeight, targetHeight, blend);
+
+			_capsuleShape.Height = _currentCapsuleHeight;
+
+			var collisionPos = _collisionShape.Position;
+			collisionPos.Y = _currentCapsuleHeight * 0.5f;
+			_collisionShape.Position = collisionPos;
+
+			if (_head != null)
+			{
+				var heightDifference = StandingHeight - _currentCapsuleHeight;
+				var headPos = _head.Position;
+				headPos.Y = _standingHeadHeight - heightDifference;
+				_head.Position = headPos;
+			}
+		}
 	}
 
 	private void UpdateWallRunTimers(float delta)
@@ -761,7 +810,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		if (_movementController == null)
 			return;
 
-		var basis = _head?.GlobalTransform.Basis ?? GlobalTransform.Basis;
+		var basis = GlobalTransform.Basis;
 		UpdateWallRunTimers(delta);
 		if (_jumpCooldownTimer > 0f)
 		{

@@ -177,12 +177,12 @@ public sealed class PlayerMovementController
 		if (input == Vector2.Zero)
 			return Vector3.Zero;
 
-		var forward = basis.Z;
+		var forward = -basis.Z;
 		forward.Y = 0f;
 		if (!forward.IsZeroApprox())
 			forward = forward.Normalized();
 
-		var right = basis.X;
+		var right = -basis.X;
 		right.Y = 0f;
 		if (!right.IsZeroApprox())
 			right = right.Normalized();
