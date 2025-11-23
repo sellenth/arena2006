@@ -12,12 +12,16 @@ public partial class PlayerInputState : RefCounted
 	public float ViewPitch { get; set; } = float.NaN;
 	public bool Interact { get; set; }
 	public bool Sprint { get; set; }
+	public bool Crouch { get; set; }
+	public bool CrouchPressed { get; set; }
 
 	public void CopyFrom(PlayerInputState other)
 	{
 		Tick = other.Tick;
 		MoveInput = other.MoveInput;
 		Jump = other.Jump;
+		Crouch = other.Crouch;
+		CrouchPressed = other.CrouchPressed;
 		PrimaryFire = other.PrimaryFire;
 		PrimaryFireJustPressed = other.PrimaryFireJustPressed;
 		Reload = other.Reload;
@@ -39,5 +43,7 @@ public partial class PlayerInputState : RefCounted
 		ViewPitch = float.NaN;
 		Interact = false;
 		Sprint = false;
+		Crouch = false;
+		CrouchPressed = false;
 	}
 }

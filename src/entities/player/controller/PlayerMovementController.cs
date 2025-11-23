@@ -3,6 +3,8 @@ using Godot;
 public enum PlayerMovementStateKind
 {
 	Grounded,
+	Crouching,
+	Sliding,
 	Airborne,
 	WallRunning
 }
@@ -14,6 +16,8 @@ public readonly struct PlayerMovementContext
 		Vector2 moveInput,
 		bool jump,
 		bool sprint,
+		bool crouch,
+		bool crouchPressed,
 		bool onFloor,
 		Basis referenceBasis,
 		bool canWallRun,
@@ -24,6 +28,8 @@ public readonly struct PlayerMovementContext
 		MoveInput = moveInput;
 		Jump = jump;
 		Sprint = sprint;
+		Crouch = crouch;
+		CrouchPressed = crouchPressed;
 		OnFloor = onFloor;
 		ReferenceBasis = referenceBasis;
 		CanWallRun = canWallRun;
@@ -35,6 +41,8 @@ public readonly struct PlayerMovementContext
 	public Vector2 MoveInput { get; }
 	public bool Jump { get; }
 	public bool Sprint { get; }
+	public bool Crouch { get; }
+	public bool CrouchPressed { get; }
 	public bool OnFloor { get; }
 	public Basis ReferenceBasis { get; }
 	public bool CanWallRun { get; }
@@ -51,6 +59,17 @@ public sealed class PlayerMovementSettings
 	public float GroundAcceleration = 40f;
 	public float GroundSpeedLimit = 60f;
 	public float GroundFriction = 0.9f;
+
+	public float CrouchAcceleration = 25f;
+	public float CrouchSpeedLimit = 6f;
+	public float CrouchFriction = 0.9f;
+
+	public float SlideSpeedLimit = 14f;
+	public float SlideSteerAcceleration = 30f;
+	public float SlideEnterSpeed = 5f;
+	public float SlideExitSpeed = 2.5f;
+	public float SlideFriction = 0.985f;
+	public float SlideMaxDuration = 1.25f;
 
 	public float AirAcceleration = 80f;
 	public float AirSpeedLimit = 0.8f;
@@ -80,15 +99,19 @@ public sealed class PlayerMovementSettings
 public sealed class PlayerMovementController
 {
 	private readonly PlayerMovementSettings _settings;
-	private readonly IMovementState _groundState;
-	private readonly IMovementState _airState;
-	private readonly IMovementState _wallState;
+	private readonly GroundedState _groundState;
+	private readonly CrouchingState _crouchState;
+	private readonly SlideState _slideState;
+	private readonly AirborneState _airState;
+	private readonly WallRunState _wallState;
 	private IMovementState _currentState;
 
 	public PlayerMovementController(PlayerMovementSettings settings = null)
 	{
 		_settings = settings ?? PlayerMovementSettings.CreateDefaults();
 		_groundState = new GroundedState(this);
+		_crouchState = new CrouchingState(this);
+		_slideState = new SlideState(this);
 		_airState = new AirborneState(this);
 		_wallState = new WallRunState(this);
 		_currentState = _airState;
@@ -154,12 +177,12 @@ public sealed class PlayerMovementController
 		if (input == Vector2.Zero)
 			return Vector3.Zero;
 
-		var forward = basis.Z;
+		var forward = -basis.Z;
 		forward.Y = 0f;
 		if (!forward.IsZeroApprox())
 			forward = forward.Normalized();
 
-		var right = basis.X;
+		var right = -basis.X;
 		right.Y = 0f;
 		if (!right.IsZeroApprox())
 			right = right.Normalized();
@@ -172,11 +195,30 @@ public sealed class PlayerMovementController
 
 	private PlayerMovementStateKind ResolveState(in PlayerMovementContext context)
 	{
-		if (context.OnFloor)
-			return PlayerMovementStateKind.Grounded;
-		if (context.CanWallRun)
-			return PlayerMovementStateKind.WallRunning;
-		return PlayerMovementStateKind.Airborne;
+		if (!context.OnFloor)
+		{
+			if (context.CanWallRun)
+				return PlayerMovementStateKind.WallRunning;
+			return PlayerMovementStateKind.Airborne;
+		}
+
+		if (_currentState == _slideState && _slideState.ShouldPersist(context))
+			return PlayerMovementStateKind.Sliding;
+
+		if (context.Crouch && _slideState.CanEnter(context))
+			return PlayerMovementStateKind.Sliding;
+
+		if (context.Crouch && (_currentState == _airState || _currentState == _wallState))
+		{
+			var planarSpeed = new Vector3(context.Velocity.X, 0f, context.Velocity.Z).Length();
+			if (planarSpeed >= _settings.SlideEnterSpeed)
+				return PlayerMovementStateKind.Sliding;
+		}
+
+		if (context.Crouch)
+			return PlayerMovementStateKind.Crouching;
+
+		return PlayerMovementStateKind.Grounded;
 	}
 
 	private void SwitchState(PlayerMovementStateKind target, in PlayerMovementContext context)
@@ -184,6 +226,8 @@ public sealed class PlayerMovementController
 		IMovementState desired = target switch
 		{
 			PlayerMovementStateKind.Grounded => _groundState,
+			PlayerMovementStateKind.Crouching => _crouchState,
+			PlayerMovementStateKind.Sliding => _slideState,
 			PlayerMovementStateKind.WallRunning => _wallState,
 			_ => _airState
 		};
@@ -241,6 +285,137 @@ public sealed class PlayerMovementController
 				_settings.GroundSpeedLimit * sprintMul,
 				_settings.GroundAcceleration * sprintMul,
 				delta);
+
+			return velocity;
+		}
+	}
+
+	private sealed class CrouchingState : IMovementState
+	{
+		private readonly PlayerMovementController _controller;
+		private readonly PlayerMovementSettings _settings;
+
+		public CrouchingState(PlayerMovementController controller)
+		{
+			_controller = controller;
+			_settings = controller._settings;
+		}
+
+		public PlayerMovementStateKind StateKind => PlayerMovementStateKind.Crouching;
+
+		public void Enter(in PlayerMovementContext context)
+		{
+		}
+
+		public Vector3 Tick(in PlayerMovementContext context, float delta)
+		{
+			var velocity = context.Velocity;
+
+			if (context.Jump)
+			{
+				velocity.Y = _settings.JumpVelocity;
+				_controller.MarkJumped(context);
+			}
+			else
+			{
+				var friction = Mathf.Clamp(_settings.CrouchFriction, 0f, 1f);
+				velocity.X *= friction;
+				velocity.Z *= friction;
+			}
+
+			var wishDir = PlayerMovementController.BuildWishDirection(context.ReferenceBasis, context.MoveInput);
+			velocity = _controller.ApplyAcceleration(
+				velocity,
+				wishDir,
+				_settings.CrouchSpeedLimit,
+				_settings.CrouchAcceleration,
+				delta);
+
+			return velocity;
+		}
+	}
+
+	private sealed class SlideState : IMovementState
+	{
+		private readonly PlayerMovementController _controller;
+		private readonly PlayerMovementSettings _settings;
+		private float _elapsed;
+		private Vector3 _slideDirection = Vector3.Zero;
+
+		public SlideState(PlayerMovementController controller)
+		{
+			_controller = controller;
+			_settings = controller._settings;
+		}
+
+		public PlayerMovementStateKind StateKind => PlayerMovementStateKind.Sliding;
+
+		public void Enter(in PlayerMovementContext context)
+		{
+			_elapsed = 0f;
+			var planarVel = new Vector3(context.Velocity.X, 0f, context.Velocity.Z);
+			_slideDirection = planarVel != Vector3.Zero
+				? planarVel.Normalized()
+				: PlayerMovementController.BuildWishDirection(context.ReferenceBasis, context.MoveInput);
+		}
+
+		public bool CanEnter(in PlayerMovementContext context)
+		{
+			if (!context.OnFloor || !context.CrouchPressed)
+				return false;
+
+			var planarSpeed = new Vector3(context.Velocity.X, 0f, context.Velocity.Z).Length();
+			return planarSpeed >= _settings.SlideEnterSpeed;
+		}
+
+		public bool ShouldPersist(in PlayerMovementContext context)
+		{
+			if (_elapsed > _settings.SlideMaxDuration)
+				return false;
+
+			if (!context.OnFloor || !context.Crouch)
+				return false;
+
+			var planarSpeed = new Vector3(context.Velocity.X, 0f, context.Velocity.Z).Length();
+			return planarSpeed >= _settings.SlideExitSpeed;
+		}
+
+		public Vector3 Tick(in PlayerMovementContext context, float delta)
+		{
+			_elapsed += delta;
+
+			var velocity = context.Velocity;
+
+			if (!ShouldPersist(context))
+			{
+				var fallback = context.OnFloor
+					? (context.Crouch ? PlayerMovementStateKind.Crouching : PlayerMovementStateKind.Grounded)
+					: PlayerMovementStateKind.Airborne;
+				_controller.SwitchState(fallback, context);
+				return velocity;
+			}
+
+			var planarVel = new Vector3(velocity.X, 0f, velocity.Z);
+			if (planarVel != Vector3.Zero)
+				_slideDirection = planarVel.Normalized();
+
+			var wishDir = PlayerMovementController.BuildWishDirection(context.ReferenceBasis, context.MoveInput);
+			var driveDir = wishDir != Vector3.Zero ? wishDir : _slideDirection;
+			if (driveDir != Vector3.Zero)
+			{
+				driveDir = driveDir.Normalized();
+				_slideDirection = driveDir;
+				velocity = _controller.ApplyAcceleration(
+					velocity,
+					driveDir,
+					_settings.SlideSpeedLimit,
+					_settings.SlideSteerAcceleration,
+					delta);
+			}
+
+			var friction = Mathf.Clamp(_settings.SlideFriction, 0f, 1f);
+			velocity.X *= friction;
+			velocity.Z *= friction;
 
 			return velocity;
 		}
