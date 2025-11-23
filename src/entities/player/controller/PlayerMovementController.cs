@@ -531,7 +531,7 @@ public sealed class PlayerMovementController
 
 			if (context.Jump)
 			{
-				var jumpDir = -context.ReferenceBasis.Z;
+				var jumpDir = context.ReferenceBasis.Z;
 				jumpDir.Y = 0;
 				if (jumpDir.LengthSquared() > 0.01f)
 					jumpDir = jumpDir.Normalized();

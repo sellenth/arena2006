@@ -172,6 +172,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5435, 0, -51.0122)
 
 [node name="RemotePlayers" type="Node3D" parent="."]
 
+[node name="PlayerSpawns" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96.26392, 18.643845, -35.222134)
+
 [node name="PlayerCharacter" parent="." instance=ExtResource("10_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52.38363, 1.05, -28.664124)
 
@@ -252,6 +255,6 @@ script = ExtResource("16_fbd4t")
 [node name="Pickups" type="Node3D" parent="."]
 
 [node name="RocketLauncherPickup" parent="Pickups" instance=ExtResource("17_fbd4t")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85.84425, 0.43021297, -24.146832)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 89.14703, 0.43021297, 10.023632)
 
 [editable path="hut2"]

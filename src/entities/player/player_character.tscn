@@ -1,9 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://bp5wletrm4dw2"]
+[gd_scene load_steps=8 format=3 uid="uid://bp5wletrm4dw2"]
 
 [ext_resource type="Script" uid="uid://dpian2gawtw4a" path="res://src/entities/player/PlayerCharacter.cs" id="1_qj4xw"]
 [ext_resource type="PackedScene" uid="uid://glg8yewwof8w" path="res://src/entities/player/player_body.tscn" id="2_23jjq"]
 [ext_resource type="Script" uid="uid://dfsnhvsmrh8yr" path="res://src/systems/ui/CrosshairUI.cs" id="2_b8iv8"]
 [ext_resource type="Script" uid="uid://cdpug6k574ola" path="res://src/entities/weapon/_shared/WeaponInventory.cs" id="3_qfbsq"]
+[ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="5_4dfh7"]
+[ext_resource type="Resource" uid="uid://b778nq68itor2" path="res://src/entities/weapon/rocket_launcher/weapon_definition.tres" id="6_1eh8o"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_s6pao"]
 resource_local_to_scene = true
@@ -40,3 +42,4 @@ script = ExtResource("2_b8iv8")
 
 [node name="WeaponInventory" type="Node3D" parent="."]
 script = ExtResource("3_qfbsq")
+StartingWeapons = Array[ExtResource("5_4dfh7")]([ExtResource("6_1eh8o")])

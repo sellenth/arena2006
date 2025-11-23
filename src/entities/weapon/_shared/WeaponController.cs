@@ -241,7 +241,7 @@ public partial class WeaponController : Node
 
 		var basis = Basis.LookingAt(viewDir, Vector3.Up);
 
-		var origin = _player.GlobalTransform.Origin + (viewDir * 0.6f) + (Vector3.Up * 0.9f);
+		var origin = _player.GlobalTransform.Origin + (viewDir * 0.3f) + (Vector3.Up * 0.9f);
 
 		var spawn = def.ProjectileSpawn;
 		return new Transform3D(basis, origin) * spawn;
