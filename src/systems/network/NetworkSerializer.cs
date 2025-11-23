@@ -67,6 +67,7 @@ public static partial class NetworkSerializer
 		buffer.PutU8((byte)(state.PrimaryFireJustPressed ? 1 : 0));
 		buffer.PutU8((byte)(state.Reload ? 1 : 0));
 		buffer.PutU8((byte)(state.Interact ? 1 : 0));
+		buffer.PutU8((byte)(state.Sprint ? 1 : 0));
 		buffer.PutFloat(state.ViewYaw);
 		buffer.PutFloat(state.ViewPitch);
 		return buffer.DataArray;
@@ -80,7 +81,7 @@ public static partial class NetworkSerializer
 		if (buffer.GetAvailableBytes() < 1) return null;
 		var packetType = buffer.GetU8();
 		if (packetType != PacketPlayerInput) return null;
-		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1 + 1 + 1 + 4 + 4) return null;
+		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 4) return null;
 		var state = new PlayerInputState
 		{
 			Tick = (int)buffer.GetU32(),
@@ -90,6 +91,7 @@ public static partial class NetworkSerializer
 			PrimaryFireJustPressed = buffer.GetU8() == 1,
 			Reload = buffer.GetU8() == 1,
 			Interact = buffer.GetU8() == 1,
+			Sprint = buffer.GetU8() == 1,
 			ViewYaw = buffer.GetFloat(),
 			ViewPitch = buffer.GetFloat()
 		};

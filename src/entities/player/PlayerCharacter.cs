@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Godot;
+using Godot.Collections;
 
 public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 {
@@ -27,6 +28,12 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private readonly PlayerLookController _lookController = new PlayerLookController();
 	private PlayerMovementController _movementController;
 	private readonly PlayerReconciliationController _reconciliation = new PlayerReconciliationController();
+	private bool _wasWallRunning = false;
+	private bool _wallRunJumpLock = false;
+	private float _wallRunTime = 0f;
+	private float _wallRunCooldownTimer = 0f;
+	private const float WallRunProbeUpperHeight = 1.2f;
+	private const float WallRunProbeLowerHeight = 0.6f;
 	private Color _playerColor = Colors.Red;
 	private bool _isAuthority = true;
 	private bool _simulateLocally = true;
@@ -426,6 +433,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			MoveInput = Input.GetVector("move_left", "move_right", "move_forward", "move_backward"),
 			Jump = Input.IsActionPressed("jump"),
 			Interact = Input.IsActionJustPressed("interact"),
+			Sprint = InputMap.HasAction("sprint") && Input.IsActionPressed("sprint"),
 			PrimaryFire = InputMap.HasAction("fire") && Input.IsActionPressed("fire"),
 			PrimaryFireJustPressed = InputMap.HasAction("fire") && Input.IsActionJustPressed("fire"),
 			Reload = (InputMap.HasAction("reload") && Input.IsActionJustPressed("reload")) || Input.IsKeyPressed(Key.R),
@@ -588,17 +596,147 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_repWeaponFireSeq = value;
 	}
 
+	private void UpdateWallRunTimers(float delta)
+	{
+		if (_wallRunCooldownTimer > 0f)
+		{
+			_wallRunCooldownTimer = Mathf.Max(0f, _wallRunCooldownTimer - delta);
+		}
+
+		if (_wasWallRunning)
+		{
+			_wallRunTime += delta;
+		}
+		else
+		{
+			_wallRunTime = 0f;
+		}
+	}
+
+	private bool TryFindWallRun(Basis basis, out Vector3 wallNormal, out Vector3 wallDirection)
+	{
+		wallNormal = Vector3.Zero;
+		wallDirection = Vector3.Zero;
+
+		if (_movementController == null || _movementController.Settings == null)
+			return false;
+
+		var settings = _movementController.Settings;
+
+		if (IsOnFloor())
+			return false;
+
+		if (_wallRunCooldownTimer > 0f)
+			return false;
+
+		if (_wallRunTime >= settings.WallRunMaxDuration)
+			return false;
+
+		if (_inputState.MoveInput.Length() < settings.WallRunMinInput)
+			return false;
+
+		var wishDir = PlayerMovementController.BuildWishDirection(basis, _inputState.MoveInput);
+		if (wishDir == Vector3.Zero)
+			return false;
+
+		var space = GetWorld3D()?.DirectSpaceState;
+		if (space == null)
+			return false;
+
+		if (!TryProbeWall(basis, space, settings, wishDir, out wallNormal))
+			return false;
+
+		wallDirection = CalculateWallRunDirection(wishDir, wallNormal);
+		return wallDirection != Vector3.Zero;
+	}
+
+	private bool TryProbeWall(Basis basis, PhysicsDirectSpaceState3D space, PlayerMovementSettings settings, Vector3 wishDir, out Vector3 wallNormal)
+	{
+		wallNormal = Vector3.Zero;
+
+		var directions = new[] { basis.X, -basis.X };
+		var heights = new[] { WallRunProbeUpperHeight, WallRunProbeLowerHeight };
+		foreach (var height in heights)
+		{
+			var start = GlobalTransform.Origin + Vector3.Up * height;
+			foreach (var dir in directions)
+			{
+				var to = start + dir.Normalized() * settings.WallCheckDistance;
+				var query = PhysicsRayQueryParameters3D.Create(start, to);
+				query.CollideWithAreas = false;
+				query.Exclude = new Array<Rid> { GetRid() };
+				var result = space.IntersectRay(query);
+				if (result.Count == 0)
+					continue;
+
+				var normal = ((Vector3)result["normal"]).Normalized();
+				if (Mathf.Abs(normal.Y) > settings.WallRunMaxNormalY)
+					continue;
+
+				if (wishDir.Dot(normal) > -0.1f)
+					continue;
+
+				wallNormal = normal;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static Vector3 CalculateWallRunDirection(Vector3 wishDir, Vector3 wallNormal)
+	{
+		var alongWall = wallNormal.Cross(Vector3.Up);
+		if (alongWall == Vector3.Zero)
+			return Vector3.Zero;
+
+		alongWall = alongWall.Normalized();
+		if (wishDir != Vector3.Zero && alongWall.Dot(wishDir) < 0f)
+			alongWall = -alongWall;
+
+		return alongWall.Dot(wishDir) > 0.05f ? alongWall : Vector3.Zero;
+	}
+
 	private void SimulateMovement(float delta)
 	{
 		if (_movementController == null)
 			return;
 
 		var basis = _head?.GlobalTransform.Basis ?? GlobalTransform.Basis;
-		var context = new PlayerMovementContext(Velocity, _inputState.MoveInput, _inputState.Jump, false, IsOnFloor(), basis);
+		UpdateWallRunTimers(delta);
+
+		var canWallRun = TryFindWallRun(basis, out var wallNormal, out var wallDirection);
+		var jumpInput = _inputState.Jump;
+		if (canWallRun || _wasWallRunning)
+		{
+			if (!jumpInput)
+			{
+				_wallRunJumpLock = false;
+			}
+			else if (!_wasWallRunning && canWallRun)
+			{
+				_wallRunJumpLock = true; // prevent holding jump from insta-wall-jumping on entry
+			}
+
+			jumpInput = jumpInput && !_wallRunJumpLock;
+		}
+
+		var context = new PlayerMovementContext(
+			Velocity,
+			_inputState.MoveInput,
+			jumpInput,
+			_inputState.Sprint,
+			IsOnFloor(),
+			basis,
+			canWallRun,
+			wallNormal,
+			wallDirection);
 		Velocity = _movementController.Step(context, delta);
 		MoveAndSlide();
 
-		if (GetSlideCollisionCount() > 0 && !IsOnFloor())
+		var isWallRunning = _movementController.IsWallRunning;
+
+		if (!isWallRunning && GetSlideCollisionCount() > 0 && !IsOnFloor())
 		{
 			var collision = GetLastSlideCollision();
 			if (collision != null)
@@ -606,6 +744,13 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 				Velocity = Velocity.Slide(collision.GetNormal());
 			}
 		}
+
+		if (_movementController.WallJumpedThisFrame || (_wasWallRunning && !isWallRunning))
+		{
+			_wallRunCooldownTimer = Mathf.Max(_wallRunCooldownTimer, _movementController.Settings.WallRunCooldown);
+		}
+
+		_wasWallRunning = isWallRunning;
 
 		if (_networkController != null && _networkController.IsClient && _simulateLocally)
 		{
