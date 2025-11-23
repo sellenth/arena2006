@@ -22,6 +22,7 @@ public sealed class PlayerLookController
 	public float Yaw { get; private set; }
 	public float Pitch { get; private set; }
 
+	private Node3D _root;
 	private Node3D _head;
 	private Camera3D _camera;
 	private Vector2 _pendingLookDelta = Vector2.Zero;
@@ -33,8 +34,9 @@ public sealed class PlayerLookController
 	private float _currentFov;
 	private float _targetFov;
 
-	public void Initialize(Node3D head, Camera3D camera, float initialYaw, float initialPitch)
+	public void Initialize(Node3D root, Node3D head, Camera3D camera, float initialYaw, float initialPitch)
 	{
+		_root = root;
 		_head = head;
 		_camera = camera;
 		Yaw = initialYaw;
@@ -150,11 +152,11 @@ public sealed class PlayerLookController
 
 	private void ApplyViewToNodes()
 	{
-		if (_head != null)
+		if (_root != null)
 		{
-			var headRot = _head.Rotation;
-			headRot.Y = Yaw;
-			_head.Rotation = headRot;
+			var rootRot = _root.Rotation;
+			rootRot.Y = Yaw;
+			_root.Rotation = rootRot;
 		}
 
 		if (_camera != null)
