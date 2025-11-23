@@ -11,6 +11,7 @@ public partial class PlayerInputState : RefCounted
 	public float ViewYaw { get; set; } = float.NaN;
 	public float ViewPitch { get; set; } = float.NaN;
 	public bool Interact { get; set; }
+	public bool Sprint { get; set; }
 
 	public void CopyFrom(PlayerInputState other)
 	{
@@ -23,6 +24,7 @@ public partial class PlayerInputState : RefCounted
 		ViewYaw = other.ViewYaw;
 		ViewPitch = other.ViewPitch;
 		Interact = other.Interact;
+		Sprint = other.Sprint;
 	}
 
 	public void Reset()
@@ -36,5 +38,6 @@ public partial class PlayerInputState : RefCounted
 		ViewYaw = float.NaN;
 		ViewPitch = float.NaN;
 		Interact = false;
+		Sprint = false;
 	}
 }

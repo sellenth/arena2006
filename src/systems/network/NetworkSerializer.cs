@@ -1,4 +1,5 @@
 using Godot;
+using System.Collections.Generic;
 
 public static partial class NetworkSerializer
 {
@@ -8,6 +9,7 @@ public static partial class NetworkSerializer
 	public const byte PacketPlayerInput = 4;
 	public const byte PacketEntitySnapshot = 5;
 	public const byte PacketEntityDespawn = 6;
+	public const byte PacketScoreboard = 7;
 
 	public const int CarSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
 	public const int PlayerSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
@@ -65,6 +67,7 @@ public static partial class NetworkSerializer
 		buffer.PutU8((byte)(state.PrimaryFireJustPressed ? 1 : 0));
 		buffer.PutU8((byte)(state.Reload ? 1 : 0));
 		buffer.PutU8((byte)(state.Interact ? 1 : 0));
+		buffer.PutU8((byte)(state.Sprint ? 1 : 0));
 		buffer.PutFloat(state.ViewYaw);
 		buffer.PutFloat(state.ViewPitch);
 		return buffer.DataArray;
@@ -78,7 +81,7 @@ public static partial class NetworkSerializer
 		if (buffer.GetAvailableBytes() < 1) return null;
 		var packetType = buffer.GetU8();
 		if (packetType != PacketPlayerInput) return null;
-		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1 + 1 + 1 + 4 + 4) return null;
+		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 4) return null;
 		var state = new PlayerInputState
 		{
 			Tick = (int)buffer.GetU32(),
@@ -88,6 +91,7 @@ public static partial class NetworkSerializer
 			PrimaryFireJustPressed = buffer.GetU8() == 1,
 			Reload = buffer.GetU8() == 1,
 			Interact = buffer.GetU8() == 1,
+			Sprint = buffer.GetU8() == 1,
 			ViewYaw = buffer.GetFloat(),
 			ViewPitch = buffer.GetFloat()
 		};
@@ -220,10 +224,70 @@ public static partial class NetworkSerializer
 		return (int)buffer.GetU32();
 	}
 
+	public static byte[] SerializeScoreboard(IEnumerable<ScoreboardEntry> rows)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.PutU8(PacketScoreboard);
+
+		var list = rows != null ? new List<ScoreboardEntry>(rows) : new List<ScoreboardEntry>();
+		buffer.PutU16((ushort)list.Count);
+
+		foreach (var row in list)
+		{
+			buffer.PutU32((uint)row.Id);
+			buffer.PutU16((ushort)Mathf.Clamp(row.Kills, 0, ushort.MaxValue));
+			buffer.PutU16((ushort)Mathf.Clamp(row.Deaths, 0, ushort.MaxValue));
+		}
+
+		return buffer.DataArray;
+	}
+
+	public static List<ScoreboardEntry> DeserializeScoreboard(byte[] packet)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.DataArray = packet;
+
+		if (buffer.GetAvailableBytes() < 3)
+			return null;
+
+		if (buffer.GetU8() != PacketScoreboard)
+			return null;
+
+		var count = buffer.GetU16();
+		var entries = new List<ScoreboardEntry>();
+
+		for (var i = 0; i < count; i++)
+		{
+			if (buffer.GetAvailableBytes() < 8)
+				break;
+
+			var peerId = (int)buffer.GetU32();
+			var kills = (int)buffer.GetU16();
+			var deaths = (int)buffer.GetU16();
+			entries.Add(new ScoreboardEntry
+			{
+				Id = peerId,
+				Kills = kills,
+				Deaths = deaths
+			});
+		}
+
+		return entries;
+	}
+
 	public partial class EntitySnapshotData : GodotObject
 	{
 		public int EntityId { get; set; }
 		public byte[] Data { get; set; }
+	}
+
+	public partial class ScoreboardEntry : GodotObject
+	{
+		public int Id { get; set; }
+		public int Kills { get; set; }
+		public int Deaths { get; set; }
 	}
 
 	private static void WriteCarSnapshot(StreamPeerBuffer buffer, CarSnapshot snapshot)

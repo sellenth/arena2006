@@ -1,11 +1,12 @@
 using Godot;
 
-public partial class DebugUiController : Node
+	public partial class DebugUiController : Node
 {
 	private RaycastCar _car;
 	private RaycastCar _fallbackCar;
 	private PlayerCharacter _player;
 	private NetworkController _network;
+	private Control _debugBoxContainer;
 	
 	private CheckBox _allForcesCB;
 	private CheckBox _pullForcesCB;
@@ -22,6 +23,7 @@ public partial class DebugUiController : Node
 	private ProgressBar _turnRatio;
 	private Label _healthLabel;
 	private Label _armorLabel;
+	private Label _moveStateLabel;
 
 	public override void _Ready()
 	{
@@ -35,24 +37,28 @@ public partial class DebugUiController : Node
 			_network.LocalCarChanged += OnLocalCarChanged;
 			OnLocalCarChanged(_network.LocalCar);
 		}
-		
+
 		var canvasLayer = GetNode<CanvasLayer>("CanvasLayer");
-		
-		_allForcesCB = canvasLayer.GetNode<CheckBox>("TOP/AllForcesCB");
-		_pullForcesCB = canvasLayer.GetNode<CheckBox>("TOP/PullForcesCB");
-		_handBreakCB = canvasLayer.GetNode<CheckBox>("TOP/HandBreakCB");
-		_slippingCB = canvasLayer.GetNode<CheckBox>("TOP/SlippingCB");
-		_frameRateLabel = canvasLayer.GetNode<Label>("TOP/FramerateLabel");
-		_timeScaleLabel = canvasLayer.GetNode<Label>("TOP/TimeScaleLabel");
-		_gameModeLabel = canvasLayer.GetNode<Label>("TOP/GameModeLabel");
-		_weaponLabel = canvasLayer.GetNode<Label>("TOP/WeaponLabel");
-		_ammoLabel = canvasLayer.GetNode<Label>("TOP/AmmoLabel");
+		_debugBoxContainer = GetNode<Control>("CanvasLayer/DebugUi");
+		_debugBoxContainer.Visible = OS.IsDebugBuild();
+
+		var topContainer = canvasLayer.GetNode<VBoxContainer>("DebugUi/TOP");
+		_allForcesCB = topContainer.GetNode<CheckBox>("AllForcesCB");
+		_pullForcesCB = topContainer.GetNode<CheckBox>("PullForcesCB");
+		_handBreakCB = topContainer.GetNode<CheckBox>("HandBreakCB");
+		_slippingCB = topContainer.GetNode<CheckBox>("SlippingCB");
+		_frameRateLabel = topContainer.GetNode<Label>("FramerateLabel");
+		_timeScaleLabel = topContainer.GetNode<Label>("TimeScaleLabel");
+		_gameModeLabel = topContainer.GetNode<Label>("GameModeLabel");
+		_weaponLabel = topContainer.GetNode<Label>("WeaponLabel");
+		_ammoLabel = canvasLayer.GetNode<Label>("BOTTOM/AmmoLabel");
 		_speedLabel = canvasLayer.GetNode<Label>("RIGHT_TOP/SpeedLabel");
 		_motorRatio = canvasLayer.GetNode<ProgressBar>("RIGHT_TOP/MotorRatio");
 		_accelLabel = canvasLayer.GetNode<Label>("RIGHT_TOP/AccelLabel");
 		_turnRatio = canvasLayer.GetNode<ProgressBar>("RIGHT_TOP/TurnRatio");
 		_healthLabel = canvasLayer.GetNode<Label>("BOTTOM/HealthLabel");
 		_armorLabel = canvasLayer.GetNode<Label>("BOTTOM/ArmorLabel");
+		_moveStateLabel = topContainer.GetNodeOrNull<Label>("MoveStateLabel");
 	}
 
 	public override void _ExitTree()
@@ -71,6 +77,10 @@ public partial class DebugUiController : Node
 			_speedLabel.Text = $"Speed: {speed:F2} m/s";
 			_healthLabel.Text = $"Health: {_player.Health}/{_player.MaxHealth}";
 			_armorLabel.Text = $"Armor: {_player.Armor}/{_player.MaxArmor}";
+			if (_moveStateLabel != null)
+			{
+				_moveStateLabel.Text = $"Move: {_player.GetMovementStateName()}";
+			}
 		}
 		else if (_car != null)
 		{
@@ -112,6 +122,14 @@ public partial class DebugUiController : Node
 		else
 		{
 			_gameModeLabel.Text = "Game Mode: None";
+		}
+	}
+
+	public override void _Input(InputEvent @event)
+	{
+		if (@event.IsActionPressed("toggle_debug_ui"))
+		{
+			_debugBoxContainer.Visible = !_debugBoxContainer.Visible;
 		}
 	}
 

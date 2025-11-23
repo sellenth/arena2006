@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Godot;
+using Godot.Collections;
 
 public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 {
@@ -20,11 +21,22 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private NetworkController _networkController;
 	private int _health = 100;
 	private int _armor = 100;
+	private bool _isDead = false;
+	private long _lastHitByPeerId = 0;
 
 	private readonly PlayerInputState _inputState = new PlayerInputState();
 	private readonly PlayerLookController _lookController = new PlayerLookController();
 	private PlayerMovementController _movementController;
 	private readonly PlayerReconciliationController _reconciliation = new PlayerReconciliationController();
+	private bool _wasWallRunning = false;
+	private bool _wallRunJumpLock = false;
+	private float _wallRunTime = 0f;
+	private float _wallRunCooldownTimer = 0f;
+	private Vector3 _currentWallNormal = Vector3.Zero;
+	private Vector3 _currentWallDirection = Vector3.Zero;
+	private float _jumpCooldownTimer = 0f;
+	private const float WallRunProbeUpperHeight = 1.2f;
+	private const float WallRunProbeLowerHeight = 0.6f;
 	private Color _playerColor = Colors.Red;
 	private bool _isAuthority = true;
 	private bool _simulateLocally = true;
@@ -68,7 +80,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		// CharacterBody defaults for surf-style movement
 		FloorStopOnSlope = false;
 		FloorBlockOnWall = false;
-		WallMinSlideAngle = Mathf.DegToRad(167);
+		WallMinSlideAngle = 0f;
 	}
 
 	public override void _Ready()
@@ -77,6 +89,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_camera = GetNodeOrNull<Camera3D>(CameraPath);
 		_mesh = GetNodeOrNull<MeshInstance3D>(MeshPath);
 		_collisionShape = GetNodeOrNull<CollisionShape3D>(CollisionShapePath);
+		_networkController = GetNodeOrNull<NetworkController>("/root/NetworkController");
 
 		if (_head == null || _camera == null)
 		{
@@ -91,7 +104,6 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 		if (AutoRegisterWithNetwork)
 		{
-			_networkController = GetNodeOrNull<NetworkController>("/root/NetworkController");
 			if (_networkController != null && _networkController.IsClient)
 			{
 				if (NetworkId != 0)
@@ -424,6 +436,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			MoveInput = Input.GetVector("move_left", "move_right", "move_forward", "move_backward"),
 			Jump = Input.IsActionPressed("jump"),
 			Interact = Input.IsActionJustPressed("interact"),
+			Sprint = InputMap.HasAction("sprint") && Input.IsActionPressed("sprint"),
 			PrimaryFire = InputMap.HasAction("fire") && Input.IsActionPressed("fire"),
 			PrimaryFireJustPressed = InputMap.HasAction("fire") && Input.IsActionJustPressed("fire"),
 			Reload = (InputMap.HasAction("reload") && Input.IsActionJustPressed("reload")) || Input.IsKeyPressed(Key.R),
@@ -586,23 +599,236 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_repWeaponFireSeq = value;
 	}
 
+	private void UpdateWallRunTimers(float delta)
+	{
+		if (_wallRunCooldownTimer > 0f)
+		{
+			_wallRunCooldownTimer = Mathf.Max(0f, _wallRunCooldownTimer - delta);
+		}
+
+		if (_wasWallRunning)
+		{
+			_wallRunTime += delta;
+		}
+		else
+		{
+			_wallRunTime = 0f;
+		}
+	}
+
+	private bool TryFindWallRun(Basis basis, out Vector3 wallNormal, out Vector3 wallDirection)
+	{
+		wallNormal = Vector3.Zero;
+		wallDirection = Vector3.Zero;
+
+		if (_movementController == null || _movementController.Settings == null)
+			return false;
+
+		var settings = _movementController.Settings;
+
+		if (IsOnFloor())
+			return false;
+
+		if (_wallRunCooldownTimer > 0f)
+			return false;
+
+		if (_wallRunTime >= settings.WallRunMaxDuration)
+			return false;
+
+		var space = GetWorld3D()?.DirectSpaceState;
+		if (space == null)
+			return false;
+
+		if (_inputState.MoveInput.Length() < settings.WallRunMinInput)
+			return false;
+
+		var wishDir = PlayerMovementController.BuildWishDirection(basis, _inputState.MoveInput);
+
+		if (_wasWallRunning && _currentWallNormal != Vector3.Zero && _currentWallDirection != Vector3.Zero)
+		{
+			var oppositeIntent = wishDir != Vector3.Zero && wishDir.Dot(_currentWallDirection) < -0.25f;
+			if (!oppositeIntent && ConfirmExistingWall(space, settings, _currentWallNormal, out var confirmedNormal))
+			{
+				wallNormal = confirmedNormal;
+				wallDirection = _currentWallDirection;
+				return true;
+			}
+		}
+
+		if (wishDir == Vector3.Zero)
+			return false;
+
+		if (!TryProbeWall(basis, space, settings, wishDir, out wallNormal))
+			return false;
+
+		wallDirection = CalculateWallRunDirection(wishDir, wallNormal, Velocity);
+		return wallDirection != Vector3.Zero;
+	}
+
+	private bool TryProbeWall(Basis basis, PhysicsDirectSpaceState3D space, PlayerMovementSettings settings, Vector3 wishDir, out Vector3 wallNormal)
+	{
+		wallNormal = Vector3.Zero;
+
+		var directions = new[] { basis.X, -basis.X };
+		var heights = new[] { WallRunProbeUpperHeight, WallRunProbeLowerHeight };
+		foreach (var height in heights)
+		{
+			var start = GlobalTransform.Origin + Vector3.Up * height;
+			foreach (var dir in directions)
+			{
+				var to = start + dir.Normalized() * settings.WallCheckDistance;
+				var query = PhysicsRayQueryParameters3D.Create(start, to);
+				query.CollideWithAreas = false;
+				query.Exclude = new Array<Rid> { GetRid() };
+				var result = space.IntersectRay(query);
+				if (result.Count == 0)
+					continue;
+
+				var normal = ((Vector3)result["normal"]).Normalized();
+				if (Mathf.Abs(normal.Y) > settings.WallRunMaxNormalY)
+					continue;
+
+				if (wishDir.Dot(normal) > -0.1f)
+					continue;
+
+				wallNormal = normal;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private bool ConfirmExistingWall(PhysicsDirectSpaceState3D space, PlayerMovementSettings settings, Vector3 wallNormal, out Vector3 confirmedNormal)
+	{
+		confirmedNormal = Vector3.Zero;
+
+		var normalDir = wallNormal.Normalized();
+		if (normalDir == Vector3.Zero)
+			return false;
+
+		var heights = new[] { WallRunProbeUpperHeight, WallRunProbeLowerHeight };
+		foreach (var height in heights)
+		{
+			var start = GlobalTransform.Origin + Vector3.Up * height;
+			var to = start - normalDir * settings.WallCheckDistance;
+			var query = PhysicsRayQueryParameters3D.Create(start, to);
+			query.CollideWithAreas = false;
+			query.Exclude = new Array<Rid> { GetRid() };
+			var result = space.IntersectRay(query);
+			if (result.Count == 0)
+				continue;
+
+			var normal = ((Vector3)result["normal"]).Normalized();
+			if (Mathf.Abs(normal.Y) > settings.WallRunMaxNormalY)
+				continue;
+
+			if (normal.Dot(normalDir) > 0.5f)
+			{
+				confirmedNormal = normal;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static Vector3 CalculateWallRunDirection(Vector3 wishDir, Vector3 wallNormal, Vector3 velocity)
+	{
+		var alongWall = wallNormal.Cross(Vector3.Up);
+		if (alongWall == Vector3.Zero)
+			return Vector3.Zero;
+
+		alongWall = alongWall.Normalized();
+
+		var planarVel = new Vector3(velocity.X, 0f, velocity.Z);
+		var directionalIntent = wishDir;
+		if (planarVel.LengthSquared() > 0.05f)
+		{
+			directionalIntent += planarVel.Normalized() * 0.75f; // bias towards actual travel to avoid backward runs
+		}
+
+		if (directionalIntent != Vector3.Zero && alongWall.Dot(directionalIntent) < 0f)
+			alongWall = -alongWall;
+
+		return directionalIntent == Vector3.Zero || alongWall.Dot(directionalIntent) > 0.05f ? alongWall : Vector3.Zero;
+	}
+
 	private void SimulateMovement(float delta)
 	{
 		if (_movementController == null)
 			return;
 
 		var basis = _head?.GlobalTransform.Basis ?? GlobalTransform.Basis;
-		var context = new PlayerMovementContext(Velocity, _inputState.MoveInput, _inputState.Jump, false, IsOnFloor(), basis);
+		UpdateWallRunTimers(delta);
+		if (_jumpCooldownTimer > 0f)
+		{
+			_jumpCooldownTimer = Mathf.Max(0f, _jumpCooldownTimer - delta);
+		}
+
+		var canWallRun = TryFindWallRun(basis, out var wallNormal, out var wallDirection);
+		if (canWallRun)
+		{
+			_currentWallNormal = wallNormal;
+			_currentWallDirection = wallDirection;
+		}
+		var jumpInput = _inputState.Jump && _jumpCooldownTimer <= 0f;
+		if (canWallRun || _wasWallRunning)
+		{
+			if (!jumpInput)
+			{
+				_wallRunJumpLock = false;
+			}
+			else if (!_wasWallRunning && canWallRun)
+			{
+				_wallRunJumpLock = true; // prevent holding jump from insta-wall-jumping on entry
+			}
+
+			jumpInput = jumpInput && !_wallRunJumpLock;
+		}
+
+		var context = new PlayerMovementContext(
+			Velocity,
+			_inputState.MoveInput,
+			jumpInput,
+			_inputState.Sprint,
+			IsOnFloor(),
+			basis,
+			canWallRun,
+			wallNormal,
+			wallDirection);
 		Velocity = _movementController.Step(context, delta);
 		MoveAndSlide();
 
-		if (GetSlideCollisionCount() > 0 && !IsOnFloor())
-		{
+		var isWallRunning = _movementController.IsWallRunning;
+
+		if (!isWallRunning && GetSlideCollisionCount() > 0 && !IsOnFloor())
+			{
 			var collision = GetLastSlideCollision();
 			if (collision != null)
-			{
+				{
 				Velocity = Velocity.Slide(collision.GetNormal());
 			}
+		}
+
+		if (_movementController.WallJumpedThisFrame || (_wasWallRunning && !isWallRunning))
+		{
+			_wallRunCooldownTimer = Mathf.Max(_wallRunCooldownTimer, _movementController.Settings.WallRunCooldown);
+		}
+
+		if (_movementController.JumpedThisFrame)
+		{
+			var cooldown = _movementController.Settings?.JumpCooldown ?? 0f;
+			if (cooldown > 0f)
+				_jumpCooldownTimer = Mathf.Max(_jumpCooldownTimer, cooldown);
+		}
+
+		_wasWallRunning = isWallRunning;
+
+		if (!_wasWallRunning)
+		{
+			_currentWallNormal = Vector3.Zero;
+			_currentWallDirection = Vector3.Zero;
 		}
 
 		if (_networkController != null && _networkController.IsClient && _simulateLocally)
@@ -631,15 +857,36 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_armor = Mathf.Clamp(value, 0, MaxArmor);
 	}
 
+	public string GetMovementStateName()
+	{
+		if (_movementController == null)
+			return "None";
+		return _movementController.State.ToString();
+	}
+
 	private void ClampVitals()
 	{
 		SetHealth(_health);
 		SetArmor(_armor);
 	}
 
-	public void ApplyDamage(int amount)
+	private bool ShouldProcessDamage()
+	{
+		// In networked games the server is authoritative over damage.
+		if (_networkController == null)
+			return true;
+		return _networkController.IsServer;
+	}
+
+	public void ApplyDamage(int amount, long instigatorPeerId = 0)
 	{
 		if (amount <= 0)
+			return;
+
+		if (_isDead)
+			return;
+
+		if (!ShouldProcessDamage())
 			return;
 
 		var remaining = amount;
@@ -653,6 +900,63 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		if (remaining > 0)
 		{
 			SetHealth(_health - remaining);
+		}
+
+		if (instigatorPeerId != 0)
+			_lastHitByPeerId = instigatorPeerId;
+
+		if (_health <= 0 && _armor <= 0)
+		{
+			var killerPeerId = instigatorPeerId != 0 ? instigatorPeerId : _lastHitByPeerId;
+			HandleDeath(killerPeerId);
+		}
+	}
+
+	private void HandleDeath(long instigatorPeerId)
+	{
+		if (_isDead)
+			return;
+
+		_isDead = true;
+		SetHealth(0);
+		SetArmor(0);
+		Velocity = Vector3.Zero;
+		_movementController?.Reset();
+		SetWorldActive(false);
+
+		if (_networkController != null && _networkController.IsServer)
+		{
+			_networkController.NotifyPlayerKilled(this, instigatorPeerId);
+		}
+		else
+		{
+			RespawnLocally();
+		}
+	}
+
+	private void RespawnLocally()
+	{
+		var transform = GlobalTransform;
+		transform.Origin += Vector3.Up * 1.5f;
+		ForceRespawn(transform);
+	}
+
+	public void ForceRespawn(Transform3D transform)
+	{
+		_isDead = false;
+		_lastHitByPeerId = 0;
+		Velocity = Vector3.Zero;
+		_movementController?.Reset();
+		SetWorldActive(true);
+		SetHealth(MaxHealth);
+		SetArmor(MaxArmor);
+		if (RespawnManager.Instance != null)
+		{
+			RespawnManager.Instance.TeleportEntity(this, transform);
+		}
+		else
+		{
+			GlobalTransform = transform;
 		}
 	}
 

@@ -19,6 +19,9 @@ offset_top = -40.0
 offset_right = 67.0
 grow_vertical = 0
 
+[node name="AmmoLabel" type="Label" parent="CanvasLayer/BOTTOM"]
+layout_mode = 2
+
 [node name="HealthLabel" type="Label" parent="CanvasLayer/BOTTOM"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -29,17 +32,37 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Armor: "
 
-[node name="TOP" type="VBoxContainer" parent="CanvasLayer"]
+[node name="DebugUi" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer/DebugUi"]
+custom_minimum_size = Vector2(12.28, 16.78)
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.015000001
+anchor_right = 5.5490003
+anchor_bottom = 5.6450005
+offset_left = 6.0
+offset_top = 9.4
+offset_right = 1.0399933
+offset_bottom = -1.8000183
+color = Color(0, 0, 0, 0.43137255)
+
+[node name="TOP" type="VBoxContainer" parent="CanvasLayer/DebugUi"]
+layout_mode = 0
 offset_left = 10.0
 offset_top = 10.0
-offset_right = 143.0
-offset_bottom = 103.0
+offset_right = 183.0
+offset_bottom = 238.0
 
-[node name="FramerateLabel" type="Label" parent="CanvasLayer/TOP"]
+[node name="FramerateLabel" type="Label" parent="CanvasLayer/DebugUi/TOP"]
 layout_mode = 2
 text = "FPS: "
 
-[node name="AllForcesCB" type="CheckBox" parent="CanvasLayer/TOP"]
+[node name="AllForcesCB" type="CheckBox" parent="CanvasLayer/DebugUi/TOP"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -50,7 +73,7 @@ text = "All forces (C)
 "
 alignment = 1
 
-[node name="PullForcesCB" type="CheckBox" parent="CanvasLayer/TOP"]
+[node name="PullForcesCB" type="CheckBox" parent="CanvasLayer/DebugUi/TOP"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -60,14 +83,14 @@ button_mask = 0
 text = "Pull forces (V)"
 alignment = 1
 
-[node name="HandBreakCB" type="CheckBox" parent="CanvasLayer/TOP"]
+[node name="HandBreakCB" type="CheckBox" parent="CanvasLayer/DebugUi/TOP"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 button_mask = 0
 text = "Handbreak (space)"
 
-[node name="SlippingCB" type="CheckBox" parent="CanvasLayer/TOP"]
+[node name="SlippingCB" type="CheckBox" parent="CanvasLayer/DebugUi/TOP"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
@@ -75,27 +98,31 @@ button_mask = 0
 text = "Is slipping
 "
 
-[node name="TimeScaleLabel" type="Label" parent="CanvasLayer/TOP"]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="GameModeLabel" type="Label" parent="CanvasLayer/TOP"]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="WeaponLabel" type="Label" parent="CanvasLayer/TOP"]
+[node name="WeaponLabel" type="Label" parent="CanvasLayer/DebugUi/TOP"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Weapon: "
 
-[node name="AmmoLabel" type="Label" parent="CanvasLayer/TOP"]
+[node name="TimeScaleLabel" type="Label" parent="CanvasLayer/DebugUi/TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GameModeLabel" type="Label" parent="CanvasLayer/DebugUi/TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MoveStateLabel" type="Label" parent="CanvasLayer/DebugUi/TOP"]
 layout_mode = 2
 
 [node name="RIGHT_TOP" type="VBoxContainer" parent="CanvasLayer"]
-offset_left = 954.0
-offset_top = 10.0
-offset_right = 1144.0
-offset_bottom = 130.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -201.90002
+offset_top = 12.79
+offset_right = -11.901367
+offset_bottom = 132.79001
+grow_horizontal = 0
 
 [node name="SpeedLabel" type="Label" parent="CanvasLayer/RIGHT_TOP"]
 unique_name_in_owner = true
