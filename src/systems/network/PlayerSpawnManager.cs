@@ -4,6 +4,7 @@ using System.Linq;
 
 public partial class PlayerSpawnManager : GodotObject
 {
+	private Node3D _playerSpawns = null;
 	private bool _respawnPointsCached = false;
 	private bool _hasFallbackSpawn = false;
 	private Transform3D _fallbackSpawnTransform = Transform3D.Identity;
@@ -56,6 +57,8 @@ public partial class PlayerSpawnManager : GodotObject
 			_fallbackSpawnTransform = carSpawn.GlobalTransform;
 			_hasFallbackSpawn = true;
 		}
+
+		_playerSpawns = root.GetNode<Node3D>("/root/GameRoot/PlayerSpawns");
 	}
 
 	public Transform3D GetSpawnTransform(int peerId, IEnumerable<Vector3> occupiedPositions, Node3D contextNode)
@@ -113,9 +116,7 @@ public partial class PlayerSpawnManager : GodotObject
 		parent.AddChild(player);
 		player.RegisterAsAuthority();
 
-		var transform = Transform3D.Identity;
-		transform.Origin += Vector3.Up * 1.2f;
-		transform.Origin.X = 100.0f;
+		var transform = _playerSpawns.GlobalTransform;
 		transform = ApplySpawnJitter(transform);
 		RespawnManager.Instance.TeleportEntity(player, transform);
 		return player;

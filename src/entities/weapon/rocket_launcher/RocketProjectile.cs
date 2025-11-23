@@ -8,7 +8,7 @@ using System.Collections.Generic;
     [Export] public float ExplodeRadius { get; set; } = 6.0f;
     [Export] public float Lifetime { get; set; } = 6.0f;
     [Export] public float ExplosionDamage { get; set; } = 100.0f;
-    [Export] public float SelfDamageScale { get; set; } = 1.0f;
+    [Export] public float SelfDamageScale { get; set; } = 0.6f;
     [Export] public float KnockbackImpulse { get; set; } = 24.0f;
     [Export] public float KnockbackUpBias { get; set; } = 0.6f;
 
@@ -72,9 +72,7 @@ using System.Collections.Generic;
         }
         if (_flightPlayer != null && IsInstanceValid(_flightPlayer))
         {
-            _flightPlayer.Stop();
-            _flightPlayer.QueueFree();
-            _flightPlayer = null;
+            StopFlightAudio();
         }
     }
 
@@ -152,12 +150,18 @@ using System.Collections.Generic;
     private void ServerExplode()
     {
         if (_exploded) return;
+        var travelVelocity = LinearVelocity;
         _exploded = true;
         LinearVelocity = Vector3.Zero;
         AngularVelocity = Vector3.Zero;
         SetPhysicsProcess(false);
 
         ApplyExplosionDamageAndImpulse();
+
+        if (ShouldPlayLocalExplosionFx())
+        {
+            PlayLocalExplosionFx(travelVelocity);
+        }
 
         OnServerExploded?.Invoke(RocketId, GlobalPosition);
         // Server doesn't need local SFX; the clients handle audio/FX when told to destroy
@@ -169,25 +173,7 @@ using System.Collections.Generic;
         if (_exploded) return;
         _exploded = true;
         SetPhysicsProcess(false);
-        if (_trailParticles != null) _trailParticles.Emitting = false;
-        if (_flightPlayer != null && IsInstanceValid(_flightPlayer))
-        {
-            _flightPlayer.Stop();
-            _flightPlayer.QueueFree();
-            _flightPlayer = null;
-        }
-        CreateExplosionEffect();
-        PlayExplosionSfx();
-        // Try to place an explosion residue decal on the impacted world surface (client-side visual only)
-        DecalUtils.SpawnExplosionDecal(
-            this,
-            GlobalPosition,
-            LinearVelocity,
-            ExplosionDecalTexture,
-            ExplosionDecalSize,
-            ExplosionDecalLifetimeSec,
-            this
-        );
+        PlayLocalExplosionFx(LinearVelocity);
         ReleaseToPool();
     }
 
@@ -222,6 +208,18 @@ using System.Collections.Generic;
         _flightPlayer.Play();
     }
 
+    private void StopFlightAudio()
+    {
+        if (_flightPlayer == null || !IsInstanceValid(_flightPlayer))
+        {
+            return;
+        }
+
+        _flightPlayer.Stop();
+        _flightPlayer.QueueFree();
+        _flightPlayer = null;
+    }
+
     private void PlayExplosionSfx()
     {
         if (ExplosionSfx == null)
@@ -241,6 +239,28 @@ using System.Collections.Generic;
         player.GlobalPosition = GlobalPosition;
         player.Finished += () => { if (IsInstanceValid(player)) player.QueueFree(); };
         player.Play();
+    }
+
+    private void PlayLocalExplosionFx(Vector3 travelVelocity)
+    {
+        if (_trailParticles != null) _trailParticles.Emitting = false;
+        StopFlightAudio();
+        CreateExplosionEffect();
+        PlayExplosionSfx();
+        DecalUtils.SpawnExplosionDecal(
+            this,
+            GlobalPosition,
+            travelVelocity,
+            ExplosionDecalTexture,
+            ExplosionDecalSize,
+            ExplosionDecalLifetimeSec,
+            this
+        );
+    }
+
+    private bool ShouldPlayLocalExplosionFx()
+    {
+        return CmdLineArgsManager.GetNetworkRole() != NetworkRole.Server;
     }
 
     private void CreateExplosionEffect()
@@ -281,12 +301,7 @@ using System.Collections.Generic;
         if (_trailParticles != null) _trailParticles.Emitting = false;
         SetHitAreaMonitoring(false);
         ResetCollisionExceptions();
-        if (_flightPlayer != null && IsInstanceValid(_flightPlayer))
-        {
-            _flightPlayer.Stop();
-            _flightPlayer.QueueFree();
-            _flightPlayer = null;
-        }
+        StopFlightAudio();
         Visible = false;
         OnServerExploded = null;
         ServerAuthority = false;
@@ -310,12 +325,7 @@ using System.Collections.Generic;
 
         SetHitAreaMonitoring(true);
 
-        if (_flightPlayer != null && IsInstanceValid(_flightPlayer))
-        {
-            _flightPlayer.Stop();
-            _flightPlayer.QueueFree();
-            _flightPlayer = null;
-        }
+        StopFlightAudio();
 
         // Clients also need contact events to drive explosion FX locally.
         SetContactMonitorSafe(true);
