@@ -77,7 +77,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		// CharacterBody defaults for surf-style movement
 		FloorStopOnSlope = false;
 		FloorBlockOnWall = false;
-		WallMinSlideAngle = Mathf.DegToRad(167);
+		WallMinSlideAngle = 0f;
 	}
 
 	public override void _Ready()
@@ -745,10 +745,10 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		var isWallRunning = _movementController.IsWallRunning;
 
 		if (!isWallRunning && GetSlideCollisionCount() > 0 && !IsOnFloor())
-		{
+			{
 			var collision = GetLastSlideCollision();
 			if (collision != null)
-			{
+				{
 				Velocity = Velocity.Slide(collision.GetNormal());
 			}
 		}

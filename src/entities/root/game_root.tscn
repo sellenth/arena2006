@@ -244,7 +244,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -443.55066, 142.31943, 189.83
 transform = Transform3D(-30.54626, 0, 95.22041, 0, 100, 0, -95.22041, 0, -30.54626, -711.03204, 46.61862, 384.85995)
 
 [node name="radio" parent="." instance=ExtResource("15_cxv46")]
-transform = Transform3D(-0.3171723, 0, -0.94836795, 0, 1, 0, 0.94836795, 0, -0.3171723, 109.705, -0.43026352, -57.133644)
+transform = Transform3D(-0.3171723, 0, -0.94836795, 0, 1, 0, 0.94836795, 0, -0.3171723, 89.28279, -0.43026352, -36.56465)
 
 [node name="WorldBoundaries" type="Node3D" parent="."]
 script = ExtResource("16_fbd4t")

@@ -66,7 +66,7 @@ public sealed class PlayerMovementSettings
 	public float WallRunSpeedLimit = 12f;
 	public float WallRunStickForce = 14f;
 	public float WallRunMaxDownwardSpeed = 18f;
-	public float WallJumpAwayImpulse = 12f;
+	public float WallJumpAwayImpulse = 4f;
 	public float WallJumpUpImpulse = 9f;
 	public float WallJumpAlongBoost = 4f;
 
