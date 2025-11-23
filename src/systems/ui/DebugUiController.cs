@@ -22,6 +22,7 @@ public partial class DebugUiController : Node
 	private ProgressBar _turnRatio;
 	private Label _healthLabel;
 	private Label _armorLabel;
+	private Label _moveStateLabel;
 
 	public override void _Ready()
 	{
@@ -53,6 +54,7 @@ public partial class DebugUiController : Node
 		_turnRatio = canvasLayer.GetNode<ProgressBar>("RIGHT_TOP/TurnRatio");
 		_healthLabel = canvasLayer.GetNode<Label>("BOTTOM/HealthLabel");
 		_armorLabel = canvasLayer.GetNode<Label>("BOTTOM/ArmorLabel");
+		_moveStateLabel = canvasLayer.GetNodeOrNull<Label>("TOP/MoveStateLabel");
 	}
 
 	public override void _ExitTree()
@@ -71,6 +73,10 @@ public partial class DebugUiController : Node
 			_speedLabel.Text = $"Speed: {speed:F2} m/s";
 			_healthLabel.Text = $"Health: {_player.Health}/{_player.MaxHealth}";
 			_armorLabel.Text = $"Armor: {_player.Armor}/{_player.MaxArmor}";
+			if (_moveStateLabel != null)
+			{
+				_moveStateLabel.Text = $"Move: {_player.GetMovementStateName()}";
+			}
 		}
 		else if (_car != null)
 		{

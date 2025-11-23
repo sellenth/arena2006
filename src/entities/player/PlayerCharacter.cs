@@ -646,7 +646,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		if (!TryProbeWall(basis, space, settings, wishDir, out wallNormal))
 			return false;
 
-		wallDirection = CalculateWallRunDirection(wishDir, wallNormal);
+		wallDirection = CalculateWallRunDirection(wishDir, wallNormal, Velocity);
 		return wallDirection != Vector3.Zero;
 	}
 
@@ -684,17 +684,25 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		return false;
 	}
 
-	private static Vector3 CalculateWallRunDirection(Vector3 wishDir, Vector3 wallNormal)
+	private static Vector3 CalculateWallRunDirection(Vector3 wishDir, Vector3 wallNormal, Vector3 velocity)
 	{
 		var alongWall = wallNormal.Cross(Vector3.Up);
 		if (alongWall == Vector3.Zero)
 			return Vector3.Zero;
 
 		alongWall = alongWall.Normalized();
-		if (wishDir != Vector3.Zero && alongWall.Dot(wishDir) < 0f)
+
+		var planarVel = new Vector3(velocity.X, 0f, velocity.Z);
+		var directionalIntent = wishDir;
+		if (planarVel.LengthSquared() > 0.05f)
+		{
+			directionalIntent += planarVel.Normalized() * 0.75f; // bias towards actual travel to avoid backward runs
+		}
+
+		if (directionalIntent != Vector3.Zero && alongWall.Dot(directionalIntent) < 0f)
 			alongWall = -alongWall;
 
-		return alongWall.Dot(wishDir) > 0.05f ? alongWall : Vector3.Zero;
+		return directionalIntent == Vector3.Zero || alongWall.Dot(directionalIntent) > 0.05f ? alongWall : Vector3.Zero;
 	}
 
 	private void SimulateMovement(float delta)
@@ -776,6 +784,13 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private void SetArmor(int value)
 	{
 		_armor = Mathf.Clamp(value, 0, MaxArmor);
+	}
+
+	public string GetMovementStateName()
+	{
+		if (_movementController == null)
+			return "None";
+		return _movementController.State.ToString();
 	}
 
 	private void ClampVitals()
