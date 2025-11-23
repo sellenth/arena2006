@@ -36,6 +36,11 @@ public partial class ScoreboardUI : CanvasLayer
 		}
 	}
 
+	public override void _Process(double delta)
+	{
+		Visible = Input.IsActionPressed("scoreboard");
+	}
+
 	private void OnScoreboardUpdated(Godot.Collections.Array scoreboard)
 	{
 		ApplyScoreboard(scoreboard);
