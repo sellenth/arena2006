@@ -46,6 +46,7 @@ public sealed class PlayerMovementSettings
 {
 	public float Gravity = 9.8f;
 	public float JumpVelocity = 3f;
+	public float JumpCooldown = 0.3f;
 
 	public float GroundAcceleration = 40f;
 	public float GroundSpeedLimit = 60f;
@@ -67,7 +68,7 @@ public sealed class PlayerMovementSettings
 	public float WallRunStickForce = 14f;
 	public float WallRunMaxDownwardSpeed = 18f;
 	public float WallJumpAwayImpulse = 4f;
-	public float WallJumpUpImpulse = 9f;
+	public float WallJumpUpImpulse = 4f;
 	public float WallJumpAlongBoost = 4f;
 
 	public static PlayerMovementSettings CreateDefaults()
@@ -355,9 +356,15 @@ public sealed class PlayerMovementController
 
 			if (context.Jump)
 			{
-				velocity = _wallNormal * _settings.WallJumpAwayImpulse
-					+ Vector3.Up * _settings.WallJumpUpImpulse
-					+ alongWall * _settings.WallJumpAlongBoost;
+				var jumpDir = -context.ReferenceBasis.Z;
+				jumpDir.Y = 0;
+				if (jumpDir.LengthSquared() > 0.01f)
+					jumpDir = jumpDir.Normalized();
+				else
+					jumpDir = _wallNormal;
+
+				velocity = jumpDir * (_settings.WallJumpAwayImpulse + _settings.WallJumpAlongBoost)
+					+ Vector3.Up * _settings.WallJumpUpImpulse;
 				_controller.MarkWallJump(_wallNormal, context);
 			}
 

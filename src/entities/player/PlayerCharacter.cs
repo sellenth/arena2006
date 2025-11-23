@@ -32,6 +32,9 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private bool _wallRunJumpLock = false;
 	private float _wallRunTime = 0f;
 	private float _wallRunCooldownTimer = 0f;
+	private Vector3 _currentWallNormal = Vector3.Zero;
+	private Vector3 _currentWallDirection = Vector3.Zero;
+	private float _jumpCooldownTimer = 0f;
 	private const float WallRunProbeUpperHeight = 1.2f;
 	private const float WallRunProbeLowerHeight = 0.6f;
 	private Color _playerColor = Colors.Red;
@@ -632,15 +635,27 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		if (_wallRunTime >= settings.WallRunMaxDuration)
 			return false;
 
+		var space = GetWorld3D()?.DirectSpaceState;
+		if (space == null)
+			return false;
+
 		if (_inputState.MoveInput.Length() < settings.WallRunMinInput)
 			return false;
 
 		var wishDir = PlayerMovementController.BuildWishDirection(basis, _inputState.MoveInput);
-		if (wishDir == Vector3.Zero)
-			return false;
 
-		var space = GetWorld3D()?.DirectSpaceState;
-		if (space == null)
+		if (_wasWallRunning && _currentWallNormal != Vector3.Zero && _currentWallDirection != Vector3.Zero)
+		{
+			var oppositeIntent = wishDir != Vector3.Zero && wishDir.Dot(_currentWallDirection) < -0.25f;
+			if (!oppositeIntent && ConfirmExistingWall(space, settings, _currentWallNormal, out var confirmedNormal))
+			{
+				wallNormal = confirmedNormal;
+				wallDirection = _currentWallDirection;
+				return true;
+			}
+		}
+
+		if (wishDir == Vector3.Zero)
 			return false;
 
 		if (!TryProbeWall(basis, space, settings, wishDir, out wallNormal))
@@ -684,6 +699,40 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		return false;
 	}
 
+	private bool ConfirmExistingWall(PhysicsDirectSpaceState3D space, PlayerMovementSettings settings, Vector3 wallNormal, out Vector3 confirmedNormal)
+	{
+		confirmedNormal = Vector3.Zero;
+
+		var normalDir = wallNormal.Normalized();
+		if (normalDir == Vector3.Zero)
+			return false;
+
+		var heights = new[] { WallRunProbeUpperHeight, WallRunProbeLowerHeight };
+		foreach (var height in heights)
+		{
+			var start = GlobalTransform.Origin + Vector3.Up * height;
+			var to = start - normalDir * settings.WallCheckDistance;
+			var query = PhysicsRayQueryParameters3D.Create(start, to);
+			query.CollideWithAreas = false;
+			query.Exclude = new Array<Rid> { GetRid() };
+			var result = space.IntersectRay(query);
+			if (result.Count == 0)
+				continue;
+
+			var normal = ((Vector3)result["normal"]).Normalized();
+			if (Mathf.Abs(normal.Y) > settings.WallRunMaxNormalY)
+				continue;
+
+			if (normal.Dot(normalDir) > 0.5f)
+			{
+				confirmedNormal = normal;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	private static Vector3 CalculateWallRunDirection(Vector3 wishDir, Vector3 wallNormal, Vector3 velocity)
 	{
 		var alongWall = wallNormal.Cross(Vector3.Up);
@@ -712,9 +761,18 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 		var basis = _head?.GlobalTransform.Basis ?? GlobalTransform.Basis;
 		UpdateWallRunTimers(delta);
+		if (_jumpCooldownTimer > 0f)
+		{
+			_jumpCooldownTimer = Mathf.Max(0f, _jumpCooldownTimer - delta);
+		}
 
 		var canWallRun = TryFindWallRun(basis, out var wallNormal, out var wallDirection);
-		var jumpInput = _inputState.Jump;
+		if (canWallRun)
+		{
+			_currentWallNormal = wallNormal;
+			_currentWallDirection = wallDirection;
+		}
+		var jumpInput = _inputState.Jump && _jumpCooldownTimer <= 0f;
 		if (canWallRun || _wasWallRunning)
 		{
 			if (!jumpInput)
@@ -758,7 +816,20 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			_wallRunCooldownTimer = Mathf.Max(_wallRunCooldownTimer, _movementController.Settings.WallRunCooldown);
 		}
 
+		if (_movementController.JumpedThisFrame)
+		{
+			var cooldown = _movementController.Settings?.JumpCooldown ?? 0f;
+			if (cooldown > 0f)
+				_jumpCooldownTimer = Mathf.Max(_jumpCooldownTimer, cooldown);
+		}
+
 		_wasWallRunning = isWallRunning;
+
+		if (!_wasWallRunning)
+		{
+			_currentWallNormal = Vector3.Zero;
+			_currentWallDirection = Vector3.Zero;
+		}
 
 		if (_networkController != null && _networkController.IsClient && _simulateLocally)
 		{
