@@ -3,8 +3,8 @@ using Godot;
 public sealed class PlayerLookController
 {
 	public float MouseSensitivity { get; set; } = 0.002f;
-	public float MinPitch { get; set; } = -1.2f;
-	public float MaxPitch { get; set; } = 1.2f;
+	public float MinPitch { get; set; } = -1.5f;
+	public float MaxPitch { get; set; } = 1.5f;
 
 	public float BaseFov { get; set; } = 75f;
 	public float FovSpeedScale { get; set; } = 0.8f;
