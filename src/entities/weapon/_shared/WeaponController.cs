@@ -28,6 +28,10 @@ public partial class WeaponController : Node
 		_gameMode = GetNodeOrNull<GameModeManager>("/root/GameModeManager");
 		_network = GetNodeOrNull<NetworkController>("/root/NetworkController");
 		_ownerPeerId = _network?.ClientPeerId ?? 0;
+		if (_ownerPeerId == 0 && _player != null && _player.OwnerPeerId != 0)
+		{
+			_ownerPeerId = _player.OwnerPeerId;
+		}
 		_poolRoot = new Node { Name = "ProjectilePools" };
 		AddChild(_poolRoot);
 		SetPhysicsProcess(true);

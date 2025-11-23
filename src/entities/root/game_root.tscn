@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3 uid="uid://pgudwlq5efn0"]
+[gd_scene load_steps=30 format=3 uid="uid://pgudwlq5efn0"]
 
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/materials/black_square.tres" id="2_n38sr"]
 [ext_resource type="Material" uid="uid://dwgngqcfvi3s4" path="res://src/materials/red_square.tres" id="3_k6g81"]
@@ -14,7 +14,9 @@
 [ext_resource type="PackedScene" uid="uid://okwsgl7vpymm" path="res://src/entities/radio/radio.blend" id="15_cxv46"]
 [ext_resource type="PackedScene" uid="uid://c68mijg2v2wkf" path="res://src/entities/jump_pad/jump_pad.tscn" id="15_l2d1b"]
 [ext_resource type="Script" uid="uid://ca88x4ouq2s6u" path="res://src/systems/network/RemoteEntityManager.cs" id="16_cxv46"]
+[ext_resource type="Script" uid="uid://6d42weerpm8u" path="res://src/systems/world/WorldBoundsManager.cs" id="16_fbd4t"]
 [ext_resource type="Script" uid="uid://5whgjxft7d3o" path="res://src/systems/vehicle/VehicleSpawnManager.cs" id="16_vspawn"]
+[ext_resource type="PackedScene" uid="uid://be48cty1sdkl8" path="res://src/entities/weapon/rocket_launcher/rocket_launcher_pickup.tscn" id="17_fbd4t"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_liv0r"]
 sky_top_color = Color(0.53064, 0.646875, 0.808594, 1)
@@ -242,7 +244,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -443.55066, 142.31943, 189.83
 transform = Transform3D(-30.54626, 0, 95.22041, 0, 100, 0, -95.22041, 0, -30.54626, -711.03204, 46.61862, 384.85995)
 
 [node name="radio" parent="." instance=ExtResource("15_cxv46")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 109.705, -0.43026352, -57.133644)
+transform = Transform3D(-0.3171723, 0, -0.94836795, 0, 1, 0, 0.94836795, 0, -0.3171723, 89.28279, -0.43026352, -36.56465)
+
+[node name="WorldBoundaries" type="Node3D" parent="."]
+script = ExtResource("16_fbd4t")
+
+[node name="Pickups" type="Node3D" parent="."]
+
+[node name="RocketLauncherPickup" parent="Pickups" instance=ExtResource("17_fbd4t")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85.84425, 0.43021297, -24.146832)
 
 [editable path="hut2"]
-[editable path="radio"]

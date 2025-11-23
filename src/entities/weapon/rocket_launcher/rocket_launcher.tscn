@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=4 uid="uid://c1is6kaw2brf1"]
+[gd_scene load_steps=10 format=4 uid="uid://c1is6kaw2brf1"]
 
 [ext_resource type="Texture2D" uid="uid://dblv0byaengdw" path="res://src/entities/weapon/rocket_launcher/rl_skin.png" id="1_yutam"]
 [ext_resource type="Texture2D" uid="uid://dat6heb3qgxvo" path="res://src/entities/weapon/rocket_launcher/rl_glow.png" id="2_rlo2o"]

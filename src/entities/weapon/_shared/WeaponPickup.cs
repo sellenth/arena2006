@@ -39,7 +39,7 @@ public partial class WeaponPickup : Area3D
 			inventory.EmitAmmo();
 		}
 
-		QueueFree();
+		GetParent<RigidBody3D>().QueueFree();
 		return true;
 	}
 }
