@@ -208,6 +208,13 @@ public sealed class PlayerMovementController
 		if (context.Crouch && _slideState.CanEnter(context))
 			return PlayerMovementStateKind.Sliding;
 
+		if (context.Crouch && (_currentState == _airState || _currentState == _wallState))
+		{
+			var planarSpeed = new Vector3(context.Velocity.X, 0f, context.Velocity.Z).Length();
+			if (planarSpeed >= _settings.SlideEnterSpeed)
+				return PlayerMovementStateKind.Sliding;
+		}
+
 		if (context.Crouch)
 			return PlayerMovementStateKind.Crouching;
 
