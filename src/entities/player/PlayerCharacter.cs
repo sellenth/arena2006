@@ -58,6 +58,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private ReplicatedFloat _viewPitchProperty;
 	private ReplicatedInt _modeProperty;
 	private ReplicatedInt _vehicleIdProperty;
+	private ReplicatedInt _movementStateProperty;
 	private ReplicatedInt _healthProperty;
 	private ReplicatedInt _armorProperty;
 	private ReplicatedInt _weaponIdProperty;
@@ -80,6 +81,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private float _currentCapsuleHeight = 1.8f;
 	private CapsuleShape3D _capsuleShape;
 	private float _standingHeadHeight = 1.75f;
+	private int _replicatedMovementState = (int)PlayerMovementStateKind.Grounded;
 
 	public PlayerCharacter()
 	{
@@ -104,9 +106,10 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 		if (_collisionShape?.Shape is CapsuleShape3D capsule)
 		{
-			_capsuleShape = capsule;
-			_currentCapsuleHeight = capsule.Height;
-			StandingHeight = capsule.Height;
+			_capsuleShape = (CapsuleShape3D)capsule;
+			_collisionShape.Shape = _capsuleShape;
+			_currentCapsuleHeight = _capsuleShape.Height;
+			StandingHeight = _capsuleShape.Height;
 		}
 
 		if (_head != null)
@@ -241,6 +244,13 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			"VehicleId",
 			() => _replicatedVehicleId,
 			value => _replicatedVehicleId = value,
+			ReplicationMode.OnChange
+		);
+
+		_movementStateProperty = new ReplicatedInt(
+			"MovementState",
+			() => (int)(_movementController?.State ?? PlayerMovementStateKind.Grounded),
+			value => _replicatedMovementState = value,
 			ReplicationMode.OnChange
 		);
 
@@ -423,11 +433,13 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			return;
 
 		var deltaFloat = (float)delta;
+		
 		if (_simulateLocally)
 		{
-			UpdateCapsuleHeight(deltaFloat);
 			SimulateMovement(deltaFloat);
 		}
+		UpdateCapsuleHeight(deltaFloat);
+		
 
 		ApplySnapshotCorrection(deltaFloat);
 
@@ -625,7 +637,9 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		if (_capsuleShape == null || _collisionShape == null)
 			return;
 
-		var state = _movementController?.State;
+		var state = _isAuthority 
+			? _movementController?.State ?? PlayerMovementStateKind.Grounded
+			: (PlayerMovementStateKind)_replicatedMovementState;
 		var isCrouched = state == PlayerMovementStateKind.Crouching || state == PlayerMovementStateKind.Sliding;
 		var targetHeight = isCrouched ? CrouchHeight : StandingHeight;
 
@@ -640,7 +654,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			collisionPos.Y = _currentCapsuleHeight * 0.5f;
 			_collisionShape.Position = collisionPos;
 
-			if (_head != null)
+			if (_head != null && _isAuthority)
 			{
 				var heightDifference = StandingHeight - _currentCapsuleHeight;
 				var headPos = _head.Position;
@@ -1048,6 +1062,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_viewPitchProperty.Write(buffer);
 		_modeProperty.Write(buffer);
 		_vehicleIdProperty.Write(buffer);
+		_movementStateProperty.Write(buffer);
 		_healthProperty.Write(buffer);
 		_armorProperty.Write(buffer);
 		_weaponIdProperty.Write(buffer);
@@ -1066,6 +1081,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_viewPitchProperty.Read(buffer);
 		_modeProperty.Read(buffer);
 		_vehicleIdProperty.Read(buffer);
+		_movementStateProperty.Read(buffer);
 		_healthProperty.Read(buffer);
 		_armorProperty.Read(buffer);
 		_weaponIdProperty.Read(buffer);
@@ -1097,6 +1113,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			 + _viewPitchProperty.GetSizeBytes()
 			 + _modeProperty.GetSizeBytes()
 			 + _vehicleIdProperty.GetSizeBytes()
+			 + _movementStateProperty.GetSizeBytes()
 			 + _healthProperty.GetSizeBytes()
 			 + _armorProperty.GetSizeBytes()
 			 + _weaponIdProperty.GetSizeBytes()
