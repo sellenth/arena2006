@@ -1,0 +1,28 @@
+[gd_resource type="Resource" load_steps=6 format=3]
+
+[ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="1"]
+[ext_resource type="PackedScene" path="res://src/entities/weapon/uzi/smg.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://src/entities/weapon/uzi/machine_gun_projectile.tscn" id="3"]
+[ext_resource type="Resource" path="res://src/entities/weapon/uzi/projectile_definition.tres" id="4"]
+
+[sub_resource type="CSharpScript" id="CSharpScript_default"]
+
+[resource]
+script = ExtResource("1")
+Id = 1
+DisplayName = "Uzi"
+WorldScene = ExtResource("2")
+ViewScene = ExtResource("2")
+ProjectileScene = ExtResource("3")
+ProjectileConfig = ExtResource("4")
+ProjectileSpawn = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 1.2)
+MagazineSize = 30
+MaxReserveAmmo = 150
+FireCooldownSec = 0.09
+ReloadDurationSec = 1.8
+Damage = 12.0
+IsAutomatic = true
+AllowHoldToFire = true
+ProjectilePoolPrewarm = 32
+EquipTimeSec = 0.2
+UnequipTimeSec = 0.2

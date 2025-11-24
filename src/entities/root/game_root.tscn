@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://pgudwlq5efn0"]
+[gd_scene load_steps=31 format=3 uid="uid://pgudwlq5efn0"]
 
 [ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/materials/black_square.tres" id="2_n38sr"]
 [ext_resource type="Material" uid="uid://dwgngqcfvi3s4" path="res://src/materials/red_square.tres" id="3_k6g81"]
@@ -17,6 +17,7 @@
 [ext_resource type="Script" uid="uid://6d42weerpm8u" path="res://src/systems/world/WorldBoundsManager.cs" id="16_fbd4t"]
 [ext_resource type="Script" uid="uid://5whgjxft7d3o" path="res://src/systems/vehicle/VehicleSpawnManager.cs" id="16_vspawn"]
 [ext_resource type="PackedScene" uid="uid://be48cty1sdkl8" path="res://src/entities/weapon/rocket_launcher/rocket_launcher_pickup.tscn" id="17_fbd4t"]
+[ext_resource type="PackedScene" path="res://src/entities/weapon/uzi/uzi_pickup.tscn" id="18_uzi"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_liv0r"]
 sky_top_color = Color(0.53064, 0.646875, 0.808594, 1)
@@ -256,5 +257,8 @@ script = ExtResource("16_fbd4t")
 
 [node name="RocketLauncherPickup" parent="Pickups" instance=ExtResource("17_fbd4t")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 89.14703, 0.43021297, 10.023632)
+
+[node name="UziPickup" parent="Pickups" instance=ExtResource("18_uzi")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 95.5, 15.606386, -37.5)
 
 [editable path="hut2"]
