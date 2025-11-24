@@ -99,6 +99,7 @@ public partial class MachineGunProjectile : Node3D, IPooledProjectile
                     }
 
                     GlobalPosition = hitPos;
+                    ApplyServerImpact(collider, hitPos, hitNorm);
                     OnServerImpact?.Invoke(BulletId, collider, hitPos, hitNorm, Damage);
                     ReleaseToPool();
                     return;
@@ -141,6 +142,29 @@ public partial class MachineGunProjectile : Node3D, IPooledProjectile
         else
         {
             QueueFree();
+        }
+    }
+
+    private void ApplyServerImpact(Node? collider, Vector3 hitPos, Vector3 hitNorm)
+    {
+        if (collider is PlayerCharacter player && Damage > 0f)
+        {
+            player.ApplyDamage(Mathf.RoundToInt(Damage), OwnerPeerId);
+            return;
+        }
+
+        if (collider is CharacterBody3D body)
+        {
+            var direction = _velocity;
+            if (direction.IsZeroApprox())
+            {
+                direction = hitNorm;
+            }
+
+            if (!direction.IsZeroApprox())
+            {
+                body.Velocity += direction.Normalized() * 2.5f;
+            }
         }
     }
 
