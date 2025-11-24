@@ -16,6 +16,8 @@ metallic_texture = ExtResource("3_lbkwx")
 roughness_texture = ExtResource("5_kgrdq")
 normal_enabled = true
 normal_texture = ExtResource("4_oqyff")
+use_z_clip_scale = true
+z_clip_scale = 0.1
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2fwrf"]
 albedo_texture = ExtResource("6_kgrdq")
@@ -23,6 +25,8 @@ metallic = 1.0
 metallic_texture = ExtResource("7_f243d")
 normal_enabled = true
 normal_texture = ExtResource("8_0e5mh")
+use_z_clip_scale = true
+z_clip_scale = 0.1
 
 [node name="smg_model" instance=ExtResource("1_rqxp4")]
 

@@ -53,7 +53,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private Transform3D _pendingReplicatedTransform = Transform3D.Identity;
 	private int _replicatedMode = (int)PlayerMode.Foot;
 	private int _replicatedVehicleId = 0;
-	
+
 	private ReplicatedTransform3D _transformProperty;
 	private ReplicatedVector3 _velocityProperty;
 	private ReplicatedFloat _viewYawProperty;
@@ -121,7 +121,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		}
 
 		InitializeControllerModules();
-		
+
 		InitializeReplication();
 
 		ClampVitals();
@@ -143,7 +143,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 		EnsureWeaponSystems();
 	}
-	
+
 	private void EnsureWeaponSystems()
 	{
 		_weaponInventory = GetNodeOrNull<WeaponInventory>("WeaponInventory");
@@ -203,7 +203,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		var node = scene.FindChild("AmmoUI", recursive: true, owned: false);
 		return node as AmmoUI;
 	}
-	
+
 	private void InitializeReplication()
 	{
 		_transformProperty = new ReplicatedTransform3D(
@@ -214,27 +214,27 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			positionThreshold: 0.01f,
 			rotationThreshold: Mathf.DegToRad(1.0f)
 		);
-		
+
 		_velocityProperty = new ReplicatedVector3(
 			"Velocity",
 			() => Velocity,
 			(value) => Velocity = value,
 			ReplicationMode.Always
 		);
-		
+
 		_viewYawProperty = new ReplicatedFloat(
 			"ViewYaw",
 			() => _lookController?.Yaw ?? 0f,
 			(value) => SetViewYaw(value),
 			ReplicationMode.Always
 		);
-		
-			_viewPitchProperty = new ReplicatedFloat(
-				"ViewPitch",
-				() => _lookController?.Pitch ?? 0f,
-				(value) => SetViewPitch(value),
-				ReplicationMode.Always
-			);
+
+		_viewPitchProperty = new ReplicatedFloat(
+			"ViewPitch",
+			() => _lookController?.Pitch ?? 0f,
+			(value) => SetViewPitch(value),
+			ReplicationMode.Always
+		);
 
 		_modeProperty = new ReplicatedInt(
 			"PlayerMode",
@@ -264,56 +264,56 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			ReplicationMode.OnChange
 		);
 
-			_armorProperty = new ReplicatedInt(
-				"Armor",
-				() => _armor,
-				value => SetArmor(value),
-				ReplicationMode.OnChange
-			);
+		_armorProperty = new ReplicatedInt(
+			"Armor",
+			() => _armor,
+			value => SetArmor(value),
+			ReplicationMode.OnChange
+		);
 
-			_weaponIdProperty = new ReplicatedInt(
-				"WeaponId",
-				() => (int)GetEquippedWeaponId(),
-				value => _repWeaponId = value,
-				ReplicationMode.OnChange
-			);
+		_weaponIdProperty = new ReplicatedInt(
+			"WeaponId",
+			() => (int)GetEquippedWeaponId(),
+			value => OnReplicatedWeaponId(value),
+			ReplicationMode.Always
+		);
 
-			_weaponMagProperty = new ReplicatedInt(
-				"WeaponMag",
-				() => GetEquippedMagazine(),
-				value => _repWeaponMag = value,
-				ReplicationMode.Always
-			);
+		_weaponMagProperty = new ReplicatedInt(
+			"WeaponMag",
+			() => GetEquippedMagazine(),
+			value => _repWeaponMag = value,
+			ReplicationMode.Always
+		);
 
-			_weaponReserveProperty = new ReplicatedInt(
-				"WeaponReserve",
-				() => GetEquippedReserve(),
-				value => _repWeaponReserve = value,
-				ReplicationMode.Always
-			);
+		_weaponReserveProperty = new ReplicatedInt(
+			"WeaponReserve",
+			() => GetEquippedReserve(),
+			value => _repWeaponReserve = value,
+			ReplicationMode.Always
+		);
 
-			_weaponFireSeqProperty = new ReplicatedInt(
-				"WeaponFireSeq",
-				() => GetEquippedFireSequence(),
-				value => OnReplicatedFireSequence(value),
-				ReplicationMode.Always
-			);
+		_weaponFireSeqProperty = new ReplicatedInt(
+			"WeaponFireSeq",
+			() => GetEquippedFireSequence(),
+			value => OnReplicatedFireSequence(value),
+			ReplicationMode.Always
+		);
 
-			_weaponReloadMsProperty = new ReplicatedInt(
-				"WeaponReloadMs",
-				() => GetEquippedReloadMs(),
-				value => _repWeaponReloadMs = value,
-				ReplicationMode.Always
-			);
+		_weaponReloadMsProperty = new ReplicatedInt(
+			"WeaponReloadMs",
+			() => GetEquippedReloadMs(),
+			value => _repWeaponReloadMs = value,
+			ReplicationMode.Always
+		);
 
-			_weaponReloadingProperty = new ReplicatedInt(
-				"WeaponReloading",
-				() => GetEquippedReloadingFlag(),
-				value => _repWeaponReloading = value,
-				ReplicationMode.Always
-			);
-		}
-	
+		_weaponReloadingProperty = new ReplicatedInt(
+			"WeaponReloading",
+			() => GetEquippedReloadingFlag(),
+			value => _repWeaponReloading = value,
+			ReplicationMode.Always
+		);
+	}
+
 	public void RegisterAsAuthority()
 	{
 		if (_isAuthority && EntityReplicationRegistry.Instance != null)
@@ -348,7 +348,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 		NetworkId = id;
 	}
-	
+
 	public void RegisterAsRemoteReplica()
 	{
 		if (NetworkId == 0)
@@ -356,7 +356,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			GD.PushWarning($"PlayerCharacter ({Name}): NetworkId is 0, cannot register remote replica.");
 			return;
 		}
-		
+
 		var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
 		if (remoteManager != null)
 		{
@@ -388,13 +388,13 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		}
 		base._ExitTree();
 	}
-	
+
 	private void ApplyTransformFromReplication(Transform3D value)
 	{
 		_hasPendingReplicatedTransform = true;
 		_pendingReplicatedTransform = value;
 	}
-	
+
 	private void SetViewYaw(float yaw)
 	{
 		if (_lookController != null && !_isAuthority)
@@ -402,7 +402,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			_lookController.SetYawPitch(yaw, _lookController.Pitch);
 		}
 	}
-	
+
 	private void SetViewPitch(float pitch)
 	{
 		if (_lookController != null && !_isAuthority)
@@ -436,13 +436,13 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			return;
 
 		var deltaFloat = (float)delta;
-		
+
 		if (_simulateLocally)
 		{
 			SimulateMovement(deltaFloat);
 		}
 		UpdateCapsuleHeight(deltaFloat);
-		
+
 
 		ApplySnapshotCorrection(deltaFloat);
 
@@ -494,7 +494,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		{
 			SetYawPitch(state.ViewYaw, state.ViewPitch);
 		}
-		
+
 		_weaponController?.SetInput(_inputState);
 	}
 
@@ -526,7 +526,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_simulateLocally = isAuthority;
 		SetPhysicsProcess(_worldActive);
 	}
-	
+
 	public bool HasAuthority()
 	{
 		return _isAuthority;
@@ -619,6 +619,26 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		return _weaponInventory?.Equipped?.IsReloading == true ? 1 : 0;
 	}
 
+	private void OnReplicatedWeaponId(int value)
+	{
+		_repWeaponId = value;
+		if (_isAuthority)
+		{
+			_weaponIdProperty.MarkClean();
+			return;
+		}
+
+		var type = (WeaponType)value;
+		if (_weaponInventory != null && _weaponInventory.Equip(type))
+		{
+			_weaponInventory.EmitAmmo();
+		}
+		else
+		{
+			GD.PushWarning($"PlayerCharacter ({Name}): Missing weapon {type} locally, cannot show remote view.");
+		}
+	}
+
 	private void OnReplicatedFireSequence(int value)
 	{
 		if (_isAuthority)
@@ -642,7 +662,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		if (_capsuleShape == null || _collisionShape == null)
 			return;
 
-		var state = _isAuthority 
+		var state = _isAuthority
 			? _movementController?.State ?? PlayerMovementStateKind.Grounded
 			: (PlayerMovementStateKind)_replicatedMovementState;
 		var isCrouched = state == PlayerMovementStateKind.Crouching || state == PlayerMovementStateKind.Sliding;
@@ -875,10 +895,10 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		var isWallRunning = _movementController.IsWallRunning;
 
 		if (!isWallRunning && GetSlideCollisionCount() > 0 && !IsOnFloor())
-			{
+		{
 			var collision = GetLastSlideCollision();
 			if (collision != null)
-				{
+			{
 				Velocity = Velocity.Slide(collision.GetNormal());
 			}
 		}
@@ -1067,7 +1087,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			return float.MaxValue;
 		return GlobalPosition.DistanceTo(other.GlobalPosition);
 	}
-	
+
 	public void WriteSnapshot(StreamPeerBuffer buffer)
 	{
 		_transformProperty.Write(buffer);
@@ -1086,7 +1106,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_weaponReloadMsProperty.Write(buffer);
 		_weaponReloadingProperty.Write(buffer);
 	}
-	
+
 	public void ReadSnapshot(StreamPeerBuffer buffer)
 	{
 		_transformProperty.Read(buffer);
@@ -1118,12 +1138,12 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			_hasPendingReplicatedTransform = false;
 		}
 	}
-	
+
 	public int GetSnapshotSizeBytes()
 	{
-		return _transformProperty.GetSizeBytes() 
-			 + _velocityProperty.GetSizeBytes() 
-			 + _viewYawProperty.GetSizeBytes() 
+		return _transformProperty.GetSizeBytes()
+			 + _velocityProperty.GetSizeBytes()
+			 + _viewYawProperty.GetSizeBytes()
 			 + _viewPitchProperty.GetSizeBytes()
 			 + _modeProperty.GetSizeBytes()
 			 + _vehicleIdProperty.GetSizeBytes()
