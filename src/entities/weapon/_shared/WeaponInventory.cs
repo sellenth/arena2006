@@ -10,6 +10,7 @@ public partial class WeaponInventory : Node
 
 	private readonly Dictionary<WeaponType, WeaponInstance> _weapons = new();
 	private WeaponInstance _equipped;
+	private WeaponType _lastEquippedType = WeaponType.None;
 
 	public WeaponInstance Equipped => _equipped;
 	public WeaponType EquippedType => _equipped?.Definition?.Id ?? WeaponType.None;
@@ -41,6 +42,7 @@ public partial class WeaponInventory : Node
 		if (def == null)
 			return null;
 
+		var previousType = _equipped?.Definition?.Id ?? WeaponType.None;
 		var instance = new WeaponInstance(
 			def,
 			magazineOverride ?? def.MagazineSize,
@@ -49,6 +51,7 @@ public partial class WeaponInventory : Node
 
 		if (equip || _equipped == null)
 		{
+			_lastEquippedType = previousType;
 			_equipped = instance;
 			EmitSignal(SignalName.EquippedChanged, (int)def.Id);
 			EmitAmmo();
@@ -64,6 +67,8 @@ public partial class WeaponInventory : Node
 		if (_equipped == instance)
 			return true;
 
+		var previousType = _equipped?.Definition?.Id ?? WeaponType.None;
+		_lastEquippedType = previousType;
 		_equipped = instance;
 		EmitSignal(SignalName.EquippedChanged, (int)type);
 		EmitAmmo();
@@ -77,6 +82,13 @@ public partial class WeaponInventory : Node
 
 		instance.AddAmmo(amount);
 		EmitAmmo();
+	}
+
+	public bool TogglePrevious()
+	{
+		if (_lastEquippedType == WeaponType.None)
+			return false;
+		return Equip(_lastEquippedType);
 	}
 
 	public void EmitAmmo()

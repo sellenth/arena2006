@@ -101,6 +101,11 @@ public partial class WeaponController : Node
 		if (_inventory == null || !_inventory.TryGetEquipped(out var instance) || instance?.Definition == null)
 			return;
 
+		if (_lastInput.WeaponToggle)
+		{
+			TryToggleWeapon();
+		}
+
 		if (_lastInput.Reload)
 		{
 			TryStartReload(instance);
@@ -356,6 +361,23 @@ public partial class WeaponController : Node
 	}
 
 	public int GetFireSequence() => _fireSequence;
+
+	private void TryToggleWeapon()
+	{
+		if (_inventory == null)
+			return;
+
+		if (_inventory.TryGetEquipped(out var current) && current != null)
+		{
+			current.CancelReload();
+		}
+
+		_reloadTimer = 0f;
+		_cooldownTimer = 0f;
+		_state = WeaponState.Idle;
+
+		_inventory.TogglePrevious();
+	}
 
 	public void PlayRemoteFireFx(WeaponType type)
 	{

@@ -477,6 +477,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			PrimaryFire = InputMap.HasAction("fire") && Input.IsActionPressed("fire"),
 			PrimaryFireJustPressed = InputMap.HasAction("fire") && Input.IsActionJustPressed("fire"),
 			Reload = (InputMap.HasAction("reload") && Input.IsActionJustPressed("reload")) || Input.IsKeyPressed(Key.R),
+			WeaponToggle = InputMap.HasAction("weapon_toggle") && Input.IsActionJustPressed("weapon_toggle"),
 			ViewYaw = _lookController?.Yaw ?? 0f,
 			ViewPitch = _lookController?.Pitch ?? 0f
 		};
