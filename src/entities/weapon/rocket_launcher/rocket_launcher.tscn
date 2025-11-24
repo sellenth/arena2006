@@ -10,6 +10,8 @@ emission_enabled = true
 emission_texture = ExtResource("2_rlo2o")
 normal_enabled = true
 normal_texture = ExtResource("3_bqdnc")
+use_z_clip_scale = true
+z_clip_scale = 0.1
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m0v2e"]
 resource_name = "default.001"

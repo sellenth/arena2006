@@ -1,11 +1,14 @@
-[gd_scene load_steps=8 format=3 uid="uid://bp5wletrm4dw2"]
+[gd_scene load_steps=11 format=3 uid="uid://bp5wletrm4dw2"]
 
 [ext_resource type="Script" uid="uid://dpian2gawtw4a" path="res://src/entities/player/PlayerCharacter.cs" id="1_qj4xw"]
 [ext_resource type="PackedScene" uid="uid://glg8yewwof8w" path="res://src/entities/player/player_body.tscn" id="2_23jjq"]
 [ext_resource type="Script" uid="uid://dfsnhvsmrh8yr" path="res://src/systems/ui/CrosshairUI.cs" id="2_b8iv8"]
+[ext_resource type="PackedScene" uid="uid://c1is6kaw2brf1" path="res://src/entities/weapon/rocket_launcher/rocket_launcher.tscn" id="3_1eh8o"]
 [ext_resource type="Script" uid="uid://cdpug6k574ola" path="res://src/entities/weapon/_shared/WeaponInventory.cs" id="3_qfbsq"]
+[ext_resource type="PackedScene" uid="uid://4ma0m5prboee" path="res://src/entities/weapon/uzi/smg.tscn" id="4_wmai1"]
 [ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="5_4dfh7"]
 [ext_resource type="Resource" uid="uid://b778nq68itor2" path="res://src/entities/weapon/rocket_launcher/weapon_definition.tres" id="6_1eh8o"]
+[ext_resource type="Script" uid="uid://c073mhvc68m23" path="res://src/entities/player/WeaponView.cs" id="7_o2wml"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_s6pao"]
 resource_local_to_scene = true
@@ -30,6 +33,15 @@ transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 1.7
 
 [node name="Cam" type="Camera3D" parent="Head"]
 fov = 100.0
+
+[node name="WeaponView" type="Node3D" parent="Head/Cam"]
+script = ExtResource("7_o2wml")
+
+[node name="RocketLauncher" parent="Head/Cam/WeaponView" instance=ExtResource("3_1eh8o")]
+transform = Transform3D(0.5591929, -0.82903755, 1.7484558e-07, 0.82903755, 0.5591929, 0, -9.77724e-08, 1.4495355e-07, 1, 0.21999997, -0.031999946, -0.34900004)
+
+[node name="MachineGun" parent="Head/Cam/WeaponView" instance=ExtResource("4_wmai1")]
+transform = Transform3D(0.48480958, -0.8746197, 0, 0.8744865, 0.48473576, -0.017452406, 0.015264219, 0.0084610935, 0.9998477, 0.19, -0.21000004, -0.64)
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 3

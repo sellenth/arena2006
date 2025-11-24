@@ -59,7 +59,8 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 	private Transform3D _pendingReplicatedTransform = Transform3D.Identity;
 	private int _health = 100;
 	private int _armor = 100;
-	
+	private float _targetSteerNorm = 0.0f;
+
 	private ReplicatedTransform3D _transformProperty;
 	private ReplicatedVector3 _linearVelocityProperty;
 	private ReplicatedVector3 _angularVelocityProperty;
@@ -72,7 +73,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		TotalWheels = Wheels.Count;
 
 		_camera = GetNodeOrNull<Camera3D>(CameraPath);
-		
+
 		InitializeReplication();
 
 		var network = GetTree().Root.GetNodeOrNull<NetworkController>("/root/NetworkController");
@@ -107,7 +108,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		ClampVitals();
 		ApplySimulationMode();
 	}
-	
+
 	private void InitializeReplication()
 	{
 		_transformProperty = new ReplicatedTransform3D(
@@ -118,20 +119,20 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			positionThreshold: SnapPosEps,
 			rotationThreshold: SnapAngEps
 		);
-		
+
 		_linearVelocityProperty = new ReplicatedVector3(
 			"LinearVelocity",
 			() => LinearVelocity,
 			(value) => LinearVelocity = value,
 			ReplicationMode.Always
 		);
-		
-			_angularVelocityProperty = new ReplicatedVector3(
-				"AngularVelocity",
-				() => AngularVelocity,
-			(value) => AngularVelocity = value,
-			ReplicationMode.Always
-		);
+
+		_angularVelocityProperty = new ReplicatedVector3(
+			"AngularVelocity",
+			() => AngularVelocity,
+		(value) => AngularVelocity = value,
+		ReplicationMode.Always
+	);
 
 		_healthProperty = new ReplicatedInt(
 			"Health",
@@ -154,7 +155,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			ReplicationMode.OnChange
 		);
 	}
-	
+
 	public void SetNetworkId(int id)
 	{
 		if (NetworkId == id)
@@ -174,7 +175,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 
 		NetworkId = id;
 	}
-	
+
 	public void RegisterAsAuthority(int? desiredId = null)
 	{
 		if (EntityReplicationRegistry.Instance == null)
@@ -182,25 +183,25 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			GD.PushError($"RaycastCar ({Name}): EntityReplicationRegistry.Instance is NULL! Cannot register.");
 			return;
 		}
-		
+
 		if (desiredId.HasValue && desiredId.Value != 0)
 			SetNetworkId(desiredId.Value);
-		
+
 		var assignedId = EntityReplicationRegistry.Instance.RegisterEntity(this, this);
 		if (assignedId == 0)
 		{
 			GD.PushWarning($"RaycastCar ({Name}): Registered but got NetworkId 0");
 		}
-		
+
 		NetworkId = assignedId;
 		GD.Print($"RaycastCar ({Name}): Registered as authority with NetworkId {NetworkId}");
 	}
-	
+
 	public void SetOccupantPeerId(int peerId)
 	{
 		_occupantPeerId = peerId;
 	}
-	
+
 	private void ApplyOccupantPeer(int peerId)
 	{
 		if (_occupantPeerId == peerId)
@@ -232,7 +233,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			return NetworkId - offset;
 		return NetworkId;
 	}
-	
+
 	public void RegisterAsRemoteReplica()
 	{
 		if (NetworkId == 0)
@@ -240,7 +241,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			GD.PushWarning($"RaycastCar ({Name}): NetworkId is 0, cannot register as remote.");
 			return;
 		}
-		
+
 		var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
 		if (remoteManager != null)
 		{
@@ -256,7 +257,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			GD.PushWarning("RaycastCar: RemoteEntityManager not found in scene!");
 		}
 	}
-	
+
 	private void ApplyTransformFromReplication(Transform3D value)
 	{
 		if (_simulateLocally)
@@ -265,7 +266,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			_hasPendingReplicatedTransform = true;
 			return;
 		}
-		
+
 		GlobalTransform = value;
 	}
 
@@ -401,20 +402,12 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 	{
 		if (!wheel.IsSteer) return;
 
-		var turnInput = _smoothedSteerInput * TireTurnSpeed;
-		if (turnInput != 0)
-		{
-			wheel.Rotation = new Vector3(wheel.Rotation.X, 
-				Mathf.Clamp(wheel.Rotation.Y + turnInput * delta,
-					Mathf.DegToRad(-TireMaxTurnDegrees), Mathf.DegToRad(TireMaxTurnDegrees)),
-				wheel.Rotation.Z);
-		}
-		else
-		{
-			wheel.Rotation = new Vector3(wheel.Rotation.X,
-				Mathf.MoveToward(wheel.Rotation.Y, 0, TireTurnSpeed * delta),
-				wheel.Rotation.Z);
-		}
+		var targetAngle = Mathf.DegToRad(TireMaxTurnDegrees) * _targetSteerNorm;
+		var steerLerp = Mathf.Clamp(TireTurnSpeed * delta, 0f, 1f);
+		wheel.Rotation = new Vector3(
+			wheel.Rotation.X,
+			Mathf.LerpAngle(wheel.Rotation.Y, targetAngle, steerLerp),
+			wheel.Rotation.Z);
 	}
 
 	public override void _PhysicsProcess(double delta)
@@ -428,21 +421,22 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		float speed = LinearVelocity.Length();
 		float speed01 = Mathf.Clamp(speed / MaxSpeed, 0f, 1f);
 
-		float maxSteerNorm = Mathf.Lerp(1f, 0.25f, speed01 * 0.85f);
-
 		float accel = SteerAccelerationRate * df;
 		float decel = SteerDecelerationRate * df;
 
 		bool reversing = Mathf.Sign(raw) != Mathf.Sign(_smoothedSteerInput) && Mathf.Abs(_smoothedSteerInput) > 0.1f;
 		float rate = reversing ? decel * 1.6f : accel;
 
-		_smoothedSteerInput = Mathf.MoveToward(_smoothedSteerInput, raw * maxSteerNorm, rate);
+		_smoothedSteerInput = Mathf.MoveToward(_smoothedSteerInput, raw, rate);
 
 		if (Mathf.Abs(raw) < 0.01f)
 		{
 			_smoothedSteerInput = Mathf.MoveToward(_smoothedSteerInput, 0f, decel);
 		}
-		
+
+		var steerLimitNorm = Mathf.Lerp(1f, 0.25f, speed01 * speed01);
+		_targetSteerNorm = Mathf.Clamp(_smoothedSteerInput * steerLimitNorm, -1f, 1f);
+
 		// if (ShowDebug) 
 		// 	DebugDraw.DrawArrowRay(GlobalPosition, LinearVelocity, 2.5f, 0.5f, Colors.Green);
 
@@ -580,7 +574,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			SetCameraActive(false);
 		}
 	}
-	
+
 	public void WriteSnapshot(StreamPeerBuffer buffer)
 	{
 		_transformProperty.Write(buffer);
@@ -590,7 +584,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 		_armorProperty.Write(buffer);
 		_occupantProperty.Write(buffer);
 	}
-	
+
 	public void ReadSnapshot(StreamPeerBuffer buffer)
 	{
 		_transformProperty.Read(buffer);
@@ -612,17 +606,17 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			_hasPendingReplicatedTransform = false;
 		}
 	}
-	
+
 	public int GetSnapshotSizeBytes()
 	{
-		return _transformProperty.GetSizeBytes() 
-			 + _linearVelocityProperty.GetSizeBytes() 
+		return _transformProperty.GetSizeBytes()
+			 + _linearVelocityProperty.GetSizeBytes()
 			 + _angularVelocityProperty.GetSizeBytes()
 			 + _healthProperty.GetSizeBytes()
 			 + _armorProperty.GetSizeBytes()
 			 + _occupantProperty.GetSizeBytes();
 	}
-	
+
 	public override void _ExitTree()
 	{
 		if (_registeredWithRemoteManager)
@@ -631,7 +625,7 @@ public partial class RaycastCar : RigidBody3D, IReplicatedEntity
 			remoteManager?.UnregisterRemoteEntity(NetworkId);
 			_registeredWithRemoteManager = false;
 		}
-		
+
 		base._ExitTree();
 	}
 }

@@ -1,11 +1,11 @@
-[gd_resource type="Resource" load_steps=6 format=3]
+[gd_resource type="Resource" load_steps=6 format=3 uid="uid://d15ym5203pcrq"]
 
 [ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="1"]
-[ext_resource type="PackedScene" path="res://src/entities/weapon/uzi/smg.tscn" id="2"]
-[ext_resource type="PackedScene" path="res://src/entities/weapon/uzi/machine_gun_projectile.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://4ma0m5prboee" path="res://src/entities/weapon/uzi/smg.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://doolnkvsismm5" path="res://src/entities/weapon/uzi/machine_gun_projectile.tscn" id="3"]
 [ext_resource type="Resource" path="res://src/entities/weapon/uzi/projectile_definition.tres" id="4"]
 
-[sub_resource type="CSharpScript" id="CSharpScript_default"]
+[sub_resource type="CSharpScript" id="CSharpScript_k8rot"]
 
 [resource]
 script = ExtResource("1")
@@ -22,7 +22,6 @@ FireCooldownSec = 0.09
 ReloadDurationSec = 1.8
 Damage = 12.0
 IsAutomatic = true
-AllowHoldToFire = true
-ProjectilePoolPrewarm = 32
 EquipTimeSec = 0.2
 UnequipTimeSec = 0.2
+ProjectilePoolPrewarm = 32
