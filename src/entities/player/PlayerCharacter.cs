@@ -469,7 +469,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		var state = new PlayerInputState
 		{
 			MoveInput = Input.GetVector("move_right", "move_left", "move_backward", "move_forward"),
-			Jump = Input.IsActionPressed("jump"),
+			Jump = Input.IsActionJustPressed("jump"),
 			Interact = Input.IsActionJustPressed("interact"),
 			Crouch = InputMap.HasAction("crouch") && Input.IsActionPressed("crouch"),
 			CrouchPressed = InputMap.HasAction("crouch") && Input.IsActionJustPressed("crouch"),
