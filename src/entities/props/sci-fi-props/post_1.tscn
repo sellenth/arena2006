@@ -1,9 +1,9 @@
 [gd_scene load_steps=11 format=4 uid="uid://bby5e6ac7fpj6"]
 
 [ext_resource type="Texture2D" uid="uid://d11rqachpkukc" path="res://src/entities/props/sci-fi-props/Maps/post_d.tga" id="1_smwwo"]
-[ext_resource type="Texture2D" uid="uid://da1or48e46mjh" path="res://src/entities/props/sci-fi-props/maps/broadcaster_d.tga" id="2_dg67n"]
-[ext_resource type="Texture2D" uid="uid://daw2yyh62xl3p" path="res://src/entities/props/sci-fi-props/maps/broadcaster_ill.tga" id="3_cfjvl"]
-[ext_resource type="Texture2D" uid="uid://c31swxplgp58x" path="res://src/entities/props/sci-fi-props/maps/broadcaster_n.tga" id="4_tl1i6"]
+[ext_resource type="Texture2D" uid="uid://da1or48e46mjh" path="res://src/entities/props/sci-fi-props/Maps/broadcaster_d.tga" id="2_dg67n"]
+[ext_resource type="Texture2D" uid="uid://daw2yyh62xl3p" path="res://src/entities/props/sci-fi-props/Maps/broadcaster_ill.tga" id="3_cfjvl"]
+[ext_resource type="Texture2D" uid="uid://c31swxplgp58x" path="res://src/entities/props/sci-fi-props/Maps/broadcaster_n.tga" id="4_tl1i6"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ub42m"]
 resource_name = "M_post"
@@ -110,10 +110,10 @@ data = PackedVector3Array(-1.2275, -0.35439998, 0.7101, -1.1477, -0.35439998, 0.
 [node name="post1" type="StaticBody3D"]
 
 [node name="post" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, 0)
+transform = Transform3D(2.5, 0, 0, 0, -1.09278474e-07, 2.5, 0, -2.5, -1.09278474e-07, 0, 0, 0)
 mesh = SubResource("ArrayMesh_ggib6")
 skeleton = NodePath("")
 
 [node name="CollisionShape3D2" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, 0)
+transform = Transform3D(2.5, 0, 0, 0, -1.09278474e-07, 2.5, 0, -2.5, -1.09278474e-07, 0, 0, 0)
 shape = SubResource("ConcavePolygonShape3D_gcwk2")

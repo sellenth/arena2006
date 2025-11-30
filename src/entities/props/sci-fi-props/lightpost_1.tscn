@@ -1,7 +1,7 @@
 [gd_scene load_steps=9 format=4 uid="uid://56kq2kywn6hx"]
 
-[ext_resource type="Texture2D" uid="uid://dlwn1pqia2lhc" path="res://src/entities/props/sci-fi-props/maps/pole_d.tga" id="1_uud68"]
-[ext_resource type="Texture2D" uid="uid://cccti1l64nfgw" path="res://src/entities/props/sci-fi-props/maps/pole_n.tga" id="2_guf6r"]
+[ext_resource type="Texture2D" uid="uid://dlwn1pqia2lhc" path="res://src/entities/props/sci-fi-props/Maps/pole_d.tga" id="1_uud68"]
+[ext_resource type="Texture2D" uid="uid://cccti1l64nfgw" path="res://src/entities/props/sci-fi-props/Maps/pole_n.tga" id="2_guf6r"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wiuom"]
 resource_name = "M_pole"
@@ -86,15 +86,15 @@ shadow_mesh = SubResource("ArrayMesh_rx4ng")
 [node name="lightpost1" type="StaticBody3D"]
 
 [node name="stairs_B_alt" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, -7.52844, 1.1920929e-07, 17.737349)
+transform = Transform3D(1.3, 0, 0, 0, -5.6824803e-08, 1.3, 0, -1.3, -5.6824803e-08, 0, 0, 0)
 mesh = SubResource("ArrayMesh_mp4yo")
 skeleton = NodePath("")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, -7.52844, 1.1920929e-07, 17.737349)
+transform = Transform3D(1.3, 0, 0, 0, -5.6824803e-08, 1.3, 0, -1.3, -5.6824803e-08, 0, 0, 0)
 shape = SubResource("ConcavePolygonShape3D_l0ht7")
 
 [node name="stairs_C" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, -20.867527, 2, 14.555891)
+transform = Transform3D(1.3, 0, 0, 0, -5.6824803e-08, 1.3, 0, -1.3, -5.6824803e-08, 0, 0, 0)
 mesh = SubResource("ArrayMesh_endo7")
 skeleton = NodePath("")

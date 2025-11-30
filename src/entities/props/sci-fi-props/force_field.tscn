@@ -1,10 +1,10 @@
 [gd_scene load_steps=11 format=4 uid="uid://by6neltfkg5e2"]
 
-[ext_resource type="Texture2D" uid="uid://3bye3uxck3ht" path="res://src/entities/props/sci-fi-props/maps/barrier_d.tga" id="1_8i0mp"]
-[ext_resource type="Texture2D" uid="uid://cosvb2l1wj51q" path="res://src/entities/props/sci-fi-props/maps/barrier_ill.tga" id="2_sqrgc"]
-[ext_resource type="Texture2D" uid="uid://bs8do05uonsis" path="res://src/entities/props/sci-fi-props/maps/barrierFrame_d.tga" id="3_unp3l"]
-[ext_resource type="Texture2D" uid="uid://bx5sqf1n3v0bd" path="res://src/entities/props/sci-fi-props/maps/barrierFrame_ill.tga" id="4_4qk1a"]
-[ext_resource type="Texture2D" uid="uid://d2y2ann8clmke" path="res://src/entities/props/sci-fi-props/maps/barrierFrame_n.tga" id="5_ayjtf"]
+[ext_resource type="Texture2D" uid="uid://3bye3uxck3ht" path="res://src/entities/props/sci-fi-props/Maps/barrier_d.tga" id="1_8i0mp"]
+[ext_resource type="Texture2D" uid="uid://cosvb2l1wj51q" path="res://src/entities/props/sci-fi-props/Maps/barrier_ill.tga" id="2_sqrgc"]
+[ext_resource type="Texture2D" uid="uid://bs8do05uonsis" path="res://src/entities/props/sci-fi-props/Maps/barrierFrame_d.tga" id="3_unp3l"]
+[ext_resource type="Texture2D" uid="uid://bx5sqf1n3v0bd" path="res://src/entities/props/sci-fi-props/Maps/barrierFrame_ill.tga" id="4_4qk1a"]
+[ext_resource type="Texture2D" uid="uid://d2y2ann8clmke" path="res://src/entities/props/sci-fi-props/Maps/barrierFrame_n.tga" id="5_ayjtf"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ps6i0"]
 resource_name = "M_barrier"
@@ -84,10 +84,10 @@ points = PackedVector3Array(-10.000003, -0.16210347, -6.341931e-08, -9.970637, -
 [node name="force_field" type="StaticBody3D"]
 
 [node name="barrier_B" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0)
+transform = Transform3D(2, 0, 0, 0, -8.742278e-08, 2, 0, -2, -8.742278e-08, 0, 0, 0)
 mesh = SubResource("ArrayMesh_w4f86")
 skeleton = NodePath("")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0)
+transform = Transform3D(2, 0, 0, 0, -8.742278e-08, 2, 0, -2, -8.742278e-08, 0, 0, 0)
 shape = SubResource("ConvexPolygonShape3D_t2ssv")

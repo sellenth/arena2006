@@ -1,8 +1,8 @@
 [gd_scene load_steps=9 format=4 uid="uid://bo26beh252p77"]
 
-[ext_resource type="Texture2D" uid="uid://da1or48e46mjh" path="res://src/entities/props/sci-fi-props/maps/broadcaster_d.tga" id="1_y6bh4"]
-[ext_resource type="Texture2D" uid="uid://daw2yyh62xl3p" path="res://src/entities/props/sci-fi-props/maps/broadcaster_ill.tga" id="2_kbeiw"]
-[ext_resource type="Texture2D" uid="uid://c31swxplgp58x" path="res://src/entities/props/sci-fi-props/maps/broadcaster_n.tga" id="3_2o6hm"]
+[ext_resource type="Texture2D" uid="uid://da1or48e46mjh" path="res://src/entities/props/sci-fi-props/Maps/broadcaster_d.tga" id="1_y6bh4"]
+[ext_resource type="Texture2D" uid="uid://daw2yyh62xl3p" path="res://src/entities/props/sci-fi-props/Maps/broadcaster_ill.tga" id="2_kbeiw"]
+[ext_resource type="Texture2D" uid="uid://c31swxplgp58x" path="res://src/entities/props/sci-fi-props/Maps/broadcaster_n.tga" id="3_2o6hm"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gj13s"]
 resource_name = "M_broadcaster"
@@ -81,10 +81,10 @@ data = PackedVector3Array(0.27019998, 5.5575, 4.8388, 0.148, 5.5575, 4.8388, 0.1
 [node name="broadcaster2" type="StaticBody3D"]
 
 [node name="broadcaster" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, 0)
+transform = Transform3D(4, 0, 0, 0, -1.7484555e-07, 4, 0, -4, -1.7484555e-07, 0, 0, 0)
 mesh = SubResource("ArrayMesh_tgvc0")
 skeleton = NodePath("")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, 0)
+transform = Transform3D(4, 0, 0, 0, -1.7484555e-07, 4, 0, -4, -1.7484555e-07, 0, 0, 0)
 shape = SubResource("ConcavePolygonShape3D_0ugte")

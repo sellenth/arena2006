@@ -1,11 +1,11 @@
 [gd_scene load_steps=12 format=4 uid="uid://dsy5wnpnr7g2f"]
 
-[ext_resource type="Texture2D" uid="uid://b7cvigat5ioqo" path="res://src/entities/props/sci-fi-props/maps/transmitter_d.tga" id="1_gbrw8"]
-[ext_resource type="Texture2D" uid="uid://cl5j1lt6biccd" path="res://src/entities/props/sci-fi-props/maps/transmitter_ill.tga" id="2_63anc"]
-[ext_resource type="Texture2D" uid="uid://dps1ig7cq7eql" path="res://src/entities/props/sci-fi-props/maps/transmitter_n.tga" id="3_gnhap"]
-[ext_resource type="Texture2D" uid="uid://da1or48e46mjh" path="res://src/entities/props/sci-fi-props/maps/broadcaster_d.tga" id="4_axvph"]
-[ext_resource type="Texture2D" uid="uid://daw2yyh62xl3p" path="res://src/entities/props/sci-fi-props/maps/broadcaster_ill.tga" id="5_dpl81"]
-[ext_resource type="Texture2D" uid="uid://c31swxplgp58x" path="res://src/entities/props/sci-fi-props/maps/broadcaster_n.tga" id="6_0gc7f"]
+[ext_resource type="Texture2D" uid="uid://b7cvigat5ioqo" path="res://src/entities/props/sci-fi-props/Maps/transmitter_d.tga" id="1_gbrw8"]
+[ext_resource type="Texture2D" uid="uid://cl5j1lt6biccd" path="res://src/entities/props/sci-fi-props/Maps/transmitter_ill.tga" id="2_63anc"]
+[ext_resource type="Texture2D" uid="uid://dps1ig7cq7eql" path="res://src/entities/props/sci-fi-props/Maps/transmitter_n.tga" id="3_gnhap"]
+[ext_resource type="Texture2D" uid="uid://da1or48e46mjh" path="res://src/entities/props/sci-fi-props/Maps/broadcaster_d.tga" id="4_axvph"]
+[ext_resource type="Texture2D" uid="uid://daw2yyh62xl3p" path="res://src/entities/props/sci-fi-props/Maps/broadcaster_ill.tga" id="5_dpl81"]
+[ext_resource type="Texture2D" uid="uid://c31swxplgp58x" path="res://src/entities/props/sci-fi-props/Maps/broadcaster_n.tga" id="6_0gc7f"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qlfml"]
 resource_name = "M_transmitter"
@@ -89,10 +89,10 @@ data = PackedVector3Array(0.1677, -0.37629998, 6.6886, 0.2149, -0.3284, 6.6442, 
 [node name="post2" type="StaticBody3D"]
 
 [node name="transmitter_B" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, -4.691274, 1.1920929e-07, -10.3977585)
+transform = Transform3D(2, 0, 0, 0, -8.742278e-08, 2, 0, -2, -8.742278e-08, 0, 0, 0)
 mesh = SubResource("ArrayMesh_8aj58")
 skeleton = NodePath("")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, -4.691274, 1.1920929e-07, -10.3977585)
+transform = Transform3D(2, 0, 0, 0, -8.742278e-08, 2, 0, -2, -8.742278e-08, 0, 0, 0)
 shape = SubResource("ConcavePolygonShape3D_ois3h")

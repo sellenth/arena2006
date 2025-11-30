@@ -1,7 +1,7 @@
 [gd_scene load_steps=7 format=4 uid="uid://cg32no4psrkj"]
 
-[ext_resource type="Texture2D" uid="uid://bjlo4x7yqdubh" path="res://src/entities/props/sci-fi-props/maps/roadblock_d.tga" id="1_o3ogo"]
-[ext_resource type="Texture2D" uid="uid://bnft5efrik23p" path="res://src/entities/props/sci-fi-props/maps/roadblock_n.tga" id="2_httna"]
+[ext_resource type="Texture2D" uid="uid://bjlo4x7yqdubh" path="res://src/entities/props/sci-fi-props/Maps/roadblock_d.tga" id="1_o3ogo"]
+[ext_resource type="Texture2D" uid="uid://bnft5efrik23p" path="res://src/entities/props/sci-fi-props/Maps/roadblock_n.tga" id="2_httna"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j1ki5"]
 resource_name = "M_roadblock"
