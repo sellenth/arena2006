@@ -3,5 +3,6 @@
 /android/
 build/
 tests/logs/*
+node_modules
 
 *.import

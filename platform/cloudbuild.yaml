@@ -1,6 +1,22 @@
 steps:
 
   # ==================================================================================================
+  #  1. Fetch Git LFS assets (pointers are in the source archive)
+  # ==================================================================================================
+  - name: 'gcr.io/cloud-builders/git'
+    id: 'git-lfs-fetch'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        apt-get update -qq
+        apt-get install -y -qq git-lfs
+        git lfs install --skip-repo
+        git lfs fetch --all
+        git lfs checkout
+    dir: '/workspace'
+
+  # ==================================================================================================
   #  2. Build the C# project
   # ==================================================================================================
   - name: 'witchpixels/godot4-omnibuilder3d:latest-4.5.1-mono'
