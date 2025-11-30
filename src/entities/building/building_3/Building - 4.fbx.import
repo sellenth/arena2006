@@ -3,13 +3,12 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://4kbqk7y3tl7a"
-path="res://.godot/imported/Building - 4.fbx-d5da1929c5b0615804375393779aa97a.scn"
+uid="uid://sp8866qbppwl"
+valid=false
 
 [deps]
 
 source_file="res://src/entities/building/building_3/Building - 4.fbx"
-dest_files=["res://.godot/imported/Building - 4.fbx-d5da1929c5b0615804375393779aa97a.scn"]
 
 [params]
 
@@ -17,7 +16,7 @@ nodes/root_type=""
 nodes/root_name=""
 nodes/root_script=null
 nodes/apply_root_scale=true
-nodes/root_scale=100.0
+nodes/root_scale=1.0
 nodes/import_as_skeleton_bones=false
 nodes/use_name_suffixes=true
 nodes/use_node_type_suffixes=true
@@ -38,7 +37,7 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
-fbx/importer=0
+fbx/importer=1
 fbx/allow_geometry_helper_nodes=false
 fbx/embedded_image_handling=1
 fbx/naming_version=1

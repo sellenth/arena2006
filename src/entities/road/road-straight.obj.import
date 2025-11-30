@@ -3,7 +3,7 @@
 importer="wavefront_obj"
 importer_version=1
 type="Mesh"
-uid="uid://cqx8dnuy5o3y5"
+uid="uid://u06ltcxplmsx"
 path="res://.godot/imported/road-straight.obj-6cf3dfbf139484b03191368d971fa475.mesh"
 
 [deps]
@@ -20,6 +20,6 @@ generate_lods=true
 generate_shadow_mesh=true
 generate_lightmap_uv2=false
 generate_lightmap_uv2_texel_size=0.2
-scale_mesh=Vector3(10, 10, 10)
+scale_mesh=Vector3(1, 1, 1)
 offset_mesh=Vector3(0, 0, 0)
 force_disable_mesh_compression=false

@@ -2,18 +2,17 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dcculd2tdja6f"
+uid="uid://iuwti674qkt7"
 path.s3tc="res://.godot/imported/MEDIUM - 5- EMMISION.png-1cabbab14c4d1901b9b313fbf8c8b064.s3tc.ctex"
-path.etc2="res://.godot/imported/MEDIUM - 5- EMMISION.png-1cabbab14c4d1901b9b313fbf8c8b064.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://src/entities/building/building_1/MEDIUM - 5- EMMISION.png"
-dest_files=["res://.godot/imported/MEDIUM - 5- EMMISION.png-1cabbab14c4d1901b9b313fbf8c8b064.s3tc.ctex", "res://.godot/imported/MEDIUM - 5- EMMISION.png-1cabbab14c4d1901b9b313fbf8c8b064.etc2.ctex"]
+dest_files=["res://.godot/imported/MEDIUM - 5- EMMISION.png-1cabbab14c4d1901b9b313fbf8c8b064.s3tc.ctex"]
 
 [params]
 

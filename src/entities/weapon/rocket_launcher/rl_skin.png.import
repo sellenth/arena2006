@@ -2,18 +2,17 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dblv0byaengdw"
+uid="uid://b54kq78r5feew"
 path.s3tc="res://.godot/imported/rl_skin.png-9d2349401e031b5ec75b14091ce57347.s3tc.ctex"
-path.etc2="res://.godot/imported/rl_skin.png-9d2349401e031b5ec75b14091ce57347.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://src/entities/weapon/rocket_launcher/rl_skin.png"
-dest_files=["res://.godot/imported/rl_skin.png-9d2349401e031b5ec75b14091ce57347.s3tc.ctex", "res://.godot/imported/rl_skin.png-9d2349401e031b5ec75b14091ce57347.etc2.ctex"]
+dest_files=["res://.godot/imported/rl_skin.png-9d2349401e031b5ec75b14091ce57347.s3tc.ctex"]
 
 [params]
 

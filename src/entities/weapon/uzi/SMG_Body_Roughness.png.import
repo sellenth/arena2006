@@ -2,22 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://doo3ow7twoo1k"
-path.s3tc="res://.godot/imported/SMG_Body_Roughness.png-851a47b5c77f9723484d459f53f9a1ff.s3tc.ctex"
-path.etc2="res://.godot/imported/SMG_Body_Roughness.png-851a47b5c77f9723484d459f53f9a1ff.etc2.ctex"
+uid="uid://cv1nq2qwfgjsb"
+path="res://.godot/imported/SMG_Body_Roughness.png-851a47b5c77f9723484d459f53f9a1ff.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://src/entities/weapon/uzi/SMG_Body_Roughness.png"
-dest_files=["res://.godot/imported/SMG_Body_Roughness.png-851a47b5c77f9723484d459f53f9a1ff.s3tc.ctex", "res://.godot/imported/SMG_Body_Roughness.png-851a47b5c77f9723484d459f53f9a1ff.etc2.ctex"]
+dest_files=["res://.godot/imported/SMG_Body_Roughness.png-851a47b5c77f9723484d459f53f9a1ff.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -25,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -39,4 +37,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=1

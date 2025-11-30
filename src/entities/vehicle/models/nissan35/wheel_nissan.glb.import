@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cbund3287huk5"
+uid="uid://b3i2rge8lx4gd"
 path="res://.godot/imported/wheel_nissan.glb-c21f39acee2d79e4d9444330558b1586.scn"
 
 [deps]
@@ -38,5 +38,5 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
-gltf/naming_version=1
+gltf/naming_version=0
 gltf/embedded_image_handling=1

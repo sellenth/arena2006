@@ -2,18 +2,17 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ddh54tbbabj0g"
+uid="uid://oum12q58o1ly"
 path.s3tc="res://.godot/imported/rl_norm.png-fabc1b164526ca7534a4f3da5f9b64b1.s3tc.ctex"
-path.etc2="res://.godot/imported/rl_norm.png-fabc1b164526ca7534a4f3da5f9b64b1.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://src/entities/weapon/rocket_launcher/rl_norm.png"
-dest_files=["res://.godot/imported/rl_norm.png-fabc1b164526ca7534a4f3da5f9b64b1.s3tc.ctex", "res://.godot/imported/rl_norm.png-fabc1b164526ca7534a4f3da5f9b64b1.etc2.ctex"]
+dest_files=["res://.godot/imported/rl_norm.png-fabc1b164526ca7534a4f3da5f9b64b1.s3tc.ctex"]
 
 [params]
 
@@ -28,7 +27,7 @@ compress/channel_pack=0
 mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=1
-roughness/src_normal="res://textures/weapons/rocket-launcher/rl_norm.png"
+roughness/src_normal="res://src/entities/weapon/rocket_launcher/rl_norm.png"
 process/channel_remap/red=0
 process/channel_remap/green=1
 process/channel_remap/blue=2

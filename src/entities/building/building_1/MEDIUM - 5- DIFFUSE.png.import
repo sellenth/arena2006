@@ -2,18 +2,17 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dbyt7wlt8hn44"
+uid="uid://ubv4gaxfuqhx"
 path.s3tc="res://.godot/imported/MEDIUM - 5- DIFFUSE.png-16c7356fc481c50f374ace844d17db9b.s3tc.ctex"
-path.etc2="res://.godot/imported/MEDIUM - 5- DIFFUSE.png-16c7356fc481c50f374ace844d17db9b.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://src/entities/building/building_1/MEDIUM - 5- DIFFUSE.png"
-dest_files=["res://.godot/imported/MEDIUM - 5- DIFFUSE.png-16c7356fc481c50f374ace844d17db9b.s3tc.ctex", "res://.godot/imported/MEDIUM - 5- DIFFUSE.png-16c7356fc481c50f374ace844d17db9b.etc2.ctex"]
+dest_files=["res://.godot/imported/MEDIUM - 5- DIFFUSE.png-16c7356fc481c50f374ace844d17db9b.s3tc.ctex"]
 
 [params]
 

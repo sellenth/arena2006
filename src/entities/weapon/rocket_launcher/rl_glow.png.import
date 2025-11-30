@@ -2,18 +2,17 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dat6heb3qgxvo"
+uid="uid://cla7fyncc8vct"
 path.s3tc="res://.godot/imported/rl_glow.png-a06f6bd6cc65b7bbe448e371526769eb.s3tc.ctex"
-path.etc2="res://.godot/imported/rl_glow.png-a06f6bd6cc65b7bbe448e371526769eb.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://src/entities/weapon/rocket_launcher/rl_glow.png"
-dest_files=["res://.godot/imported/rl_glow.png-a06f6bd6cc65b7bbe448e371526769eb.s3tc.ctex", "res://.godot/imported/rl_glow.png-a06f6bd6cc65b7bbe448e371526769eb.etc2.ctex"]
+dest_files=["res://.godot/imported/rl_glow.png-a06f6bd6cc65b7bbe448e371526769eb.s3tc.ctex"]
 
 [params]
 
