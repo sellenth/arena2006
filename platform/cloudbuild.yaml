@@ -12,7 +12,7 @@ steps:
         apt-get update -qq
         apt-get install -y -qq git-lfs
         git lfs install --skip-repo
-        git lfs fetch --all
+        git lfs fetch
         git lfs checkout
     dir: '/workspace'
 
