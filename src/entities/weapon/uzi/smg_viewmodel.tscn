@@ -1,0 +1,39 @@
+[gd_scene load_steps=12 format=3 uid="uid://dup2aagbps5gb"]
+
+[ext_resource type="PackedScene" uid="uid://tguvnn1ewg8h" path="res://src/entities/weapon/uzi/smg_model.fbx" id="1_2xv3h"]
+[ext_resource type="Texture2D" uid="uid://brigivvfgl7ic" path="res://src/entities/weapon/uzi/SMG_Body_BaseColor.png" id="2_flnjp"]
+[ext_resource type="Texture2D" uid="uid://desvx3j31uveh" path="res://src/entities/weapon/uzi/SMG_Body_Metallic.png" id="3_lkbbr"]
+[ext_resource type="Texture2D" uid="uid://p8wk4vbtslio" path="res://src/entities/weapon/uzi/SMG_Body_Normal.png" id="4_2t8yh"]
+[ext_resource type="Texture2D" uid="uid://bpwbwn0f88mka" path="res://src/entities/weapon/uzi/SMG_Body_Roughness.png" id="5_ip8bs"]
+[ext_resource type="Texture2D" uid="uid://pbr1ojw1fu6m" path="res://src/entities/weapon/uzi/SMG_Magazine_BaseColor.png" id="6_f2ga7"]
+[ext_resource type="Texture2D" uid="uid://bvi2idqv0egs6" path="res://src/entities/weapon/uzi/SMG_Magazine_Metallic.png" id="7_8ifa8"]
+[ext_resource type="Texture2D" uid="uid://d26xsyyec05xw" path="res://src/entities/weapon/uzi/SMG_Magazine_Normal.png" id="8_rg7ke"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2xv3h"]
+z_clip_scale = 0.1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_f243d"]
+albedo_texture = ExtResource("2_flnjp")
+metallic = 1.0
+metallic_texture = ExtResource("3_lkbbr")
+roughness_texture = ExtResource("5_ip8bs")
+normal_enabled = true
+normal_texture = ExtResource("4_2t8yh")
+use_z_clip_scale = true
+z_clip_scale = 0.1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2fwrf"]
+albedo_texture = ExtResource("6_f2ga7")
+metallic = 1.0
+metallic_texture = ExtResource("7_8ifa8")
+normal_enabled = true
+normal_texture = ExtResource("8_rg7ke")
+use_z_clip_scale = true
+z_clip_scale = 0.1
+
+[node name="smg_model" instance=ExtResource("1_2xv3h")]
+
+[node name="SMG_LP" parent="." index="0"]
+material_overlay = SubResource("StandardMaterial3D_2xv3h")
+surface_material_override/0 = SubResource("StandardMaterial3D_f243d")
+surface_material_override/1 = SubResource("StandardMaterial3D_2fwrf")

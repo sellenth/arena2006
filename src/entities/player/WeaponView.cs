@@ -53,10 +53,32 @@ public partial class WeaponView : Node3D
 		if (_currentView != null)
 		{
 			_currentView.Visible = true;
+			ApplyZClipScale(_currentView);
 		}
 		else
 		{
 			GD.PushWarning($"{Name}: No child view found matching '{sceneKey}'.");
+		}
+	}
+
+	private void ApplyZClipScale(Node node)
+	{
+		if (node is MeshInstance3D meshInstance)
+		{
+			for (int i = 0; i < meshInstance.GetSurfaceOverrideMaterialCount(); i++)
+			{
+				var material = meshInstance.GetSurfaceOverrideMaterial(i);
+				if (material != null)
+				{
+					material.Set("use_z_clip_scale", true);
+					material.Set("z_clip_scale", 0.1f);
+				}
+			}
+		}
+
+		foreach (var child in node.GetChildren())
+		{
+			ApplyZClipScale(child);
 		}
 	}
 

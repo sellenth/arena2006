@@ -1,16 +1,17 @@
-[gd_resource type="Resource" load_steps=6 format=3 uid="uid://b778nq68itor2"]
+[gd_resource type="Resource" load_steps=7 format=3 uid="uid://b778nq68itor2"]
 
 [ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="1"]
 [ext_resource type="PackedScene" uid="uid://c1is6kaw2brf1" path="res://src/entities/weapon/rocket_launcher/rocket_launcher.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://bqfluf8q56o4k" path="res://src/entities/weapon/rocket_launcher/rocket_projectile.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://077fwctsfy01" path="res://src/entities/weapon/rocket_launcher/rocket_launcher_viewmodel.tscn" id="3_a6u2p"]
 [ext_resource type="Resource" uid="uid://53maa486k4ky" path="res://src/entities/weapon/rocket_launcher/projectile_definition.tres" id="4"]
 
-[sub_resource type="CSharpScript" id="CSharpScript_gfamh"]
+[sub_resource type="CSharpScript" id="CSharpScript_7hwn7"]
 
 [resource]
 script = ExtResource("1")
 WorldScene = ExtResource("2")
-ViewScene = ExtResource("2")
+ViewScene = ExtResource("3_a6u2p")
 ProjectileScene = ExtResource("3")
 ProjectileConfig = ExtResource("4")
 ProjectileSpawn = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 1.8)

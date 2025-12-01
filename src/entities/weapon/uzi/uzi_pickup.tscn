@@ -21,7 +21,6 @@ Weapon = ExtResource("3")
 shape = SubResource("SphereShape3D_pickup")
 
 [node name="SMGModel" parent="PickupArea" instance=ExtResource("2")]
-transform = Transform3D(0.85, 0, 0, 0, 0.85, 0, 0, 0, 0.85, 0, 0, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, -0.03, 0.04)

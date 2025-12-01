@@ -1,8 +1,8 @@
-[gd_scene load_steps=11 format=4 uid="uid://c1is6kaw2brf1"]
+[gd_scene load_steps=11 format=4 uid="uid://077fwctsfy01"]
 
-[ext_resource type="Texture2D" uid="uid://d3urlx0h2exnj" path="res://src/entities/weapon/rocket_launcher/rl_skin.png" id="1_yutam"]
-[ext_resource type="Texture2D" uid="uid://cvfmbs66rt70f" path="res://src/entities/weapon/rocket_launcher/rl_glow.png" id="2_rlo2o"]
-[ext_resource type="Texture2D" uid="uid://dvhr08pxx7vn4" path="res://src/entities/weapon/rocket_launcher/rl_norm.png" id="3_bqdnc"]
+[ext_resource type="Texture2D" uid="uid://d3urlx0h2exnj" path="res://src/entities/weapon/rocket_launcher/rl_skin.png" id="1_glspy"]
+[ext_resource type="Texture2D" uid="uid://cvfmbs66rt70f" path="res://src/entities/weapon/rocket_launcher/rl_glow.png" id="2_d00tt"]
+[ext_resource type="Texture2D" uid="uid://dvhr08pxx7vn4" path="res://src/entities/weapon/rocket_launcher/rl_norm.png" id="3_n3qm7"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m0v2e"]
 resource_name = "default.001"
@@ -47,11 +47,11 @@ bind/3/bone = -1
 bind/3/pose = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 1.8, 0.16)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_l7tsv"]
-albedo_texture = ExtResource("1_yutam")
+albedo_texture = ExtResource("1_glspy")
 emission_enabled = true
-emission_texture = ExtResource("2_rlo2o")
+emission_texture = ExtResource("2_d00tt")
 normal_enabled = true
-normal_texture = ExtResource("3_bqdnc")
+normal_texture = ExtResource("3_n3qm7")
 z_clip_scale = 0.1
 
 [sub_resource type="Animation" id="Animation_n83ft"]
