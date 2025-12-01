@@ -63,6 +63,12 @@ public partial class WeaponView : Node3D
 
 	private void ApplyZClipScale(Node node)
 	{
+		// Only apply Z-clip scaling if we have authority (local player)
+		if (_inventory?.GetParent() is PlayerCharacter player && !player.HasAuthority())
+		{
+			return;
+		}
+
 		if (node is MeshInstance3D meshInstance)
 		{
 			for (int i = 0; i < meshInstance.GetSurfaceOverrideMaterialCount(); i++)
@@ -70,11 +76,15 @@ public partial class WeaponView : Node3D
 				var material = meshInstance.GetSurfaceOverrideMaterial(i);
 				if (material != null)
 				{
-					material.Set("use_z_clip_scale", true);
-					material.Set("z_clip_scale", 0.1f);
+					// Duplicate material to ensure we don't modify the shared resource
+					var uniqueMaterial = (Material)material.Duplicate();
+					meshInstance.SetSurfaceOverrideMaterial(i, uniqueMaterial);
 
-					material.Set("use_fov_override", true);
-					material.Set("fov_override", 58.6f);
+					uniqueMaterial.Set("use_z_clip_scale", true);
+					uniqueMaterial.Set("z_clip_scale", 0.1f);
+
+					uniqueMaterial.Set("use_fov_override", true);
+					uniqueMaterial.Set("fov_override", 58.6f);
 				}
 			}
 		}
