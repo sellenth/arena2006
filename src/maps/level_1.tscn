@@ -1,0 +1,161 @@
+[gd_scene load_steps=17 format=3 uid="uid://b421r5btdjnjk"]
+
+[ext_resource type="PackedScene" uid="uid://blonoqi74ntvl" path="res://src/entities/building/hut/hut.blend" id="1_ji382"]
+[ext_resource type="PackedScene" uid="uid://cx52oxtv3s6d2" path="res://src/entities/radio/radio.blend" id="2_2p0sj"]
+[ext_resource type="PackedScene" uid="uid://be48cty1sdkl8" path="res://src/entities/weapon/rocket_launcher/rocket_launcher_pickup.tscn" id="3_pm7mf"]
+[ext_resource type="PackedScene" uid="uid://6upo62dxeiq3" path="res://src/entities/weapon/uzi/uzi_pickup.tscn" id="4_bhhkb"]
+[ext_resource type="Script" uid="uid://5whgjxft7d3o" path="res://src/systems/vehicle/VehicleSpawnManager.cs" id="7_4d3c5"]
+[ext_resource type="PackedScene" uid="uid://ct07rpph3wvww" path="res://src/entities/vehicle/car/player_car.tscn" id="8_8la65"]
+[ext_resource type="Material" uid="uid://cp2te8i2ckj5o" path="res://src/materials/black_square.tres" id="23_wlf8p"]
+[ext_resource type="Script" uid="uid://6d42weerpm8u" path="res://src/systems/world/WorldBoundsManager.cs" id="24_3vhyc"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_f5ev0"]
+size = Vector3(0.1, 5, 300)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_dn4c5"]
+points = PackedVector3Array(-0.05, -2.5, -150, 0.05, -2.5, -150, -0.05, -2.5, 150, -0.05, 2.5, -150, 0.05, 2.5, -150, 0.05, -2.5, 150, -0.05, 2.5, 150, 0.05, 2.5, 150)
+
+[sub_resource type="BoxMesh" id="BoxMesh_kjxge"]
+size = Vector3(10, 10, 1)
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_1pip1"]
+points = PackedVector3Array(-5.078371, -5.077377, -0.57936513, 4.7881784, 4.787241, 0.5, 4.7881784, -4.787241, 0.5, 5.078371, 5.077377, -0.57936513, -4.7881784, 4.787241, 0.5, 5.078371, -5.077377, -0.57936513, -5.078371, 5.077377, -0.57936513, -4.7881784, -4.787241, 0.5)
+
+[sub_resource type="Curve3D" id="Curve3D_tk7n2"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 0, 20, 0, -15.518671, -4.145767, -27.06517, 15.518671, 4.145767, 27.06517, -23.448, 0, 71.109, 0, 0, 0, 0, 0, 0, -106.276, 0, 142.767),
+"tilts": PackedFloat32Array(0, 0, 0)
+}
+point_count = 3
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_gaita"]
+sky_top_color = Color(0.53064, 0.646875, 0.808594, 1)
+sky_horizon_color = Color(0.611765, 0.694118, 0.827451, 1)
+ground_bottom_color = Color(0.652344, 0.652344, 0.652344, 1)
+ground_horizon_color = Color(0.611389, 0.695429, 0.828125, 1)
+
+[sub_resource type="Sky" id="Sky_6mmwj"]
+sky_material = SubResource("ProceduralSkyMaterial_gaita")
+
+[sub_resource type="Environment" id="Environment_4d3c5"]
+background_mode = 2
+sky = SubResource("Sky_6mmwj")
+tonemap_mode = 1
+
+[node name="Level" type="Node3D"]
+
+[node name="Ramp" type="StaticBody3D" parent="."]
+transform = Transform3D(0.17084587, 0, 0.9852978, 0, 1, 0, -0.9852978, 0, 0.17084587, -369.4748, 4.032215, 585.11523)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ramp"]
+transform = Transform3D(0.88970345, 0.45653903, 0, -0.45653903, 0.88970345, 0, 0, 0, 1, 1.0178925, 1.9836692, 0)
+mesh = SubResource("BoxMesh_f5ev0")
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="Ramp"]
+transform = Transform3D(0.88970345, 0.45653903, 0, -0.45653903, 0.88970345, 0, 0, 0, 1, 1.0178925, 1.9836692, 0)
+shape = SubResource("ConvexPolygonShape3D_dn4c5")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="Ramp"]
+transform = Transform3D(0.97900105, 0.17290926, -0.107981905, -0.17290926, 0.423741, -0.88912654, -0.1079819, 0.88912654, 0.44474047, -1.1718221, -1.8405948, 0.22788525)
+mesh = SubResource("BoxMesh_kjxge")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ramp"]
+transform = Transform3D(0.97900105, 0.17290926, -0.107981905, -0.17290926, 0.423741, -0.88912654, -0.1079819, 0.88912654, 0.44474047, -1.1718221, -1.8405948, 0.22788525)
+shape = SubResource("ConvexPolygonShape3D_1pip1")
+
+[node name="Surf" type="Path3D" parent="."]
+transform = Transform3D(0.42445764, -0.028023908, -0.905014, 0.018104218, 0.99958384, -0.022461263, 0.90526676, -0.0068507087, 0.42478833, -314.91525, 1.8856678, 552.95386)
+curve = SubResource("Curve3D_tk7n2")
+
+[node name="CSGPolygon3D" type="CSGPolygon3D" parent="Surf"]
+use_collision = true
+polygon = PackedVector2Array(0, 0, 3, 10, 6, 0)
+mode = 2
+path_node = NodePath("..")
+path_interval_type = 1
+path_interval = 0.01
+path_simplify_angle = 0.0
+path_rotation = 2
+path_rotation_accurate = false
+path_local = true
+path_continuous_u = true
+path_u_distance = 1.0
+path_joined = false
+
+[node name="hut2" parent="." instance=ExtResource("1_ji382")]
+transform = Transform3D(-30.54626, 0, 95.22041, 0, 100, 0, -95.22041, 0, -30.54626, -711.03204, 46.61862, 384.85995)
+
+[node name="radio" parent="." instance=ExtResource("2_2p0sj")]
+transform = Transform3D(0.8104306, 0, 0.585835, 0, 1, 0, -0.585835, 0, 0.8104306, 62.595955, -0.43026352, 42.64595)
+
+[node name="Pickups" type="Node3D" parent="."]
+
+[node name="RocketLauncherPickup" parent="Pickups" instance=ExtResource("3_pm7mf")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 89.14703, 0.43021297, 10.023632)
+
+[node name="UziPickup" parent="Pickups" instance=ExtResource("4_bhhkb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45.087574, 0.6063862, -114.19768)
+
+[node name="UziPickup2" parent="Pickups" instance=ExtResource("4_bhhkb")]
+transform = Transform3D(-0.13345, 0, -0.99105555, 0, 1, 0, 0.99105555, 0, -0.13345, 30.394533, 0.6063862, -142.59618)
+
+[node name="WorldBoundaries" type="Node3D" parent="."]
+script = ExtResource("24_3vhyc")
+
+[node name="CSGTerrain" type="Node3D" parent="."]
+transform = Transform3D(0.65677005, 0, -0.75409085, 0, 1, 0, 0.75409085, 0, 0.65677005, -19.183643, 3.8146973e-06, -100.64766)
+metadata/_edit_group_ = true
+metadata/_edit_lock_ = true
+
+[node name="Ground" type="CSGBox3D" parent="CSGTerrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.5, -94.222)
+material_override = ExtResource("23_wlf8p")
+use_collision = true
+size = Vector3(750, 3, 750)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="CSGTerrain"]
+environment = SubResource("Environment_4d3c5")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="CSGTerrain"]
+transform = Transform3D(-0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, 0.75, -0.433013, 0, 20.3866, 0)
+shadow_enabled = true
+directional_shadow_max_distance = 500.0
+
+[node name="VehicleSpawnManager" type="Node3D" parent="."]
+transform = Transform3D(-0.1373061, 0, -0.9905286, 0, 1, 0, 0.9905286, 0, -0.1373061, 201.62666, 17.998312, 9.656418)
+script = ExtResource("7_4d3c5")
+VehicleScene = ExtResource("8_8la65")
+SpawnPointsRootPath = NodePath("../VehicleSpawns")
+MaxVehicles = 3
+
+[node name="PlayerSpawns" type="Node3D" parent="."]
+transform = Transform3D(0.65677005, 0, -0.75409085, 0, 1, 0, 0.75409085, 0, 0.65677005, 28.613968, 16.21741, 84.991394)
+
+[node name="VehicleSpawns" type="Node3D" parent="."]
+transform = Transform3D(0.65677005, 0, -0.75409085, 0, 1, 0, 0.75409085, 0, 0.65677005, -19.183643, -6.1545067, 34.665512)
+
+[node name="CarSpawnPoint" type="Marker3D" parent="VehicleSpawns"]
+transform = Transform3D(-0.59451413, 0, -0.8040852, 0, 1, 0, 0.8040852, 0, -0.59451413, 77.83687, 6.9724426, 13.790623)
+
+[node name="VehicleSpawn2" type="Marker3D" parent="VehicleSpawns"]
+transform = Transform3D(0.34201998, 0, 0.93969315, 0, 1, 0, -0.93969315, 0, 0.34201998, 144.55522, 6.3683925, 35.790447)
+
+[node name="VehicleSpawn3" type="Marker3D" parent="VehicleSpawns"]
+transform = Transform3D(-0.93969303, 0, 0.34201998, 0, 1, 0, -0.34201998, 0, -0.93969303, 77.884125, 19.159697, -11.056553)
+
+[node name="CSGTerrain2" type="Node3D" parent="."]
+transform = Transform3D(0.65677005, 0, -0.75409085, 0, 1, 0, 0.75409085, 0, 0.65677005, -19.183643, 3.8146973e-06, -100.64766)
+metadata/_edit_group_ = true
+metadata/_edit_lock_ = true
+
+[node name="Ground" type="CSGBox3D" parent="CSGTerrain2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.5, -94.222)
+material_override = ExtResource("23_wlf8p")
+use_collision = true
+size = Vector3(750, 3, 750)
+
+[node name="RemoteVehicles" type="Node3D" parent="."]
+transform = Transform3D(0.65677005, 0, -0.75409085, 0, 1, 0, 0.75409085, 0, 0.65677005, -19.183643, 3.8146973e-06, -100.64766)
+
+[node name="WorldBoundaries2" type="Node3D" parent="."]
+script = ExtResource("24_3vhyc")

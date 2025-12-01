@@ -106,11 +106,21 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			}
 		}
 
-		_managesMouseMode = AutoRegisterWithNetwork && (_networkController == null || _networkController.IsClient);
+		RefreshMouseModeManagement();
 
 		ApplyColor(_playerColor);
 
 		EnsureWeaponSystems();
+	}
+
+	private void RefreshMouseModeManagement()
+	{
+		if (_networkController == null && IsInsideTree())
+		{
+			_networkController = GetNodeOrNull<NetworkController>("/root/NetworkController");
+		}
+
+		_managesMouseMode = AutoRegisterWithNetwork && (_networkController == null || _networkController.IsClient);
 	}
 
 	private void EnsureWeaponSystems()
@@ -516,6 +526,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 	public void SetCameraActive(bool active)
 	{
+		RefreshMouseModeManagement();
+
 		_cameraActive = active;
 		if (_camera != null)
 		{

@@ -1,13 +1,13 @@
 using Godot;
 
-	public partial class DebugUiController : Node
+public partial class DebugUiController : Node
 {
 	private RaycastCar _car;
 	private RaycastCar _fallbackCar;
 	private PlayerCharacter _player;
 	private NetworkController _network;
 	private Control _debugBoxContainer;
-	
+
 	private CheckBox _allForcesCB;
 	private CheckBox _pullForcesCB;
 	private CheckBox _handBreakCB;
@@ -29,7 +29,9 @@ using Godot;
 	{
 		_car = GetNodeOrNull<RaycastCar>("../Car");
 		_fallbackCar = _car;
-		_player = GetNodeOrNull<PlayerCharacter>("../PlayerCharacter");
+		var root = GetTree().Root;
+		_player = root.FindChild("PlayerCharacter", true, false) as PlayerCharacter;
+		GD.Print(_player);
 		_network = GetNodeOrNull<NetworkController>("/root/NetworkController");
 
 		if (_network != null)
@@ -70,7 +72,7 @@ using Godot;
 	public override void _Process(double delta)
 	{
 		var isFootMode = _network != null && _network.CurrentClientMode == PlayerMode.Foot;
-		
+
 		if (isFootMode && _player != null)
 		{
 			var speed = _player.Velocity.Length();
@@ -86,17 +88,17 @@ using Godot;
 		{
 			_handBreakCB.ButtonPressed = _car.HandBreak;
 			_slippingCB.ButtonPressed = _car.IsSlipping;
-			
+
 			var speed = _car.LinearVelocity.Length();
 			_speedLabel.Text = $"Speed: {speed:F2} m/s";
-			
+
 			_motorRatio.Value = Mathf.Abs(_car.MotorInput);
-			
+
 			_turnRatio.Value = -_car.SteerInput;
-			
+
 			var accelForce = _car.Acceleration * _car.MotorInput;
 			_accelLabel.Text = $"AccelForce: {accelForce:F1}";
-			
+
 			_healthLabel.Text = $"Health: {_car.Health}/{_car.MaxHealth}";
 			_armorLabel.Text = $"Armor: {_car.Armor}/{_car.MaxArmor}";
 		}

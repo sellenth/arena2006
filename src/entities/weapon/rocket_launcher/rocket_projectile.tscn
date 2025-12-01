@@ -1,9 +1,9 @@
 [gd_scene load_steps=11 format=3 uid="uid://bqfluf8q56o4k"]
 
 [ext_resource type="Script" uid="uid://ufgjflvqoju" path="res://src/entities/weapon/rocket_launcher/RocketProjectile.cs" id="1_rocket"]
-[ext_resource type="Texture2D" uid="uid://cml2pbqvmj5vg" path="res://src/systems/fx/decal/scorch.png" id="2_6c3m4"]
-[ext_resource type="ArrayMesh" uid="uid://itmjp5ytwmqk" path="res://src/entities/weapon/rocket_launcher/agm65.obj" id="3_2lask"]
-[ext_resource type="Texture2D" uid="uid://cihslwflajtow" path="res://src/entities/weapon/rocket_launcher/skin.png" id="4_ohvn3"]
+[ext_resource type="Texture2D" uid="uid://b0wroodgrvako" path="res://src/systems/fx/decal/scorch.png" id="2_6c3m4"]
+[ext_resource type="ArrayMesh" uid="uid://c56bjerteekjn" path="res://src/entities/weapon/rocket_launcher/agm65.obj" id="3_2lask"]
+[ext_resource type="Texture2D" uid="uid://doon3diu68x7x" path="res://src/entities/weapon/rocket_launcher/skin.png" id="4_ohvn3"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 radius = 0.1

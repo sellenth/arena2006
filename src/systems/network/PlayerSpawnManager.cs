@@ -50,7 +50,7 @@ public partial class PlayerSpawnManager : GodotObject
 
 		var root = tree.Root;
 		var carSpawn = root.FindChild("CarSpawnPoint", true, false) as Marker3D;
-		carSpawn ??= root.GetNodeOrNull<Marker3D>("/root/GameRoot/CarSpawnPoint");
+		carSpawn ??= root.GetNodeOrNull<Marker3D>("/root/GameRoot/Level/CarSpawnPoint");
 		if (carSpawn != null)
 		{
 			manager.RegisterSpawnPoint(carSpawn, 1.15f, 0.4f, 0.2f);
@@ -58,7 +58,7 @@ public partial class PlayerSpawnManager : GodotObject
 			_hasFallbackSpawn = true;
 		}
 
-		_playerSpawns = root.GetNode<Node3D>("/root/GameRoot/PlayerSpawns");
+		_playerSpawns = root.GetNode<Node3D>("/root/GameRoot/Level/PlayerSpawns");
 	}
 
 	public Transform3D GetSpawnTransform(int peerId, IEnumerable<Vector3> occupiedPositions, Node3D contextNode)

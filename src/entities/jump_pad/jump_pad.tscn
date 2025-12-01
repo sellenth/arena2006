@@ -1,7 +1,7 @@
 [gd_scene load_steps=7 format=3 uid="uid://c68mijg2v2wkf"]
 
 [ext_resource type="Script" uid="uid://m1u3nnnxihl4" path="res://src/entities/jump_pad/JumpPad.cs" id="1_q2s6u"]
-[ext_resource type="AudioStream" uid="uid://e4kkyiuqxefg" path="res://src/entities/jump_pad/jump-pad.mp3" id="2_n3k3v"]
+[ext_resource type="AudioStream" uid="uid://bs8msex6680qh" path="res://src/entities/jump_pad/jump-pad.mp3" id="2_n3k3v"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_visual"]
 albedo_color = Color(0.2, 0.8, 0.9, 1)
@@ -13,10 +13,10 @@ emission_energy_multiplier = 1.2
 size = Vector3(6, 0.2, 6)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_pad"]
-size = Vector3(6, 0.2, 6)
+size = Vector3(6, 0.1, 6)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_detect"]
-size = Vector3(6, 0.405, 6)
+size = Vector3(6, 0.17955078, 6)
 
 [node name="JumpPad" type="StaticBody3D"]
 script = ExtResource("1_q2s6u")
@@ -27,6 +27,7 @@ material_override = SubResource("StandardMaterial3D_visual")
 mesh = SubResource("BoxMesh_visual")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 0)
 shape = SubResource("BoxShape3D_pad")
 
 [node name="DetectionArea" type="Area3D" parent="."]
@@ -34,5 +35,5 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 collision_mask = 1048575
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="DetectionArea"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.855168, 0.00257146)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9678926, 0.00257146)
 shape = SubResource("BoxShape3D_detect")

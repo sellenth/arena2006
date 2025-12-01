@@ -166,7 +166,7 @@ public partial class RespawnManager : RefCounted
 			return;
 
 		var carSpawn = root.FindChild("CarSpawnPoint", true, false) as Marker3D;
-		carSpawn ??= root.GetNodeOrNull<Marker3D>("/root/GameRoot/CarSpawnPoint");
+		carSpawn ??= root.GetNodeOrNull<Marker3D>("/root/GameRoot/Level/CarSpawnPoint");
 		if (carSpawn != null)
 			RegisterSpawnPoint(carSpawn, 1.15f, 0.4f, 0.2f);
 	}
