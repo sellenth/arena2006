@@ -72,6 +72,9 @@ public partial class WeaponView : Node3D
 				{
 					material.Set("use_z_clip_scale", true);
 					material.Set("z_clip_scale", 0.1f);
+
+					material.Set("use_fov_override", true);
+					material.Set("fov_override", 58.6f);
 				}
 			}
 		}
