@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://blonoqi74ntvl" path="res://src/entities/building/hut/hut.blend" id="1_ji382"]
 [ext_resource type="PackedScene" uid="uid://cx52oxtv3s6d2" path="res://src/entities/radio/radio.blend" id="2_2p0sj"]
 [ext_resource type="PackedScene" uid="uid://be48cty1sdkl8" path="res://src/entities/weapon/rocket_launcher/rocket_launcher_pickup.tscn" id="3_pm7mf"]
-[ext_resource type="PackedScene" uid="uid://6upo62dxeiq3" path="res://src/entities/weapon/uzi/uzi_pickup.tscn" id="4_bhhkb"]
+[ext_resource type="PackedScene" uid="uid://6upo62dxeiq3" path="res://src/entities/weapon/uzi/smg_pickup.tscn" id="4_bhhkb"]
 [ext_resource type="PackedScene" uid="uid://by6neltfkg5e2" path="res://src/entities/props/sci-fi-props/force_field.tscn" id="5_3po51"]
 [ext_resource type="PackedScene" uid="uid://56kq2kywn6hx" path="res://src/entities/props/sci-fi-props/lightpost_1.tscn" id="6_j6qd3"]
 [ext_resource type="PackedScene" uid="uid://jytenjfsnvlw" path="res://src/entities/props/sci-fi-props/lightpost_2.tscn" id="7_1oxd0"]

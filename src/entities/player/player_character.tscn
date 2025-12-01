@@ -43,6 +43,8 @@ visible = false
 
 [node name="RocketLauncher" parent="Head/Cam/WeaponView" instance=ExtResource("5_bclnc")]
 transform = Transform3D(1, 0, 0, 0, 0.9617413, 0.27395922, 0, -0.27395922, 0.9617413, 0.22, -0.22, -0.45)
+[node name="MachineGun" parent="Head/Cam/WeaponView" instance=ExtResource("5_tpgr7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.174, -0.274, -0.372)
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 3
