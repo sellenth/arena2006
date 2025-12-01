@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://bp5wletrm4dw2"]
+[gd_scene load_steps=12 format=3 uid="uid://bp5wletrm4dw2"]
 
 [ext_resource type="Script" uid="uid://dpian2gawtw4a" path="res://src/entities/player/PlayerCharacter.cs" id="1_qj4xw"]
 [ext_resource type="PackedScene" uid="uid://glg8yewwof8w" path="res://src/entities/player/player_body.tscn" id="2_23jjq"]
@@ -7,8 +7,9 @@
 [ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="5_4dfh7"]
 [ext_resource type="PackedScene" uid="uid://077fwctsfy01" path="res://src/entities/weapon/rocket_launcher/rocket_launcher_viewmodel.tscn" id="5_bclnc"]
 [ext_resource type="PackedScene" uid="uid://dup2aagbps5gb" path="res://src/entities/weapon/uzi/smg_viewmodel.tscn" id="5_tpgr7"]
-[ext_resource type="Resource" uid="uid://b778nq68itor2" path="res://src/entities/weapon/rocket_launcher/weapon_definition.tres" id="6_1eh8o"]
+[ext_resource type="PackedScene" uid="uid://5b41c2j5uq3h" path="res://src/entities/weapon/ak/ak_viewmodel.tscn" id="6_bclnc"]
 [ext_resource type="Script" uid="uid://c073mhvc68m23" path="res://src/entities/player/WeaponView.cs" id="7_o2wml"]
+[ext_resource type="Resource" uid="uid://630njoevb58b" path="res://src/entities/weapon/ak/weapon_definition.tres" id="10_bclnc"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_s6pao"]
 resource_local_to_scene = true
@@ -37,12 +38,14 @@ fov = 100.0
 [node name="WeaponView" type="Node3D" parent="Head/Cam"]
 script = ExtResource("7_o2wml")
 
-[node name="MachineGun" parent="Head/Cam/WeaponView" instance=ExtResource("5_tpgr7")]
-transform = Transform3D(0.9999999, -0.00048851967, 7.1054274e-15, 0.00048851967, 0.9999999, -4.270362e-11, 7.1054274e-15, 4.2714863e-11, 1, 0.174, -0.274, -0.372)
-visible = false
-
 [node name="RocketLauncher" parent="Head/Cam/WeaponView" instance=ExtResource("5_bclnc")]
 transform = Transform3D(1, 0, 0, 0, 0.9617413, 0.27395922, 0, -0.27395922, 0.9617413, 0.22, -0.22, -0.45)
+visible = false
+
+[node name="AK" parent="Head/Cam/WeaponView" instance=ExtResource("6_bclnc")]
+transform = Transform3D(0.9975641, -0.0012174182, -0.069745846, 0, 0.9998477, -0.017452406, 0.06975647, 0.017409893, 0.99741215, 0.15, -0.18, -0.42)
+visible = false
+
 [node name="MachineGun" parent="Head/Cam/WeaponView" instance=ExtResource("5_tpgr7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.174, -0.274, -0.372)
 
@@ -57,4 +60,4 @@ script = ExtResource("2_b8iv8")
 
 [node name="WeaponInventory" type="Node3D" parent="."]
 script = ExtResource("3_qfbsq")
-StartingWeapons = Array[ExtResource("5_4dfh7")]([ExtResource("6_1eh8o")])
+StartingWeapons = Array[ExtResource("5_4dfh7")]([ExtResource("10_bclnc")])

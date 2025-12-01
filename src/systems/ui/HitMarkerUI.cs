@@ -168,7 +168,7 @@ public partial class HitMarkerUI : Control
         {
             WeaponType.RocketLauncher => RocketReferenceDamage,
             WeaponType.MachineGun => MachineGunReferenceDamage,
-            _ => RocketReferenceDamage
+            _ => MachineGunReferenceDamage
         };
         if (reference <= 0.0001f) reference = 1.0f;
         return Mathf.Clamp(damage / reference, 0f, 1f);

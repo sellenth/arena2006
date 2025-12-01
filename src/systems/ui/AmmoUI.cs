@@ -22,6 +22,7 @@ public partial class AmmoUI : Control
             _weaponLabel.Text = weapon switch
             {
                 WeaponType.MachineGun => "Machine Gun",
+                WeaponType.AK => "AK",
                 WeaponType.RocketLauncher => "Rocket Launcher",
                 _ => weapon.ToString(),
             };

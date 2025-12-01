@@ -1,0 +1,28 @@
+[gd_resource type="Resource" load_steps=7 format=3 uid="uid://630njoevb58b"]
+
+[ext_resource type="Resource" path="res://src/entities/weapon/ak/projectile_definition.tres" id="1_gektc"]
+[ext_resource type="PackedScene" uid="uid://34kaubovaw2c" path="res://src/entities/weapon/ak/ak_projectile.tscn" id="2_4748l"]
+[ext_resource type="PackedScene" uid="uid://5b41c2j5uq3h" path="res://src/entities/weapon/ak/ak_viewmodel.tscn" id="3_gektc"]
+[ext_resource type="PackedScene" uid="uid://ilsvu7y22ohw" path="res://src/entities/weapon/ak/ak_pickup.tscn" id="4_gektc"]
+[ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="5_30cml"]
+
+[sub_resource type="CSharpScript" id="CSharpScript_qbyje"]
+
+[resource]
+script = ExtResource("5_30cml")
+Id = 2
+DisplayName = "AK"
+WorldScene = ExtResource("4_gektc")
+ViewScene = ExtResource("3_gektc")
+ProjectileScene = ExtResource("2_4748l")
+ProjectileConfig = ExtResource("1_gektc")
+ProjectileSpawn = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 1.2)
+MagazineSize = 30
+MaxReserveAmmo = 150
+FireCooldownSec = 0.11
+ReloadDurationSec = 1.8
+Damage = 24.0
+IsAutomatic = true
+EquipTimeSec = 0.2
+UnequipTimeSec = 0.2
+ProjectilePoolPrewarm = 32
