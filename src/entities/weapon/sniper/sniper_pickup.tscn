@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://sniperpickupUID"]
+
+[ext_resource type="PackedScene" uid="uid://c44ofumy11psc" path="res://src/entities/weapon/sniper/sniper_base.tscn" id="1_base"]
+
+[node name="SniperPickup" type="Node3D"]
+
+[node name="sniper" parent="." instance=ExtResource("1_base")]

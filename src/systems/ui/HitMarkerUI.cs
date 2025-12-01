@@ -5,6 +5,8 @@ public partial class HitMarkerUI : Control
     [Export] public float EntryHoldSeconds { get; set; } = 0.12f;
     [Export] public float FadeOutSeconds { get; set; } = 0.18f;
     [Export] public float MachineGunReferenceDamage { get; set; } = 12.0f;
+    [Export] public float AKReferenceDamage { get; set; } = 24.0f;
+    [Export] public float SniperReferenceDamage { get; set; } = 95.0f;
     [Export] public float RocketReferenceDamage { get; set; } = 60.0f;
     [Export] public float MinLineLength { get; set; } = 10.0f;
     [Export] public float MaxLineLength { get; set; } = 20.0f;
@@ -168,6 +170,8 @@ public partial class HitMarkerUI : Control
         {
             WeaponType.RocketLauncher => RocketReferenceDamage,
             WeaponType.MachineGun => MachineGunReferenceDamage,
+            WeaponType.AK => AKReferenceDamage,
+            WeaponType.Sniper => SniperReferenceDamage,
             _ => MachineGunReferenceDamage
         };
         if (reference <= 0.0001f) reference = 1.0f;

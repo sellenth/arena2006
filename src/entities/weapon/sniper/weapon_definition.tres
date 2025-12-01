@@ -1,0 +1,26 @@
+[gd_resource type="Resource" load_steps=7 format=3 uid="uid://sniperweapondefUID"]
+
+[ext_resource type="Resource" path="res://src/entities/weapon/sniper/projectile_definition.tres" id="1_gektc"]
+[ext_resource type="PackedScene" uid="uid://sniperprojectileUID" path="res://src/entities/weapon/sniper/sniper_projectile.tscn" id="2_4748l"]
+[ext_resource type="PackedScene" uid="uid://sniperviewmodelUID" path="res://src/entities/weapon/sniper/sniper_viewmodel.tscn" id="3_gektc"]
+[ext_resource type="PackedScene" uid="uid://sniperpickupUID" path="res://src/entities/weapon/sniper/sniper_pickup.tscn" id="4_gektc"]
+[ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="5_30cml"]
+
+[resource]
+script = ExtResource("5_30cml")
+Id = 3
+DisplayName = "Sniper"
+WorldScene = ExtResource("4_gektc")
+ViewScene = ExtResource("3_gektc")
+ProjectileScene = ExtResource("2_4748l")
+ProjectileConfig = ExtResource("1_gektc")
+ProjectileSpawn = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 1.5)
+MagazineSize = 5
+MaxReserveAmmo = 20
+FireCooldownSec = 1.2
+ReloadDurationSec = 3.0
+Damage = 95.0
+IsAutomatic = false
+EquipTimeSec = 0.5
+UnequipTimeSec = 0.4
+ProjectilePoolPrewarm = 10

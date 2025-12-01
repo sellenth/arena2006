@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://bp5wletrm4dw2"]
+[gd_scene load_steps=13 format=3 uid="uid://bp5wletrm4dw2"]
 
 [ext_resource type="Script" uid="uid://dpian2gawtw4a" path="res://src/entities/player/PlayerCharacter.cs" id="1_qj4xw"]
 [ext_resource type="PackedScene" uid="uid://glg8yewwof8w" path="res://src/entities/player/player_body.tscn" id="2_23jjq"]
@@ -9,7 +9,8 @@
 [ext_resource type="PackedScene" uid="uid://dup2aagbps5gb" path="res://src/entities/weapon/uzi/smg_viewmodel.tscn" id="5_tpgr7"]
 [ext_resource type="PackedScene" uid="uid://5b41c2j5uq3h" path="res://src/entities/weapon/ak/ak_viewmodel.tscn" id="6_bclnc"]
 [ext_resource type="Script" uid="uid://c073mhvc68m23" path="res://src/entities/player/WeaponView.cs" id="7_o2wml"]
-[ext_resource type="Resource" uid="uid://630njoevb58b" path="res://src/entities/weapon/ak/weapon_definition.tres" id="10_bclnc"]
+[ext_resource type="PackedScene" path="res://src/entities/weapon/sniper/sniper_viewmodel.tscn" id="8_sniper"]
+[ext_resource type="Resource" path="res://src/entities/weapon/sniper/weapon_definition.tres" id="11_sniper"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_s6pao"]
 resource_local_to_scene = true
@@ -49,6 +50,9 @@ visible = false
 [node name="MachineGun" parent="Head/Cam/WeaponView" instance=ExtResource("5_tpgr7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.174, -0.274, -0.372)
 
+[node name="Sniper" parent="Head/Cam/WeaponView" instance=ExtResource("8_sniper")]
+transform = Transform3D(0.052335974, 0, 0.9986295, 0, 1, 0, -0.9986295, 0, 0.052335974, 0.09, -0.12, -0.27)
+
 [node name="Control" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 15
@@ -60,4 +64,4 @@ script = ExtResource("2_b8iv8")
 
 [node name="WeaponInventory" type="Node3D" parent="."]
 script = ExtResource("3_qfbsq")
-StartingWeapons = Array[ExtResource("5_4dfh7")]([ExtResource("10_bclnc")])
+StartingWeapons = Array[ExtResource("5_4dfh7")]([ExtResource("11_sniper")])

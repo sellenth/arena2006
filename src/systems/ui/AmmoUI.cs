@@ -23,6 +23,7 @@ public partial class AmmoUI : Control
             {
                 WeaponType.MachineGun => "Machine Gun",
                 WeaponType.AK => "AK",
+                WeaponType.Sniper => "Sniper",
                 WeaponType.RocketLauncher => "Rocket Launcher",
                 _ => weapon.ToString(),
             };
