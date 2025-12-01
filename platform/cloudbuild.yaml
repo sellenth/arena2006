@@ -89,15 +89,29 @@ steps:
 
 
   # ==================================================================================================
-  #  9. Upload the client build to a GCS bucket
+  #  9. Zip the client builds
+  # ==================================================================================================
+  - name: 'gcr.io/cloud-builders/git'
+    id: 'zip-builds'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        apt-get update -qq && apt-get install -y -qq zip
+        cd build
+        zip -r linux_client.zip linux_client
+        zip -r windows_client.zip windows_client
+    dir: '/workspace'
+
+  # ==================================================================================================
+  #  10. Upload the client build to a GCS bucket
   # ==================================================================================================
   - name: 'gcr.io/cloud-builders/gsutil'
     id: 'upload-client-build'
     args:
       - 'cp'
-      - '-r'
-      - 'build/linux_client/*'
-      - 'build/windows_client/*'
+      - 'build/linux_client.zip'
+      - 'build/windows_client.zip'
       - 'gs://${_GCS_BUCKET_NAME}/$COMMIT_SHA/'
     dir: '/workspace'
 

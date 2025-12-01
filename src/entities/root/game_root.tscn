@@ -254,6 +254,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 89.14703, 0.43021297, 10.0236
 [node name="UziPickup" parent="Pickups" instance=ExtResource("18_uzi")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45.087574, 0.6063862, -114.19768)
 
+[node name="UziPickup2" parent="Pickups" instance=ExtResource("18_uzi")]
+transform = Transform3D(-0.13345, 0, -0.99105555, 0, 1, 0, 0.99105555, 0, -0.13345, 30.394533, 0.6063862, -142.59618)
+
 [node name="force_field" parent="." instance=ExtResource("20_m3tkt")]
 transform = Transform3D(0.9552216, 0, 0.29589143, 0, 1, 0, -0.29589143, 0, 0.9552216, -2.0958805, 7.16546e-08, -54.248695)
 
@@ -358,6 +361,27 @@ transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 43.83363, 0.084381156, -102.5
 
 [node name="StorageBox6" parent="." instance=ExtResource("27_bcv38")]
 transform = Transform3D(1.8040118, 0, 0.8634474, 0, 2, 0, -0.8634474, 0, 1.8040118, 43.83363, 4.0691204, -102.52554)
+
+[node name="PlayerCharacter2" parent="." instance=ExtResource("10_player")]
+transform = Transform3D(-0.13345, 0, -0.99105555, 0, 1, 0, 0.99105555, 0, -0.13345, -55.347633, 1.05, -146.77983)
+
+[node name="lightpost3" parent="." instance=ExtResource("21_wp58p")]
+transform = Transform3D(0.9508136, 0, 0.3097639, 0, 1, 0, -0.3097639, 0, 0.9508136, 13.407925, -3.8146973e-06, -144.42438)
+
+[node name="StorageBox7" parent="." instance=ExtResource("27_bcv38")]
+transform = Transform3D(-0.2669, 0, -1.9821111, 0, 2, 0, 1.9821111, 0, -0.2669, 22.916502, 0.08438116, -134.0203)
+
+[node name="StorageBox8" parent="." instance=ExtResource("27_bcv38")]
+transform = Transform3D(0.70463085, 0, -1.8717629, 0, 2, 0, 1.8717629, 0, 0.70463085, 15.919369, 0.08438116, -127.34839)
+
+[node name="StorageBox9" parent="." instance=ExtResource("27_bcv38")]
+transform = Transform3D(-0.2669, 0, -1.9821111, 0, 2, 0, 1.9821111, 0, -0.2669, 22.925943, 0.08438116, -142.9565)
+
+[node name="StorageBox10" parent="." instance=ExtResource("27_bcv38")]
+transform = Transform3D(-0.2669, 0, -1.9821111, 0, 2, 0, 1.9821111, 0, -0.2669, 18.994123, 0.08438116, -145.39656)
+
+[node name="StorageBox11" parent="." instance=ExtResource("27_bcv38")]
+transform = Transform3D(0.61497897, 0, -1.903103, 0, 2, 0, 1.903103, 0, 0.61497897, 18.994123, 4.0691204, -145.39656)
 
 [node name="temple" parent="." instance=ExtResource("30_un0uv")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 132.47417, 0.084396414, 60.482475)
