@@ -18,7 +18,7 @@
 [ext_resource type="Script" uid="uid://6d42weerpm8u" path="res://src/systems/world/WorldBoundsManager.cs" id="16_fbd4t"]
 [ext_resource type="Script" uid="uid://5whgjxft7d3o" path="res://src/systems/vehicle/VehicleSpawnManager.cs" id="16_vspawn"]
 [ext_resource type="PackedScene" uid="uid://be48cty1sdkl8" path="res://src/entities/weapon/rocket_launcher/rocket_launcher_pickup.tscn" id="17_fbd4t"]
-[ext_resource type="PackedScene" path="res://src/entities/weapon/uzi/uzi_pickup.tscn" id="18_uzi"]
+[ext_resource type="PackedScene" uid="uid://6upo62dxeiq3" path="res://src/entities/weapon/uzi/uzi_pickup.tscn" id="18_uzi"]
 [ext_resource type="PackedScene" uid="uid://bo26beh252p77" path="res://src/entities/props/sci-fi-props/broadcaster.tscn" id="19_lndio"]
 [ext_resource type="PackedScene" uid="uid://by6neltfkg5e2" path="res://src/entities/props/sci-fi-props/force_field.tscn" id="20_m3tkt"]
 [ext_resource type="PackedScene" uid="uid://56kq2kywn6hx" path="res://src/entities/props/sci-fi-props/lightpost_1.tscn" id="21_wp58p"]
@@ -252,7 +252,7 @@ transform = Transform3D(0.8104306, 0, 0.585835, 0, 1, 0, -0.585835, 0, 0.8104306
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 89.14703, 0.43021297, 10.023632)
 
 [node name="UziPickup" parent="Pickups" instance=ExtResource("18_uzi")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 95.5, 15.606386, -37.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45.087574, 0.6063862, -114.19768)
 
 [node name="force_field" parent="." instance=ExtResource("20_m3tkt")]
 transform = Transform3D(0.9552216, 0, 0.29589143, 0, 1, 0, -0.29589143, 0, 0.9552216, -2.0958805, 7.16546e-08, -54.248695)
