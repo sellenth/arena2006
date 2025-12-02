@@ -7,7 +7,7 @@ kind: Service
 metadata:
   name: arena2006-server
 spec:
-  type: LoadBalancer
+  type: NodePort
   selector:
     app: arena2006-server
   ports:
