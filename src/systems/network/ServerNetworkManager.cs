@@ -386,6 +386,18 @@ public partial class ServerNetworkManager : GodotObject
 			peer?.Peer?.PutPacket(packet);
 	}
 
+	public void SendHitMarker(int peerId, float damage, WeaponType weaponType, bool wasKill)
+	{
+		if (peerId == 0)
+			return;
+
+		if (!_peers.TryGetValue(peerId, out var info) || info?.Peer == null)
+			return;
+
+		var packet = NetworkSerializer.SerializeHitMarker(damage, weaponType, wasKill);
+		info.Peer.PutPacket(packet);
+	}
+
 	public PeerInfo GetPeer(int peerId)
 	{
 		return _peers.TryGetValue(peerId, out var info) ? info : null;
@@ -398,4 +410,3 @@ public partial class ServerNetworkManager : GodotObject
 
 	private int GetPlayerEntityId(int peerId) => NetworkConfig.PlayerEntityIdOffset + peerId;
 }
-

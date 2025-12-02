@@ -32,6 +32,7 @@ using System.Collections.Generic;
     public long RocketId { get; private set; } = 0;
     public bool ServerAuthority { get; private set; } = false;
     public bool PlayAudio { get; set; } = true;
+    public WeaponType WeaponType { get; set; } = WeaponType.RocketLauncher;
     public Action<RocketProjectile>? ReturnToPool { get; set; }
         = null; // Assigned by the rocket pool when pooling is enabled.
 
@@ -305,6 +306,7 @@ using System.Collections.Generic;
         Visible = false;
         OnServerExploded = null;
         ServerAuthority = false;
+        WeaponType = WeaponType.RocketLauncher;
         UpdateAuthoritySignals();
     }
 
@@ -453,7 +455,10 @@ using System.Collections.Generic;
                 {
                     scaledDamage *= SelfDamageScale;
                 }
-                player.ApplyDamage(Mathf.RoundToInt(scaledDamage), OwnerPeerId);
+                var appliedDamage = Mathf.RoundToInt(scaledDamage);
+                player.ApplyDamage(appliedDamage, OwnerPeerId);
+                var wasKill = player.Health <= 0 && player.Armor <= 0;
+                NotifyHitMarker(player, appliedDamage, wasKill);
                 player.ApplyExternalImpulse(knockback);
             }
             else if (collider is CharacterBody3D character)
@@ -465,6 +470,18 @@ using System.Collections.Generic;
                 rigid.ApplyImpulse(knockback);
             }
         }
+    }
+
+    private void NotifyHitMarker(PlayerCharacter player, int appliedDamage, bool wasKill)
+    {
+        if (OwnerPeerId == 0 || player == null)
+            return;
+
+        if (player.OwnerPeerId == OwnerPeerId)
+            return;
+
+        var network = GetNodeOrNull<NetworkController>("/root/NetworkController");
+        network?.SendHitMarkerToPeer((int)OwnerPeerId, appliedDamage, WeaponType, wasKill);
     }
 
     private void ReleaseToPool()

@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://cukaeucupjo2e"]
+[gd_scene load_steps=4 format=3 uid="uid://cukaeucupjo2e"]
 
 [ext_resource type="Script" uid="uid://d0vm38pjoww3p" path="res://src/systems/ui/DebugUiController.cs" id="1_b4myk"]
+[ext_resource type="Script" uid="uid://dja75o5h84r1" path="res://src/systems/ui/HitMarkerUI.cs" id="2_nqq46"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a5fxc"]
 bg_color = Color(0.853973, 1, 0.660156, 1)
@@ -151,3 +152,12 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_a5fxc")
 min_value = -1.0
 max_value = 1.0
 show_percentage = false
+
+[node name="HitMarkerUI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_nqq46")

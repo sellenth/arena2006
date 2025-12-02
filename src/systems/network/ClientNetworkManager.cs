@@ -24,6 +24,7 @@ public partial class ClientNetworkManager : GodotObject
 	public event Action<int> PlayerDisconnectedEvent;
 	public event Action<int, byte[]> EntitySnapshotReceivedEvent;
 	public event Action<System.Collections.Generic.List<NetworkSerializer.ScoreboardEntry>> ScoreboardUpdatedEvent;
+	public event Action<float, WeaponType, bool> HitMarkerReceived;
 
 	public int ClientId => _clientId;
 	public PlayerMode CurrentMode => _currentMode;
@@ -276,6 +277,12 @@ public partial class ClientNetworkManager : GodotObject
 						ScoreboardUpdatedEvent?.Invoke(scoreboardEntries);
 					}
 					break;
+				case NetworkSerializer.PacketHitMarker:
+					if (NetworkSerializer.DeserializeHitMarker(packet, out var damage, out var weaponType, out var wasKill))
+					{
+						HitMarkerReceived?.Invoke(damage, weaponType, wasKill);
+					}
+					break;
 			}
 		}
 	}
@@ -391,4 +398,3 @@ public partial class ClientNetworkManager : GodotObject
 
 	private int GetPlayerEntityId(int peerId) => NetworkConfig.PlayerEntityIdOffset + peerId;
 }
-

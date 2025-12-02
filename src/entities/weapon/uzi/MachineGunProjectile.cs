@@ -10,6 +10,7 @@ public partial class MachineGunProjectile : Node3D, IPooledProjectile
     public long OwnerPeerId { get; private set; }
     public bool ServerAuthority { get; private set; }
     public float Damage { get; private set; }
+    public WeaponType WeaponType { get; private set; } = WeaponType.MachineGun;
     public Action<MachineGunProjectile>? ReturnToPool { get; set; }
 
     private Vector3 _velocity = Vector3.Zero;
@@ -26,12 +27,13 @@ public partial class MachineGunProjectile : Node3D, IPooledProjectile
         SetPhysicsProcess(false);
     }
 
-    public void Initialize(long bulletId, long ownerPeerId, bool serverAuthority, Vector3 position, Basis rotation, Vector3 velocity, float damage)
+    public void Initialize(long bulletId, long ownerPeerId, bool serverAuthority, Vector3 position, Basis rotation, Vector3 velocity, float damage, WeaponType weaponType)
     {
         BulletId = bulletId;
         OwnerPeerId = ownerPeerId;
         ServerAuthority = serverAuthority;
         Damage = damage;
+        WeaponType = weaponType;
         _velocity = velocity;
         ResetForSpawn();
         GlobalTransform = new Transform3D(rotation, position);
@@ -49,6 +51,7 @@ public partial class MachineGunProjectile : Node3D, IPooledProjectile
         OnServerLifetimeExpired = null;
         ServerAuthority = false;
         Damage = 0f;
+        WeaponType = WeaponType.MachineGun;
         BulletId = 0;
         OwnerPeerId = 0;
     }
@@ -149,7 +152,10 @@ public partial class MachineGunProjectile : Node3D, IPooledProjectile
     {
         if (collider is PlayerCharacter player && Damage > 0f)
         {
-            player.ApplyDamage(Mathf.RoundToInt(Damage), OwnerPeerId);
+            var appliedDamage = Mathf.RoundToInt(Damage);
+            player.ApplyDamage(appliedDamage, OwnerPeerId);
+            var wasKill = player.Health <= 0 && player.Armor <= 0;
+            NotifyHitMarker(player, appliedDamage, wasKill);
             return;
         }
 
@@ -174,5 +180,17 @@ public partial class MachineGunProjectile : Node3D, IPooledProjectile
         {
             ReleaseToPool();
         }
+    }
+
+    private void NotifyHitMarker(PlayerCharacter player, int appliedDamage, bool wasKill)
+    {
+        if (OwnerPeerId == 0 || player == null)
+            return;
+
+        if (player.OwnerPeerId == OwnerPeerId)
+            return;
+
+        var network = GetNodeOrNull<NetworkController>("/root/NetworkController");
+        network?.SendHitMarkerToPeer((int)OwnerPeerId, appliedDamage, WeaponType, wasKill);
     }
 }

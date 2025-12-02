@@ -10,6 +10,7 @@ public static partial class NetworkSerializer
 	public const byte PacketEntitySnapshot = 5;
 	public const byte PacketEntityDespawn = 6;
 	public const byte PacketScoreboard = 7;
+	public const byte PacketHitMarker = 8;
 
 	public const int CarSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
 	public const int PlayerSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
@@ -230,6 +231,42 @@ public static partial class NetworkSerializer
 			return 0;
 		
 		return (int)buffer.GetU32();
+	}
+
+	public static byte[] SerializeHitMarker(float damage, WeaponType weaponType, bool wasKill)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.PutU8(PacketHitMarker);
+		buffer.PutFloat(damage);
+		buffer.PutU32((uint)weaponType);
+		buffer.PutU8((byte)(wasKill ? 1 : 0));
+		return buffer.DataArray;
+	}
+
+	public static bool DeserializeHitMarker(byte[] packet, out float damage, out WeaponType weaponType, out bool wasKill)
+	{
+		damage = 0f;
+		weaponType = WeaponType.None;
+		wasKill = false;
+
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.DataArray = packet;
+
+		if (buffer.GetAvailableBytes() < 1)
+			return false;
+
+		if (buffer.GetU8() != PacketHitMarker)
+			return false;
+
+		if (buffer.GetAvailableBytes() < 4 + 4 + 1)
+			return false;
+
+		damage = buffer.GetFloat();
+		weaponType = (WeaponType)buffer.GetU32();
+		wasKill = buffer.GetU8() == 1;
+		return true;
 	}
 
 	public static byte[] SerializeScoreboard(IEnumerable<ScoreboardEntry> rows)

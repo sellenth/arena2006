@@ -278,6 +278,7 @@ public partial class WeaponController : Node
 		if (projectileNode is RocketProjectile rocket)
 		{
 			ApplyRocketConfig(def, rocket);
+			rocket.WeaponType = def.Id;
 			var speed = rocket.Speed;
 			var velocity = direction * speed;
 			rocket.Initialize(fireSequence, ownerPeerId, serverAuthority, spawnTransform.Origin, velocity);
@@ -291,7 +292,7 @@ public partial class WeaponController : Node
 		{
 			var speed = ApplyBulletConfig(def, bullet);
 			var velocity = direction * speed;
-			bullet.Initialize(fireSequence, ownerPeerId, serverAuthority, spawnTransform.Origin, spawnTransform.Basis, velocity, def.Damage);
+			bullet.Initialize(fireSequence, ownerPeerId, serverAuthority, spawnTransform.Origin, spawnTransform.Basis, velocity, def.Damage, def.Id);
 			bullet.RegisterCollisionException(_player);
 			if (pool != null)
 			{

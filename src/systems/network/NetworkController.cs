@@ -16,6 +16,7 @@ public partial class NetworkController : Node
 
 	private PackedScene _playerCharacterScene;
 	private PackedScene _scoreboardUiScene;
+	private HitMarkerUI _hitMarkerUi;
 
 	public event Action<PlayerMode> ClientModeChanged;
 	public event Action<RaycastCar> LocalCarChanged;
@@ -73,6 +74,7 @@ public partial class NetworkController : Node
 				_scoreboardManager.UpdateScoreboardFromPacket(godotScoreboard);
 				EmitSignal(SignalName.ScoreboardUpdated, godotScoreboard);
 			};
+			_clientManager.HitMarkerReceived += OnClientHitMarker;
 		}
 	}
 
@@ -179,6 +181,14 @@ public partial class NetworkController : Node
 		_serverManager?.NotifyPlayerKilled(victim, killerPeerId);
 	}
 
+	public void SendHitMarkerToPeer(int peerId, float damage, WeaponType weaponType, bool wasKill)
+	{
+		if (!IsServer)
+			return;
+
+		_serverManager?.SendHitMarker(peerId, damage, weaponType, wasKill);
+	}
+
 	private void InitializeScoreboardUi()
 	{
 		_scoreboardManager?.Initialize(_scoreboardUiScene, this);
@@ -207,5 +217,28 @@ public partial class NetworkController : Node
 		}
 
 		return array;
+	}
+
+	private void OnClientHitMarker(float damage, WeaponType weaponType, bool wasKill)
+	{
+		var ui = FindHitMarkerUi();
+		if (ui != null)
+		{
+			ui.ShowHitFeedback(damage, weaponType, wasKill);
+		}
+	}
+
+	private HitMarkerUI FindHitMarkerUi()
+	{
+		if (_hitMarkerUi != null && IsInstanceValid(_hitMarkerUi) && _hitMarkerUi.IsInsideTree())
+			return _hitMarkerUi;
+
+		_hitMarkerUi = null;
+		var scene = GetTree()?.CurrentScene;
+		if (scene == null)
+			return null;
+
+		_hitMarkerUi = scene.FindChild("HitMarkerUI", true, false) as HitMarkerUI;
+		return _hitMarkerUi;
 	}
 }
