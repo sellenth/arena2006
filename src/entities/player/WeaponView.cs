@@ -8,6 +8,7 @@ public partial class WeaponView : Node3D
 	private WeaponInventory _inventory;
 	private Node3D _currentView;
 	private readonly Dictionary<string, Node3D> _viewsByKey = new();
+	private readonly Dictionary<Node3D, Transform3D> _baseTransforms = new();
 	private float _adsBlend = 0f;
 	private AdsConfig _adsConfig;
 
@@ -107,9 +108,13 @@ public partial class WeaponView : Node3D
 
 	private void ApplyAdsPose()
 	{
-		// Placeholder: when Hip/Ads anchors are added, lerp the viewmodel transform using _adsBlend.
 		if (_currentView == null)
 			return;
+
+		var baseTransform = GetBaseTransform(_currentView);
+		var offset = _adsConfig?.ViewOffset ?? Transform3D.Identity;
+		var target = baseTransform * offset;
+		_currentView.Transform = baseTransform.InterpolateWith(target, _adsBlend);
 
 		ApplyScopeOverlay();
 	}
@@ -179,6 +184,10 @@ public partial class WeaponView : Node3D
 		{
 			if (child is Node3D node)
 			{
+				if (!_baseTransforms.ContainsKey(node))
+				{
+					_baseTransforms[node] = node.Transform;
+				}
 				var key = !string.IsNullOrEmpty(node.SceneFilePath) ? node.SceneFilePath : node.Name.ToString();
 				GD.Print(key);
 				if (!string.IsNullOrEmpty(key))
@@ -199,5 +208,19 @@ public partial class WeaponView : Node3D
 			}
 		}
 		_currentView = null;
+	}
+
+	private Transform3D GetBaseTransform(Node3D view)
+	{
+		if (view == null)
+			return Transform3D.Identity;
+
+		if (!_baseTransforms.TryGetValue(view, out var baseTransform))
+		{
+			baseTransform = view.Transform;
+			_baseTransforms[view] = baseTransform;
+		}
+
+		return baseTransform;
 	}
 }

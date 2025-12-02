@@ -1,12 +1,13 @@
-[gd_resource type="Resource" load_steps=7 format=3 uid="uid://d15ym5203pcrq"]
+[gd_resource type="Resource" load_steps=8 format=3 uid="uid://d15ym5203pcrq"]
 
 [ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="1"]
+[ext_resource type="Resource" uid="uid://da3ubl2cb64fl" path="res://src/entities/weapon/uzi/ads_config.tres" id="1_qbyje"]
 [ext_resource type="PackedScene" uid="uid://doolnkvsismm5" path="res://src/entities/weapon/uzi/machine_gun_projectile.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://dup2aagbps5gb" path="res://src/entities/weapon/uzi/smg_viewmodel.tscn" id="3_8am7p"]
-[ext_resource type="Resource" path="res://src/entities/weapon/uzi/projectile_definition.tres" id="4"]
+[ext_resource type="Resource" uid="uid://csnebb1wgohcx" path="res://src/entities/weapon/uzi/projectile_definition.tres" id="4"]
 [ext_resource type="PackedScene" uid="uid://4ma0m5prboee" path="res://src/entities/weapon/uzi/smg_base.tscn" id="4_8am7p"]
 
-[sub_resource type="CSharpScript" id="CSharpScript_qbyje"]
+[sub_resource type="CSharpScript" id="CSharpScript_ouhwg"]
 
 [resource]
 script = ExtResource("1")
@@ -26,3 +27,4 @@ IsAutomatic = true
 EquipTimeSec = 0.2
 UnequipTimeSec = 0.2
 ProjectilePoolPrewarm = 32
+Ads = ExtResource("1_qbyje")

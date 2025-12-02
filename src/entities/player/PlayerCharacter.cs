@@ -624,7 +624,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			AddChild(_healthComponent);
 		}
 
-		_healthComponent.Initialize(MaxHealth, MaxArmor);
+		_healthComponent.Initialize(MaxHealth, 0);
 		_healthComponent.Died += HandleDeath;
 	}
 

@@ -4,4 +4,4 @@
 
 [node name="AKViewmodel" type="Node3D"]
 
-[node name="ak" parent="." instance=ExtResource("1_lydfi")]
+[node name="ak2" parent="." instance=ExtResource("1_lydfi")]

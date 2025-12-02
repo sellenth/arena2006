@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://sniperprojectileUID"]
+[gd_scene load_steps=4 format=3 uid="uid://bdht61x75dbih"]
 
 [ext_resource type="Script" uid="uid://bjl4hixbaa05r" path="res://src/entities/weapon/uzi/MachineGunProjectile.cs" id="1_fawij"]
 

@@ -1,9 +1,8 @@
-[gd_resource type="Resource" load_steps=2 format=3]
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://dycwwr38ee3fr"]
 
 [ext_resource type="Script" uid="uid://chhigb78hn2p5" path="res://src/entities/weapon/_shared/ProjectileDefinition.cs" id="1"]
 
 [resource]
 script = ExtResource("1")
-Speed = 600.0
+Speed = 1200.0
 LifetimeSec = 2.0
-GravityScale = 0.0

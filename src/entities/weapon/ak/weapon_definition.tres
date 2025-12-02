@@ -7,7 +7,7 @@
 [ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="5_30cml"]
 [ext_resource type="PackedScene" uid="uid://cjbqme3c0e05w" path="res://src/entities/weapon/ak/ak_base.tscn" id="5_4748l"]
 
-[sub_resource type="CSharpScript" id="CSharpScript_jf4rj"]
+[sub_resource type="CSharpScript" id="CSharpScript_4748l"]
 
 [resource]
 script = ExtResource("5_30cml")
@@ -22,7 +22,7 @@ MagazineSize = 30
 MaxReserveAmmo = 150
 FireCooldownSec = 0.11
 ReloadDurationSec = 1.8
-Damage = 24.0
+Damage = 25.0
 IsAutomatic = true
 EquipTimeSec = 0.2
 UnequipTimeSec = 0.2

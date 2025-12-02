@@ -35,6 +35,7 @@ transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 1.7
 
 [node name="Cam" type="Camera3D" parent="Head"]
 fov = 100.0
+near = 0.01
 
 [node name="WeaponView" type="Node3D" parent="Head/Cam"]
 script = ExtResource("7_o2wml")
@@ -44,12 +45,10 @@ transform = Transform3D(1, 0, 0, 0, 0.9617413, 0.27395922, 0, -0.27395922, 0.961
 visible = false
 
 [node name="AK" parent="Head/Cam/WeaponView" instance=ExtResource("6_bclnc")]
-transform = Transform3D(0.9975641, -0.0012174182, -0.069745846, 0, 0.9998477, -0.017452406, 0.06975647, 0.017409893, 0.99741215, 0.15, -0.18, -0.42)
-visible = false
+transform = Transform3D(0.99999464, -5.7874237e-05, -0.0033156232, 7.9028485e-11, 0.9998476, -0.0174524, 0.0033161216, 0.017452309, 0.99984217, 0.15, -0.18000007, -0.42)
 
 [node name="MachineGun" parent="Head/Cam/WeaponView" instance=ExtResource("5_tpgr7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.174, -0.274, -0.372)
-visible = false
 
 [node name="Sniper" parent="Head/Cam/WeaponView" instance=ExtResource("8_sniper")]
 transform = Transform3D(0.052335974, 0, 0.9986295, 0, 1, 0, -0.9986295, 0, 0.052335974, 0.09, -0.12, -0.27)
