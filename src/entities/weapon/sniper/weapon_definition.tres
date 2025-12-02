@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://c44ofumy11psc" path="res://src/entities/weapon/sniper/sniper_base.tscn" id="5_ouhwg"]
 [ext_resource type="Resource" uid="uid://50f085cf0e7b" path="res://src/entities/weapon/sniper/fire_audio.tres" id="6"]
 
-[sub_resource type="CSharpScript" id="CSharpScript_ouhwg"]
+[sub_resource type="CSharpScript" id="CSharpScript_y6aih"]
 
 [resource]
 resource_local_to_scene = true
@@ -25,8 +25,8 @@ MaxReserveAmmo = 20
 FireCooldownSec = 1.0
 ReloadDurationSec = 3.0
 Damage = 100.0
-FireAudio = ExtResource("6")
 EquipTimeSec = 0.5
 UnequipTimeSec = 0.4
 ProjectilePoolPrewarm = 10
+FireAudio = ExtResource("6")
 Ads = ExtResource("1_ouhwg")

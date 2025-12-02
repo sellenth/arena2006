@@ -1,9 +1,10 @@
-[gd_scene load_steps=11 format=3 uid="uid://bqfluf8q56o4k"]
+[gd_scene load_steps=12 format=3 uid="uid://bqfluf8q56o4k"]
 
 [ext_resource type="Script" uid="uid://ufgjflvqoju" path="res://src/entities/weapon/rocket_launcher/RocketProjectile.cs" id="1_rocket"]
 [ext_resource type="Texture2D" uid="uid://b0wroodgrvako" path="res://src/systems/fx/decal/scorch.png" id="2_6c3m4"]
 [ext_resource type="ArrayMesh" uid="uid://c56bjerteekjn" path="res://src/entities/weapon/rocket_launcher/agm65.obj" id="3_2lask"]
 [ext_resource type="Texture2D" uid="uid://doon3diu68x7x" path="res://src/entities/weapon/rocket_launcher/skin.png" id="4_ohvn3"]
+[ext_resource type="AudioStream" uid="uid://4djifcgjrul3" path="res://src/entities/weapon/rocket_launcher/rocket_loop.mp3" id="5_i1tbh"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 radius = 0.1
@@ -27,6 +28,7 @@ initial_velocity_min = 2.0
 initial_velocity_max = 3.0
 angular_velocity_min = -180.0
 angular_velocity_max = 180.0
+gravity = Vector3(0, 0, 0)
 linear_accel_min = -2.0
 linear_accel_max = -1.0
 scale_min = 0.3
@@ -36,8 +38,8 @@ hue_variation_min = -0.1
 hue_variation_max = 0.1
 
 [sub_resource type="SphereMesh" id="SphereMesh_1"]
-radial_segments = 6
-rings = 3
+radial_segments = 4
+rings = 5
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q20ru"]
 albedo_texture = ExtResource("4_ohvn3")
@@ -51,6 +53,7 @@ continuous_cd = true
 contact_monitor = true
 max_contacts_reported = 10
 script = ExtResource("1_rocket")
+FlightLoopSfx = ExtResource("5_i1tbh")
 ExplosionDecalTexture = ExtResource("2_6c3m4")
 ExplosionDecalSize = 5.0
 ExplosionDecalLifetimeSec = 300.0

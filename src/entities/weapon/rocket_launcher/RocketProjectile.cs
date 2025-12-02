@@ -104,7 +104,7 @@ using System.Collections.Generic;
         LinearVelocity = initialVelocity;
         AngularVelocity = Vector3.Zero;
 
-        if (PlayAudio && !Multiplayer.IsServer())
+        if (PlayAudio && ShouldPlayAudio())
         {
             StartFlightAudio();
         }
@@ -332,6 +332,13 @@ using System.Collections.Generic;
         // Clients also need contact events to drive explosion FX locally.
         SetContactMonitorSafe(true);
         MaxContactsReported = 16;
+    }
+
+    private bool ShouldPlayAudio()
+    {
+        // Avoid playing audio on headless/dedicated servers, but allow it when running as a listen server.
+        var display = DisplayServer.GetName();
+        return !display.Equals("headless", StringComparison.OrdinalIgnoreCase) && !OS.HasFeature("server");
     }
 
     private void SetContactMonitorSafe(bool enabled)
