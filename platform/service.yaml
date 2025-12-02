@@ -13,4 +13,5 @@ spec:
   ports:
   - protocol: UDP
     port: 45000
+    nodePort: 45000
     targetPort: 45000
