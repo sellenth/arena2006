@@ -21,6 +21,7 @@ public sealed class PlayerLookController
 
 	public float Yaw { get; private set; }
 	public float Pitch { get; private set; }
+	public float AdsBlend { get; private set; } = 0f;
 
 	private Node3D _root;
 	private Node3D _head;
@@ -33,6 +34,8 @@ public sealed class PlayerLookController
 	private float _baseFov = 75f;
 	private float _currentFov;
 	private float _targetFov;
+	private float _adsTargetFov;
+	private float _adsSensitivityScale = 1f;
 
 	public void Initialize(Node3D root, Node3D head, Camera3D camera, float initialYaw, float initialPitch)
 	{
@@ -78,8 +81,9 @@ public sealed class PlayerLookController
 
 		var delta = _pendingLookDelta;
 		_pendingLookDelta = Vector2.Zero;
-		Yaw -= delta.X * MouseSensitivity;
-		Pitch = Mathf.Clamp(Pitch - delta.Y * MouseSensitivity, MinPitch, MaxPitch);
+		var sensScale = Mathf.Lerp(1f, _adsSensitivityScale, AdsBlend);
+		Yaw -= delta.X * MouseSensitivity * sensScale;
+		Pitch = Mathf.Clamp(Pitch - delta.Y * MouseSensitivity * sensScale, MinPitch, MaxPitch);
 		ApplyViewToNodes();
 		return true;
 	}
@@ -93,6 +97,13 @@ public sealed class PlayerLookController
 	{
 		UpdateCameraEffects(delta, velocity, grounded);
 		ApplyViewToNodes();
+	}
+
+	public void SetAdsBlend(float blend, float targetFov, float sensitivityScale)
+	{
+		AdsBlend = Mathf.Clamp(blend, 0f, 1f);
+		_adsTargetFov = targetFov > 0f ? targetFov : BaseFov;
+		_adsSensitivityScale = Mathf.Max(0.01f, sensitivityScale);
 	}
 
 	public Vector3 GetViewDirection(Node3D fallback)
@@ -113,7 +124,10 @@ public sealed class PlayerLookController
 
 		var planarVelocity = new Vector3(velocity.X, 0f, velocity.Z);
 		var planarSpeed = planarVelocity.Length();
-		var targetFov = BaseFov + Mathf.Clamp(planarSpeed * FovSpeedScale, 0f, MaxFovBoost);
+		var adsFov = _adsTargetFov > 0f ? _adsTargetFov : BaseFov;
+		var baseFov = Mathf.Lerp(BaseFov, adsFov, AdsBlend);
+		var speedBoost = Mathf.Clamp(planarSpeed * FovSpeedScale, 0f, MaxFovBoost) * (1f - AdsBlend);
+		var targetFov = baseFov + speedBoost;
 		var lerp = 1f - Mathf.Exp(-FovLerpRate * delta);
 		_currentFov = Mathf.Lerp(_currentFov, targetFov, lerp);
 		_targetFov = targetFov;
@@ -127,7 +141,7 @@ public sealed class PlayerLookController
 
 		var normalizedStrafe = Mathf.Clamp(-strafe * 0.1f, -1f, 1f);
 		var tiltTarget = Mathf.DegToRad(normalizedStrafe * TiltAngleDegrees);
-		_cameraTiltRad = Mathf.Lerp(_cameraTiltRad, tiltTarget, 1f - Mathf.Exp(-TiltResponse * delta))  * (planarSpeed / 60f);
+		_cameraTiltRad = Mathf.Lerp(_cameraTiltRad, tiltTarget, 1f - Mathf.Exp(-TiltResponse * delta)) * (planarSpeed / 60f);
 
 		//UpdateHeadBob(delta, planarSpeed, grounded);
 	}

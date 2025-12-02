@@ -1,26 +1,30 @@
-[gd_resource type="Resource" load_steps=7 format=3 uid="uid://sniperweapondefUID"]
+[gd_resource type="Resource" load_steps=8 format=3 uid="uid://dpiyh0wcm86o7"]
 
 [ext_resource type="Resource" path="res://src/entities/weapon/sniper/projectile_definition.tres" id="1_gektc"]
-[ext_resource type="PackedScene" uid="uid://sniperprojectileUID" path="res://src/entities/weapon/sniper/sniper_projectile.tscn" id="2_4748l"]
-[ext_resource type="PackedScene" uid="uid://sniperviewmodelUID" path="res://src/entities/weapon/sniper/sniper_viewmodel.tscn" id="3_gektc"]
-[ext_resource type="PackedScene" uid="uid://sniperpickupUID" path="res://src/entities/weapon/sniper/sniper_pickup.tscn" id="4_gektc"]
+[ext_resource type="Resource" uid="uid://dtogr2220xryv" path="res://src/entities/weapon/sniper/ads_config.tres" id="1_ouhwg"]
+[ext_resource type="PackedScene" path="res://src/entities/weapon/sniper/sniper_projectile.tscn" id="2_4748l"]
+[ext_resource type="PackedScene" path="res://src/entities/weapon/sniper/sniper_viewmodel.tscn" id="3_gektc"]
 [ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="5_30cml"]
+[ext_resource type="PackedScene" uid="uid://c44ofumy11psc" path="res://src/entities/weapon/sniper/sniper_base.tscn" id="5_ouhwg"]
+
+[sub_resource type="CSharpScript" id="CSharpScript_y6aih"]
 
 [resource]
+resource_local_to_scene = true
 script = ExtResource("5_30cml")
 Id = 3
 DisplayName = "Sniper"
-WorldScene = ExtResource("4_gektc")
+WorldScene = ExtResource("5_ouhwg")
 ViewScene = ExtResource("3_gektc")
 ProjectileScene = ExtResource("2_4748l")
 ProjectileConfig = ExtResource("1_gektc")
 ProjectileSpawn = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 1.5)
 MagazineSize = 5
 MaxReserveAmmo = 20
-FireCooldownSec = 1.2
+FireCooldownSec = 1.0
 ReloadDurationSec = 3.0
-Damage = 95.0
-IsAutomatic = false
+Damage = 100.0
 EquipTimeSec = 0.5
 UnequipTimeSec = 0.4
 ProjectilePoolPrewarm = 10
+Ads = ExtResource("1_ouhwg")

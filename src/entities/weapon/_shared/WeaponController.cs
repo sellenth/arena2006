@@ -362,6 +362,11 @@ public partial class WeaponController : Node
 
 	public int GetFireSequence() => _fireSequence;
 
+	public AdsConfig GetEquippedAdsConfig()
+	{
+		return _inventory?.Equipped?.Definition?.Ads;
+	}
+
 	private void TryToggleWeapon()
 	{
 		if (_inventory == null)

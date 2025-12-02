@@ -1,0 +1,11 @@
+[gd_resource type="Resource" load_steps=3 format=3 uid="uid://dtogr2220xryv"]
+
+[ext_resource type="Script" uid="uid://b1gmenpn0ti3g" path="res://src/entities/weapon/_shared/AdsConfig.cs" id="1_4te2o"]
+[ext_resource type="Texture2D" uid="uid://d7mapy7kmhky" path="res://src/entities/weapon/sniper/scope.png" id="1_dl1h5"]
+
+[resource]
+script = ExtResource("1_4te2o")
+Mode = 3
+TargetFov = 5.0
+SensitivityScale = 0.1
+ScopeOverlay = ExtResource("1_dl1h5")

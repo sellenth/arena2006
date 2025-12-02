@@ -8,6 +8,8 @@ public partial class WeaponView : Node3D
 	private WeaponInventory _inventory;
 	private Node3D _currentView;
 	private readonly Dictionary<string, Node3D> _viewsByKey = new();
+	private float _adsBlend = 0f;
+	private AdsConfig _adsConfig;
 
 	public override void _Ready()
 	{
@@ -25,6 +27,13 @@ public partial class WeaponView : Node3D
 		_inventory.EquippedChanged += OnEquippedChanged;
 
 		RefreshView(_inventory.Equipped?.Definition);
+	}
+
+	public void SetAdsVisual(float blend, AdsConfig config)
+	{
+		_adsBlend = Mathf.Clamp(blend, 0f, 1f);
+		_adsConfig = config;
+		ApplyAdsPose();
 	}
 
 	private void OnEquippedChanged(WeaponType type)
@@ -54,6 +63,7 @@ public partial class WeaponView : Node3D
 		{
 			_currentView.Visible = true;
 			ApplyZClipScale(_currentView);
+			ApplyAdsPose();
 		}
 		else
 		{
@@ -92,6 +102,73 @@ public partial class WeaponView : Node3D
 		foreach (var child in node.GetChildren())
 		{
 			ApplyZClipScale(child);
+		}
+	}
+
+	private void ApplyAdsPose()
+	{
+		// Placeholder: when Hip/Ads anchors are added, lerp the viewmodel transform using _adsBlend.
+		if (_currentView == null)
+			return;
+
+		ApplyScopeOverlay();
+	}
+
+	private void ApplyScopeOverlay()
+	{
+		var overlay = GetScopeOverlay(_currentView);
+		if (overlay == null)
+			return;
+
+		var texRect = overlay.GetNodeOrNull<TextureRect>("TextureRect")
+			?? overlay.FindChild("TextureRect", recursive: true, owned: false) as TextureRect;
+
+		if (_adsConfig == null || _adsConfig.Mode != AdsMode.Scope || _adsBlend <= 0.001f)
+		{
+			overlay.Visible = false;
+			SetMeshesVisible(_currentView, true);
+			return;
+		}
+
+		if (_adsConfig.ScopeOverlay != null && texRect != null)
+		{
+			texRect.Texture = _adsConfig.ScopeOverlay;
+		}
+
+		var alpha = Mathf.Clamp(_adsBlend * _adsConfig.ScopeOverlayOpacity, 0f, 1f);
+		var mod = overlay.Modulate;
+		mod.A = alpha;
+		overlay.Modulate = mod;
+		overlay.Visible = alpha > 0.001f;
+
+		// Hide the viewmodel mesh when scoped to avoid seeing the weapon in the scope.
+		SetMeshesVisible(_currentView, alpha <= 0.99f);
+	}
+
+	private Control GetScopeOverlay(Node view)
+	{
+		if (view == null)
+			return null;
+		var overlay = view.GetNodeOrNull<Control>("ScopeOverlay");
+		if (overlay != null)
+			return overlay;
+		return view.FindChild("ScopeOverlay", recursive: true, owned: false) as Control;
+	}
+
+	private void SetMeshesVisible(Node node, bool visible)
+	{
+		if (node == null)
+			return;
+
+		if (node is MeshInstance3D mesh)
+		{
+			mesh.Visible = visible;
+		}
+
+		foreach (var child in node.GetChildren())
+		{
+			if (child is Node childNode)
+				SetMeshesVisible(childNode, visible);
 		}
 	}
 

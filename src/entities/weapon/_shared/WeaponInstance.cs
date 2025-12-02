@@ -10,6 +10,7 @@ public partial class WeaponInstance : RefCounted
 	public bool IsReloading { get; private set; }
 	public double ReloadEndTimeMs { get; private set; }
 	public IReadOnlyDictionary<AttachmentSlot, AttachmentDefinition> Attachments => _attachments;
+	public AdsConfig AdsConfig => Definition?.Ads;
 
 	private readonly Dictionary<AttachmentSlot, AttachmentDefinition> _attachments = new();
 

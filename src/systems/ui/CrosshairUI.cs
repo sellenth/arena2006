@@ -30,6 +30,10 @@ public partial class CrosshairUI : Control
     {
         // Hide crosshair when mouse is released for UI (menus), show when captured and in Shooter mode
         bool expectingVisible = (Input.MouseMode == Input.MouseModeEnum.Captured);
+        if (InputMap.HasAction("aim") && Input.IsActionPressed("aim"))
+        {
+            expectingVisible = false;
+        }
         if (Visible != expectingVisible)
         {
             Visible = expectingVisible;

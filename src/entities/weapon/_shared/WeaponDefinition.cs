@@ -26,6 +26,7 @@ public partial class WeaponDefinition : Resource
 	[Export] public WeaponAudioSet? ReloadAudio { get; set; }
 	[Export] public WeaponAudioSet? DryFireAudio { get; set; }
 	[Export] public Godot.Collections.Array<AttachmentSlotDefinition> AttachmentSlots { get; set; } = new();
+	[Export] public AdsConfig? Ads { get; set; } = new AdsConfig();
 
 	public bool HasProjectile => ProjectileScene != null;
 }

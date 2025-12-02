@@ -55,6 +55,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private ReplicatedInt _weaponFireSeqProperty;
 	private ReplicatedInt _weaponReloadMsProperty;
 	private ReplicatedInt _weaponReloadingProperty;
+	private ReplicatedInt _adsStateProperty;
 	public int Health => _healthComponent?.Health ?? MaxHealth;
 	public int Armor => _healthComponent?.Armor ?? MaxArmor;
 	private WeaponInventory _weaponInventory;
@@ -67,6 +68,10 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private int _repWeaponReloadMs = 0;
 	private int _repWeaponReloading = 0;
 	private int _replicatedMovementState = (int)PlayerMovementStateKind.Grounded;
+	private int _adsState = 0;
+	private int _repAdsState = 0;
+	private float _adsBlend = 0f;
+	private WeaponView _weaponView;
 
 	public PlayerCharacter()
 	{
@@ -152,6 +157,11 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			AddChild(_weaponController);
 		}
 
+		if (_weaponView == null)
+		{
+			_weaponView = FindWeaponView();
+		}
+
 		ConnectAmmoUi();
 	}
 
@@ -181,6 +191,15 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		// Search by name to avoid hard-coded paths.
 		var node = scene.FindChild("AmmoUI", recursive: true, owned: false);
 		return node as AmmoUI;
+	}
+
+	private WeaponView FindWeaponView()
+	{
+		var scene = GetTree()?.CurrentScene;
+		if (scene == null)
+			return null;
+		var node = scene.FindChild("WeaponView", recursive: true, owned: false);
+		return node as WeaponView;
 	}
 
 	private void InitializeReplication()
@@ -289,6 +308,13 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			"WeaponReloading",
 			() => GetEquippedReloadingFlag(),
 			value => _repWeaponReloading = value,
+			ReplicationMode.Always
+		);
+
+		_adsStateProperty = new ReplicatedInt(
+			"AdsState",
+			() => _adsState,
+			value => _repAdsState = value,
 			ReplicationMode.Always
 		);
 	}
@@ -435,6 +461,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			: (PlayerMovementStateKind)_replicatedMovementState;
 		_movementComponent?.UpdateCapsuleHeight(deltaFloat, capsuleState, _isAuthority);
 
+		UpdateAdsState(deltaFloat);
+
 
 		ApplySnapshotCorrection(deltaFloat);
 
@@ -470,6 +498,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			PrimaryFireJustPressed = InputMap.HasAction("fire") && Input.IsActionJustPressed("fire"),
 			Reload = (InputMap.HasAction("reload") && Input.IsActionJustPressed("reload")) || Input.IsKeyPressed(Key.R),
 			WeaponToggle = InputMap.HasAction("weapon_toggle") && Input.IsActionJustPressed("weapon_toggle"),
+			Aim = InputMap.HasAction("aim") && Input.IsActionPressed("aim"),
 			ViewYaw = _lookController?.Yaw ?? 0f,
 			ViewPitch = _lookController?.Pitch ?? 0f
 		};
@@ -482,6 +511,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			return;
 
 		_inputState.CopyFrom(state);
+		_adsState = _inputState.Aim ? 1 : 0;
 		if (!float.IsNaN(state.ViewYaw) && !float.IsNaN(state.ViewPitch))
 		{
 			SetYawPitch(state.ViewYaw, state.ViewPitch);
@@ -632,6 +662,13 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		return _weaponInventory?.Equipped?.IsReloading == true ? 1 : 0;
 	}
 
+	private AdsConfig GetActiveAdsConfig()
+	{
+		return _weaponInventory?.Equipped?.AdsConfig
+			?? _weaponInventory?.Equipped?.Definition?.Ads
+			?? new AdsConfig();
+	}
+
 	private void OnReplicatedWeaponId(int value)
 	{
 		_repWeaponId = value;
@@ -678,6 +715,34 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private void ApplyPendingLookInput()
 	{
 		_lookController?.ApplyQueuedLook();
+	}
+
+	private void UpdateAdsState(float delta)
+	{
+		var config = GetActiveAdsConfig() ?? new AdsConfig();
+		var allowsAds = config.Mode != AdsMode.None;
+		var desired = allowsAds
+			? (_isAuthority ? (_inputState.Aim ? 1 : 0) : _repAdsState)
+			: 0;
+		_adsState = desired;
+
+		var targetBlend = desired > 0 ? 1f : 0f;
+		var time = targetBlend > _adsBlend ? config.EnterTimeSec : config.ExitTimeSec;
+		var step = time <= 0f ? 1f : Mathf.Clamp(delta / time, 0f, 1f);
+		_adsBlend = Mathf.MoveToward(_adsBlend, targetBlend, step);
+
+		var adsFov = config.TargetFov > 0f ? config.TargetFov : _lookController?.BaseFov ?? 75f;
+		var sensScale = config.SensitivityScale > 0f ? config.SensitivityScale : 1f;
+
+		if (_isAuthority)
+		{
+			_lookController?.SetAdsBlend(_adsBlend, adsFov, sensScale);
+			_weaponView?.SetAdsVisual(_adsBlend, config);
+		}
+		else
+		{
+			_weaponView?.SetAdsVisual(0f, null);
+		}
 	}
 
 	public string GetMovementStateName()
@@ -819,6 +884,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_weaponFireSeqProperty.Write(buffer);
 		_weaponReloadMsProperty.Write(buffer);
 		_weaponReloadingProperty.Write(buffer);
+		_adsStateProperty.Write(buffer);
 	}
 
 	public void ReadSnapshot(StreamPeerBuffer buffer)
@@ -838,6 +904,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_weaponFireSeqProperty.Read(buffer);
 		_weaponReloadMsProperty.Read(buffer);
 		_weaponReloadingProperty.Read(buffer);
+		_adsStateProperty.Read(buffer);
 
 		if (_hasPendingReplicatedTransform)
 		{
@@ -869,6 +936,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			 + _weaponReserveProperty.GetSizeBytes()
 			 + _weaponFireSeqProperty.GetSizeBytes()
 			 + _weaponReloadMsProperty.GetSizeBytes()
-			 + _weaponReloadingProperty.GetSizeBytes();
+			 + _weaponReloadingProperty.GetSizeBytes()
+			 + _adsStateProperty.GetSizeBytes();
 	}
 }

@@ -9,6 +9,7 @@ public partial class PlayerInputState : RefCounted
 	public bool PrimaryFireJustPressed { get; set; }
 	public bool Reload { get; set; }
 	public bool WeaponToggle { get; set; }
+	public bool Aim { get; set; }
 	public float ViewYaw { get; set; } = float.NaN;
 	public float ViewPitch { get; set; } = float.NaN;
 	public bool Interact { get; set; }
@@ -27,6 +28,7 @@ public partial class PlayerInputState : RefCounted
 		PrimaryFireJustPressed = other.PrimaryFireJustPressed;
 		Reload = other.Reload;
 		WeaponToggle = other.WeaponToggle;
+		Aim = other.Aim;
 		ViewYaw = other.ViewYaw;
 		ViewPitch = other.ViewPitch;
 		Interact = other.Interact;
@@ -42,6 +44,7 @@ public partial class PlayerInputState : RefCounted
 		PrimaryFireJustPressed = false;
 		Reload = false;
 		WeaponToggle = false;
+		Aim = false;
 		ViewYaw = float.NaN;
 		ViewPitch = float.NaN;
 		Interact = false;
