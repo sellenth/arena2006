@@ -2,7 +2,7 @@ using Godot;
 
 public static class NetworkConfig
 {
-	public const int DefaultPort = 45000;
+	public const int DefaultPort = 30000;
 	public const int PeerTimeoutMsec = 5000;
 	public const int PlayerEntityIdOffset = 3000;
 	public const int VehicleEntityIdOffset = 2000;
