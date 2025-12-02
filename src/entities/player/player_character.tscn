@@ -49,9 +49,11 @@ visible = false
 
 [node name="MachineGun" parent="Head/Cam/WeaponView" instance=ExtResource("5_tpgr7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.174, -0.274, -0.372)
+visible = false
 
 [node name="Sniper" parent="Head/Cam/WeaponView" instance=ExtResource("8_sniper")]
 transform = Transform3D(0.052335974, 0, 0.9986295, 0, 1, 0, -0.9986295, 0, 0.052335974, 0.09, -0.12, -0.27)
+visible = false
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 3

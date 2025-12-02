@@ -1,0 +1,7 @@
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://cb671oa515e00"]
+
+[ext_resource type="Script" uid="uid://b1gmenpn0ti3g" path="res://src/entities/weapon/_shared/AdsConfig.cs" id="1_egr64"]
+
+[resource]
+script = ExtResource("1_egr64")
+Mode = 1
