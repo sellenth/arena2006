@@ -12,6 +12,6 @@ spec:
     app: arena2006-server
   ports:
   - protocol: UDP
-    port: 45000
-    nodePort: 45000
+    port: 12345
+    nodePort: 30000
     targetPort: 45000
