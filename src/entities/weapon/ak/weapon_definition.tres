@@ -1,13 +1,14 @@
-[gd_resource type="Resource" load_steps=8 format=3 uid="uid://630njoevb58b"]
+[gd_resource type="Resource" load_steps=9 format=3 uid="uid://630njoevb58b"]
 
 [ext_resource type="Resource" uid="uid://cb671oa515e00" path="res://src/entities/weapon/ak/ads_config.tres" id="1_4748l"]
-[ext_resource type="Resource" path="res://src/entities/weapon/ak/projectile_definition.tres" id="1_gektc"]
+[ext_resource type="Resource" uid="uid://dxapgrvhamoa2" path="res://src/entities/weapon/ak/projectile_definition.tres" id="1_gektc"]
 [ext_resource type="PackedScene" uid="uid://34kaubovaw2c" path="res://src/entities/weapon/ak/ak_projectile.tscn" id="2_4748l"]
 [ext_resource type="PackedScene" uid="uid://5b41c2j5uq3h" path="res://src/entities/weapon/ak/ak_viewmodel.tscn" id="3_gektc"]
 [ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="5_30cml"]
 [ext_resource type="PackedScene" uid="uid://cjbqme3c0e05w" path="res://src/entities/weapon/ak/ak_base.tscn" id="5_4748l"]
+[ext_resource type="Resource" uid="uid://ea5a7c01bea0" path="res://src/entities/weapon/ak/fire_audio.tres" id="6"]
 
-[sub_resource type="CSharpScript" id="CSharpScript_4748l"]
+[sub_resource type="CSharpScript" id="CSharpScript_gx7kp"]
 
 [resource]
 script = ExtResource("5_30cml")
@@ -27,4 +28,5 @@ IsAutomatic = true
 EquipTimeSec = 0.2
 UnequipTimeSec = 0.2
 ProjectilePoolPrewarm = 32
+FireAudio = ExtResource("6")
 Ads = ExtResource("1_4748l")

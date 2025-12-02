@@ -1,12 +1,17 @@
-[gd_resource type="Resource" load_steps=7 format=3 uid="uid://b778nq68itor2"]
+[gd_resource type="Resource" load_steps=10 format=3 uid="uid://b778nq68itor2"]
 
 [ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="1"]
+[ext_resource type="Script" uid="uid://b1gmenpn0ti3g" path="res://src/entities/weapon/_shared/AdsConfig.cs" id="1_pgt81"]
 [ext_resource type="PackedScene" uid="uid://c1is6kaw2brf1" path="res://src/entities/weapon/rocket_launcher/rocket_launcher.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://bqfluf8q56o4k" path="res://src/entities/weapon/rocket_launcher/rocket_projectile.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://077fwctsfy01" path="res://src/entities/weapon/rocket_launcher/rocket_launcher_viewmodel.tscn" id="3_a6u2p"]
 [ext_resource type="Resource" uid="uid://53maa486k4ky" path="res://src/entities/weapon/rocket_launcher/projectile_definition.tres" id="4"]
+[ext_resource type="Resource" uid="uid://6ecbe5daf535" path="res://src/entities/weapon/rocket_launcher/fire_audio.tres" id="5"]
 
-[sub_resource type="CSharpScript" id="CSharpScript_7hwn7"]
+[sub_resource type="Resource" id="Resource_hmrto"]
+script = ExtResource("1_pgt81")
+
+[sub_resource type="CSharpScript" id="CSharpScript_gx7kp"]
 
 [resource]
 script = ExtResource("1")
@@ -23,3 +28,4 @@ Damage = 100.0
 AllowHoldToFire = false
 EquipTimeSec = 0.35
 UnequipTimeSec = 0.35
+FireAudio = ExtResource("5")
