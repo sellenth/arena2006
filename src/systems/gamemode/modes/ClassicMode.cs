@@ -30,6 +30,8 @@ public sealed partial class ClassicMode : GameMode
 	public override bool LoopPhases => true;
 	public override int LoopStartIndex => 0;
 
+	public override TeamStructure TeamStructure => TeamStructure.FreeForAll;
+
 	protected override IReadOnlyList<GameModePhaseDefinition> BuildPhases()
 	{
 		return new[]
@@ -59,6 +61,14 @@ public sealed partial class ClassicMode : GameMode
 			case GameModePhaseType.FragWindow:
 				manager.SetWeaponsEnabled(true, phase.PhaseType, "classic_frag_phase");
 				break;
+		}
+	}
+
+	public override void OnPlayerKilled(MatchContext ctx, int victimId, int killerId)
+	{
+		if (killerId > 0 && killerId != victimId)
+		{
+			ctx.ScoreTracker?.AddPlayerScore(killerId, ScoreRules.PointsPerElimination);
 		}
 	}
 }

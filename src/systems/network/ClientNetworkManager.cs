@@ -25,10 +25,13 @@ public partial class ClientNetworkManager : GodotObject
 	public event Action<int, byte[]> EntitySnapshotReceivedEvent;
 	public event Action<System.Collections.Generic.List<NetworkSerializer.ScoreboardEntry>> ScoreboardUpdatedEvent;
 	public event Action<float, WeaponType, bool> HitMarkerReceived;
+	public event Action<MatchStateSnapshot> MatchStateReceivedEvent;
+	public event Action<int, int> TeamAssignmentReceivedEvent;
 
 	public int ClientId => _clientId;
 	public PlayerMode CurrentMode => _currentMode;
 	public RaycastCar LocalCar => _car;
+	public PlayerCharacter LocalPlayer => _playerCharacter;
 
 	private enum TestInputMode
 	{
@@ -283,6 +286,20 @@ public partial class ClientNetworkManager : GodotObject
 						HitMarkerReceived?.Invoke(damage, weaponType, wasKill);
 					}
 					break;
+				case NetworkSerializer.PacketMatchState:
+					var matchState = NetworkSerializer.DeserializeMatchState(packet);
+					if (matchState.HasValue)
+					{
+						MatchStateReceivedEvent?.Invoke(matchState.Value);
+					}
+					break;
+				case NetworkSerializer.PacketTeamAssignment:
+					var teamAssignment = NetworkSerializer.DeserializeTeamAssignment(packet);
+					if (teamAssignment.HasValue)
+					{
+						TeamAssignmentReceivedEvent?.Invoke(teamAssignment.Value.PeerId, teamAssignment.Value.TeamId);
+					}
+					break;
 			}
 		}
 	}
@@ -356,6 +373,11 @@ public partial class ClientNetworkManager : GodotObject
 		player.ConfigureAuthority(true);
 		player.SetCameraActive(_currentMode == PlayerMode.Foot);
 		ApplyClientInputToPlayer();
+	}
+
+	public void SetLocalPlayerColor(Color color)
+	{
+		_playerCharacter?.SetPlayerColor(color);
 	}
 
 	public void AttachLocalVehicle(int vehicleId, RaycastCar car)

@@ -1,10 +1,19 @@
-[gd_scene load_steps=4 format=3 uid="uid://cukaeucupjo2e"]
+[gd_scene load_steps=6 format=3 uid="uid://cukaeucupjo2e"]
 
 [ext_resource type="Script" uid="uid://d0vm38pjoww3p" path="res://src/systems/ui/DebugUiController.cs" id="1_b4myk"]
 [ext_resource type="Script" uid="uid://dja75o5h84r1" path="res://src/systems/ui/HitMarkerUI.cs" id="2_nqq46"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a5fxc"]
 bg_color = Color(0.853973, 1, 0.660156, 1)
+
+[sub_resource type="Gradient" id="Gradient_nqq46"]
+offsets = PackedFloat32Array(0.35795453, 1)
+colors = PackedColorArray(0.5660922, 1.7688051e-06, 3.3691526e-07, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_ggt3y"]
+gradient = SubResource("Gradient_nqq46")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
 
 [node name="UiController" type="Node"]
 script = ExtResource("1_b4myk")
@@ -161,3 +170,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_nqq46")
+
+[node name="DeathUI" type="CanvasLayer" parent="."]
+visible = false
+
+[node name="TextureRect" type="TextureRect" parent="DeathUI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_ggt3y")

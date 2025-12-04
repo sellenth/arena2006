@@ -1,8 +1,8 @@
 [gd_scene load_steps=10 format=4 uid="uid://dqsjudt64pb3u"]
 
-[ext_resource type="Texture2D" uid="uid://dbyt7wlt8hn44" path="res://src/entities/building/building_1/MEDIUM - 5- DIFFUSE.png" id="1_rbqwy"]
-[ext_resource type="Texture2D" uid="uid://dcculd2tdja6f" path="res://src/entities/building/building_1/MEDIUM - 5- EMMISION.png" id="2_s10r2"]
-[ext_resource type="Texture2D" uid="uid://dijqsn76pitow" path="res://src/entities/building/building_1/MEDIUM - 5 - BUMP_normal.png" id="3_gjx5j"]
+[ext_resource type="Texture2D" uid="uid://wc2drh2mqwjx" path="res://src/entities/building/building_1/MEDIUM - 5- DIFFUSE.png" id="1_rbqwy"]
+[ext_resource type="Texture2D" uid="uid://cluamjubngb6a" path="res://src/entities/building/building_1/MEDIUM - 5- EMMISION.png" id="2_s10r2"]
+[ext_resource type="Texture2D" uid="uid://ho7gbvuor0r6" path="res://src/entities/building/building_1/MEDIUM - 5 - BUMP_normal.png" id="3_gjx5j"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ay3ru"]
 resource_name = "Material.002"

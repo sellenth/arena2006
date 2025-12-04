@@ -1,5 +1,6 @@
 [gd_scene load_steps=86 format=4 uid="uid://c44ofumy11psc"]
 
+[ext_resource type="Material" uid="uid://dwgngqcfvi3s4" path="res://src/materials/red_square.tres" id="1_5xeb4"]
 [ext_resource type="Texture2D" uid="uid://b3wtjvu2t2axk" path="res://src/entities/weapon/sniper/Maps/Scifi_Sniper/Scifi_Sniper_Body_Base_color_1001.jpg" id="1_fcja4"]
 [ext_resource type="Texture2D" uid="uid://bu7ke3nyiws38" path="res://src/entities/weapon/sniper/Maps/Scifi_Sniper/Scifi_Sniper_Details_Base_color_1002.jpg" id="2_5xeb4"]
 
@@ -46,9 +47,6 @@ metadata/extras = {
 "bc": {},
 "hops": {}
 }
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fcja4"]
-albedo_texture = ExtResource("1_fcja4")
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_q5gls"]
 _surfaces = [{
@@ -1317,7 +1315,7 @@ metadata/extras = {
 transform = Transform3D(1.7315608, 0, 0, 0, -6.192545e-07, -1.7315608, 0, 1.7315608, -6.192545e-07, -0.043934643, 0.07975894, -4.6006753e-05)
 mesh = SubResource("ArrayMesh_td4fo")
 skeleton = NodePath("")
-surface_material_override/0 = SubResource("StandardMaterial3D_fcja4")
+surface_material_override/0 = ExtResource("1_5xeb4")
 metadata/extras = {
 "MM": {},
 "bc": {},

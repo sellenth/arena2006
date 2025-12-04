@@ -8,12 +8,16 @@ public partial class WeaponInventory : Node
 
 	[Export] public Godot.Collections.Array<WeaponDefinition> StartingWeapons { get; set; } = new();
 
+	public const int MaxWeapons = 2;
+
 	private readonly Dictionary<WeaponType, WeaponInstance> _weapons = new();
 	private WeaponInstance _equipped;
 	private WeaponType _lastEquippedType = WeaponType.None;
 
 	public WeaponInstance Equipped => _equipped;
 	public WeaponType EquippedType => _equipped?.Definition?.Id ?? WeaponType.None;
+	public int WeaponCount => _weapons.Count;
+	public bool CanAddWeapon => _weapons.Count < MaxWeapons;
 
 	public override void _Ready()
 	{
@@ -89,6 +93,14 @@ public partial class WeaponInventory : Node
 		if (_lastEquippedType == WeaponType.None)
 			return false;
 		return Equip(_lastEquippedType);
+	}
+
+	public void Clear()
+	{
+		_weapons.Clear();
+		_equipped = null;
+		_lastEquippedType = WeaponType.None;
+		EmitSignal(SignalName.EquippedChanged, (int)WeaponType.None);
 	}
 
 	public void EmitAmmo()

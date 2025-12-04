@@ -28,7 +28,6 @@ public partial class PlayerWrapper : Node3D
 		}
 
 		ApplyMode(_currentMode);
-		RandomizeLocalPlayerColor();
 	}
 
 	public override void _ExitTree()
@@ -53,16 +52,5 @@ public partial class PlayerWrapper : Node3D
 		var isFoot = mode == PlayerMode.Foot;
 		_player.SetWorldActive(isFoot);
 		_player.SetCameraActive(isFoot);
-	}
-
-	private void RandomizeLocalPlayerColor()
-	{
-		if (_player == null)
-			return;
-
-		var rng = new RandomNumberGenerator();
-		rng.Randomize();
-		var color = new Color(rng.Randf(), rng.Randf(), rng.Randf());
-		_player.SetPlayerColor(color);
 	}
 }

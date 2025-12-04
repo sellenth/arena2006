@@ -170,6 +170,13 @@ public abstract partial class GameMode : GodotObject
 	public virtual bool LoopPhases => false;
 	public virtual int LoopStartIndex => 0;
 
+	public virtual TeamStructure TeamStructure => TeamStructure.FreeForAll;
+	public virtual int TeamCount => 0;
+	public virtual IWinCondition WinCondition => null;
+	public virtual bool HasRounds => false;
+	public virtual float RoundDuration => 0f;
+	public virtual float MatchTimeLimit => 0f;
+
 	private IReadOnlyList<GameModePhaseDefinition> _phases;
 
 	public IReadOnlyList<GameModePhaseDefinition> Phases
@@ -189,11 +196,28 @@ public abstract partial class GameMode : GodotObject
 
 	internal void EnsurePhasesCached() => _ = Phases;
 
+	public virtual TeamConfig GetTeamConfig()
+	{
+		return TeamStructure switch
+		{
+			TeamStructure.TwoTeams => TeamConfig.TwoTeam,
+			TeamStructure.MultiTeam => TeamConfig.CreateMultiTeam(TeamCount),
+			_ => TeamConfig.FreeForAll
+		};
+	}
+
 	public virtual void OnActivated(GameModeManager manager) { }
 	public virtual void OnDeactivated(GameModeManager manager) { }
 	public virtual void OnPhaseEntered(GameModeManager manager, GameModePhaseState phase) { }
 	public virtual void OnPhaseExited(GameModeManager manager, GameModePhaseState phase) { }
 	public virtual void OnPhaseTick(GameModeManager manager, GameModePhaseState phase, double delta) { }
+
+	public virtual void OnPlayerKilled(MatchContext ctx, int victimId, int killerId) { }
+	public virtual void OnObjectiveEvent(MatchContext ctx, ObjectiveEventData evt) { }
+	public virtual void OnRoundStart(MatchContext ctx, int roundNumber) { }
+	public virtual void OnRoundEnd(MatchContext ctx, int winningTeam) { }
+	public virtual void OnPlayerJoined(MatchContext ctx, int peerId) { }
+	public virtual void OnPlayerLeft(MatchContext ctx, int peerId) { }
 
 	public virtual int ResolveNextPhaseIndex(int currentPhaseIndex)
 	{
@@ -219,13 +243,38 @@ public abstract partial class GameMode : GodotObject
 	}
 }
 
+public enum ObjectiveEventType
+{
+	None = 0,
+	FlagPickedUp,
+	FlagDropped,
+	FlagCaptured,
+	FlagReturned,
+	BombPlanted,
+	BombDefused,
+	BombExploded,
+	CheckpointReached,
+	LapCompleted,
+	ZoneCaptured,
+	ZoneLost
+}
+
+public struct ObjectiveEventData
+{
+	public ObjectiveEventType Type;
+	public int PlayerId;
+	public int TeamId;
+	public int ObjectiveId;
+	public Vector3 Position;
+}
+
 [GlobalClass]
 public partial class GameModeManager : Node
 {
 	public static GameModeManager Instance { get; private set; }
 
-	[Export(PropertyHint.Enum, "classic,race_only,deathmatch")]
-	public string DefaultModeId { get; set; } = ClassicMode.ModeId;
+	[Export(PropertyHint.Enum, "classic,race_only,deathmatch,team_deathmatch,search_and_destroy")]
+	public string DefaultModeId { get; set; } = SearchAndDestroyMode.ModeId;
 
 	private readonly Dictionary<string, GameMode> _modes = new(StringComparer.OrdinalIgnoreCase);
 
@@ -237,6 +286,12 @@ public partial class GameModeManager : Node
 	private bool _carControlEnabled = false;
 	private bool _shooterControlEnabled = false;
 	private bool _weaponsEnabled = false;
+
+	private TeamManager _teamManager;
+	private MatchState _matchState;
+	private ScoreTracker _scoreTracker;
+	private MatchContext _matchContext;
+	private int _serverTick;
 
 	[Signal]
 	public delegate void GameModeChangedEventHandler(string modeId, string displayName);
@@ -262,6 +317,27 @@ public partial class GameModeManager : Node
 	[Signal]
 	public delegate void ScoreRulesChangedEventHandler(Godot.Collections.Dictionary scoreRules);
 
+	[Signal]
+	public delegate void PlayerKilledEventHandler(int killerId, int victimId, int teamId);
+
+	[Signal]
+	public delegate void TeamScoreChangedEventHandler(int teamId, int score);
+
+	[Signal]
+	public delegate void MatchEndedEventHandler(int winningTeam);
+
+	[Signal]
+	public delegate void RoundStartedEventHandler(int roundNumber);
+
+	[Signal]
+	public delegate void RoundEndedEventHandler(int roundNumber, int winningTeam);
+
+	[Signal]
+	public delegate void PlayerTeamColorChangedEventHandler(int peerId, Color color);
+
+	[Signal]
+	public delegate void RespawnPlayersAtTeamSpawnsEventHandler(Godot.Collections.Dictionary teamSpawnNodes);
+
 	public GameMode ActiveMode => _activeMode;
 	public GameModePhaseState ActivePhase => _activePhase;
 	public GameModeScoreRules ActiveScoreRules => _activeScoreRules;
@@ -269,6 +345,10 @@ public partial class GameModeManager : Node
 	public bool CarControlEnabled => _carControlEnabled;
 	public bool ShooterControlEnabled => _shooterControlEnabled;
 	public bool WeaponsEnabled => _weaponsEnabled;
+	public TeamManager TeamManager => _teamManager;
+	public MatchState MatchState => _matchState;
+	public ScoreTracker ScoreTracker => _scoreTracker;
+	public MatchContext Context => _matchContext;
 
 	public override void _EnterTree()
 	{
@@ -292,6 +372,7 @@ public partial class GameModeManager : Node
 
 	public override void _Ready()
 	{
+		InitializeMatchSystems();
 		RegisterBuiltInModes();
 
 		if (!string.IsNullOrEmpty(DefaultModeId) && _modes.ContainsKey(DefaultModeId))
@@ -308,8 +389,119 @@ public partial class GameModeManager : Node
 		}
 	}
 
+	private void InitializeMatchSystems()
+	{
+		_teamManager = new TeamManager();
+		_matchState = new MatchState();
+		_scoreTracker = new ScoreTracker(_matchState, _teamManager);
+		_matchContext = new MatchContext(_matchState, _teamManager, _scoreTracker, this);
+
+		_scoreTracker.TeamScoreChanged += OnTeamScoreChanged;
+		_scoreTracker.PlayerKilled += OnPlayerKilledInternal;
+		_scoreTracker.WinConditionMet += OnWinConditionMet;
+		_teamManager.PlayerTeamChanged += OnPlayerTeamChanged;
+	}
+
+	private void OnPlayerTeamChanged(int peerId, int oldTeam, int newTeam)
+	{
+		var teamDef = _teamManager.GetTeamDefinition(newTeam);
+		var color = teamDef?.Color ?? Colors.White;
+		EmitSignal(SignalName.PlayerTeamColorChanged, peerId, color);
+	}
+
+	public Color GetTeamColorForPlayer(int peerId)
+	{
+		var teamId = _teamManager?.GetTeamForPlayer(peerId) ?? TeamManager.NoTeam;
+		var teamDef = _teamManager?.GetTeamDefinition(teamId);
+		return teamDef?.Color ?? Colors.White;
+	}
+
+	private void OnTeamScoreChanged(int teamId, int score)
+	{
+		EmitSignal(SignalName.TeamScoreChanged, teamId, score);
+	}
+
+	private void OnPlayerKilledInternal(int killerId, int victimId, int assisterId)
+	{
+		var killerTeam = _teamManager.GetTeamForPlayer(killerId);
+		EmitSignal(SignalName.PlayerKilled, killerId, victimId, killerTeam);
+	}
+
+	private void OnWinConditionMet(int winningTeam)
+	{
+		if (_matchState.IsOver)
+			return;
+
+		_matchState.EndMatch(winningTeam);
+
+		if (_teamManager.IsFreeForAll)
+		{
+			GD.Print($"=== MATCH OVER === Player {winningTeam} WINS! ===");
+		}
+		else
+		{
+			var teamDef = _teamManager.GetTeamDefinition(winningTeam);
+			GD.Print($"=== MATCH OVER === {teamDef.Name} WINS! ===");
+		}
+
+		EmitSignal(SignalName.MatchEnded, winningTeam);
+		TransitionToResultsPhase();
+	}
+
+	private void TransitionToResultsPhase()
+	{
+		if (_activeMode == null)
+			return;
+
+		for (int i = 0; i < _activeMode.Phases.Count; i++)
+		{
+			if (_activeMode.Phases[i].PhaseType == GameModePhaseType.Results)
+			{
+				if (_activePhase != null)
+				{
+					_activeMode.OnPhaseExited(this, _activePhase);
+					EmitSignal(
+						SignalName.PhaseEnded,
+						(int)_activePhase.PhaseType,
+						_activePhase.Definition.Description,
+						"win_condition_met"
+					);
+				}
+
+				_phaseIndex = i;
+				var definition = _activeMode.Phases[i];
+				_activePhase = new GameModePhaseState(definition, i);
+				ApplyPhaseAccess(definition);
+				_activeMode.OnPhaseEntered(this, _activePhase);
+				EmitSignal(
+					SignalName.PhaseStarted,
+					(int)definition.PhaseType,
+					definition.Description,
+					"win_condition_met"
+				);
+				return;
+			}
+		}
+
+		GD.Print("No Results phase defined - advancing to next phase");
+		AdvanceToNextPhase("win_condition_met");
+	}
+
 	public override void _Process(double delta)
 	{
+		_serverTick++;
+		_matchState?.SetServerTick(_serverTick);
+
+		if (_matchState != null && _matchState.IsLive)
+		{
+			_matchState.TickPhaseTime((float)delta);
+
+			if (_activeMode?.WinCondition != null)
+			{
+				_scoreTracker?.CheckWinCondition(_activeMode.WinCondition);
+			}
+		}
+
 		if (_activeMode == null || _activePhase == null)
 		{
 			return;
@@ -372,6 +564,20 @@ public partial class GameModeManager : Node
 		DeactivateCurrentMode("mode_switch");
 		_activeMode = mode;
 		_activeScoreRules = mode.ScoreRules;
+
+		_teamManager.Configure(mode.GetTeamConfig());
+		_matchState.Reset();
+		_matchState.SetModeId(mode.Id);
+
+		if (mode.MatchTimeLimit > 0)
+		{
+			_matchState.SetPhase(MatchPhase.Live, mode.MatchTimeLimit);
+		}
+		else
+		{
+			_matchState.SetPhase(MatchPhase.Live);
+		}
+
 		EmitSignal(SignalName.GameModeChanged, mode.Id, mode.DisplayName);
 		EmitSignal(SignalName.ScoreRulesChanged, _activeScoreRules.ToDictionary());
 		mode.OnActivated(this);
@@ -519,5 +725,138 @@ public partial class GameModeManager : Node
 		RegisterMode(new ClassicMode());
 		RegisterMode(new RaceOnlyMode());
 		RegisterMode(new DeathmatchMode());
+		RegisterMode(new TeamDeathmatchMode());
+		RegisterMode(new SearchAndDestroyMode());
+	}
+
+	public void NotifyPlayerKilled(int victimId, int killerId)
+	{
+		if (_activeMode == null || _matchContext == null)
+			return;
+
+		if (_matchState.IsOver)
+		{
+			GD.Print($"[GameMode] Kill ignored - match already over");
+			return;
+		}
+
+		var victimTeam = _teamManager.GetTeamForPlayer(victimId);
+		var killerTeam = _teamManager.GetTeamForPlayer(killerId);
+
+		if (killerId == victimId || killerId <= 0)
+		{
+			_scoreTracker.RecordSuicide(victimId);
+			GD.Print($"[GameMode] Player {victimId} died (suicide/environment)");
+		}
+		else if (_teamManager.ArePlayersOnSameTeam(killerId, victimId))
+		{
+			_scoreTracker.RecordTeamKill(killerId, victimId);
+			GD.Print($"[GameMode] Player {killerId} team-killed Player {victimId}");
+		}
+		else
+		{
+			_scoreTracker.RecordKill(killerId, victimId);
+			var killerScore = _scoreTracker.GetPlayerScore(killerId);
+			var killerKills = _scoreTracker.GetPlayerKills(killerId);
+			GD.Print($"[GameMode] Player {killerId} killed Player {victimId} | Score: {killerScore} Kills: {killerKills}");
+		}
+
+		_activeMode.OnPlayerKilled(_matchContext, victimId, killerId);
+	}
+
+	public void NotifyPlayerJoined(int peerId)
+	{
+		if (_activeMode == null || _matchContext == null)
+			return;
+
+		if (_teamManager.IsTeamBased)
+		{
+			_teamManager.AutoAssignTeam(peerId);
+		}
+
+		_activeMode.OnPlayerJoined(_matchContext, peerId);
+	}
+
+	public void NotifyPlayerLeft(int peerId)
+	{
+		if (_activeMode == null || _matchContext == null)
+			return;
+
+		_activeMode.OnPlayerLeft(_matchContext, peerId);
+		_teamManager.RemovePlayer(peerId);
+		_matchState.RemovePlayer(peerId);
+	}
+
+	public void NotifyObjectiveEvent(ObjectiveEventData evt)
+	{
+		if (_activeMode == null || _matchContext == null)
+			return;
+
+		_activeMode.OnObjectiveEvent(_matchContext, evt);
+	}
+
+	public int GetTeamForPlayer(int peerId)
+	{
+		return _teamManager?.GetTeamForPlayer(peerId) ?? TeamManager.NoTeam;
+	}
+
+	public bool AssignPlayerToTeam(int peerId, int teamId)
+	{
+		return _teamManager?.AssignPlayerToTeam(peerId, teamId) ?? false;
+	}
+
+	public MatchStateSnapshot GetMatchStateSnapshot()
+	{
+		return MatchStateSnapshot.FromState(_matchState, this);
+	}
+
+	public void StartRound(int roundNumber)
+	{
+		if (_activeMode == null || !_activeMode.HasRounds)
+			return;
+
+		_matchState.SetRound(roundNumber);
+		_activeMode.OnRoundStart(_matchContext, roundNumber);
+		EmitSignal(SignalName.RoundStarted, roundNumber);
+	}
+
+	public void EndRound(int winningTeam)
+	{
+		if (_activeMode == null || !_activeMode.HasRounds)
+			return;
+
+		var roundNumber = _matchState.RoundNumber;
+		_activeMode.OnRoundEnd(_matchContext, winningTeam);
+		EmitSignal(SignalName.RoundEnded, roundNumber, winningTeam);
+	}
+
+	public void RequestTeamRespawns(System.Collections.Generic.Dictionary<int, string> teamSpawnNodes)
+	{
+		var dict = new Godot.Collections.Dictionary();
+		foreach (var kvp in teamSpawnNodes)
+		{
+			dict[kvp.Key] = kvp.Value;
+		}
+		EmitSignal(SignalName.RespawnPlayersAtTeamSpawns, dict);
+	}
+
+	public void RestartActiveMode()
+	{
+		if (_activeMode == null)
+			return;
+
+		var modeId = _activeMode.Id;
+
+		if (_activeMode is SearchAndDestroyMode sndMode)
+		{
+			sndMode.RestartMatch(this);
+		}
+
+		_matchState.Reset();
+		_phaseIndex = -1;
+		_activePhase = null;
+		AdvanceToNextPhase("mode_restart");
+
+		GD.Print($"[GameModeManager] Mode '{modeId}' restarted");
 	}
 }

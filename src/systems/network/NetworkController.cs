@@ -24,6 +24,7 @@ public partial class NetworkController : Node
 	public bool IsClient => _role == NetworkRole.Client;
 	public int ClientPeerId => _clientManager?.ClientId ?? 0;
 	public RaycastCar LocalCar => _clientManager?.LocalCar;
+	public PlayerCharacter LocalPlayer => _clientManager?.LocalPlayer;
 	public PlayerMode CurrentClientMode => _clientManager?.CurrentMode ?? PlayerMode.Foot;
 
 	public override void _Ready()
@@ -75,6 +76,8 @@ public partial class NetworkController : Node
 				EmitSignal(SignalName.ScoreboardUpdated, godotScoreboard);
 			};
 			_clientManager.HitMarkerReceived += OnClientHitMarker;
+			_clientManager.MatchStateReceivedEvent += OnClientMatchStateReceived;
+			_clientManager.TeamAssignmentReceivedEvent += OnClientTeamAssignmentReceived;
 		}
 	}
 
@@ -91,12 +94,25 @@ public partial class NetworkController : Node
 		_spawnManager.CacheSpawnPoints(GetTree(), carParent);
 		_serverManager.SetWorldBoundsManager(WorldBoundsManager.Instance);
 		_vehicleManager.SetWorldBoundsManager(WorldBoundsManager.Instance);
+
+		var gameModeManager = GameModeManager.Instance;
+		if (gameModeManager != null)
+		{
+			gameModeManager.PlayerTeamColorChanged += _serverManager.OnPlayerTeamColorChanged;
+			gameModeManager.RespawnPlayersAtTeamSpawns += _serverManager.OnRespawnPlayersAtTeamSpawns;
+		}
 	}
+
+	private MatchStateClient _matchStateClient;
 
 	private void StartClient()
 	{
 		var clientIp = CmdLineArgsManager.GetClientIp();
 		_clientManager.Initialize(clientIp);
+
+		_matchStateClient = new MatchStateClient();
+		_matchStateClient.Name = "MatchStateClient";
+		AddChild(_matchStateClient);
 	}
 
 	public override void _UnhandledInput(InputEvent @event)
@@ -240,5 +256,22 @@ public partial class NetworkController : Node
 
 		_hitMarkerUi = scene.FindChild("HitMarkerUI", true, false) as HitMarkerUI;
 		return _hitMarkerUi;
+	}
+
+	private void OnClientMatchStateReceived(MatchStateSnapshot snapshot)
+	{
+		_matchStateClient?.ApplySnapshot(snapshot);
+	}
+
+	private void OnClientTeamAssignmentReceived(int peerId, int teamId)
+	{
+		if (peerId == ClientPeerId)
+		{
+			var matchStateClient = GetTree()?.CurrentScene?.GetNodeOrNull<MatchStateClient>("MatchStateClient");
+			matchStateClient?.SetLocalTeam(teamId);
+
+			var teamDef = TeamDefinition.GetDefault(teamId);
+			_clientManager?.SetLocalPlayerColor(teamDef.Color);
+		}
 	}
 }

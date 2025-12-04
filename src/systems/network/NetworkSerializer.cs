@@ -11,6 +11,9 @@ public static partial class NetworkSerializer
 	public const byte PacketEntityDespawn = 6;
 	public const byte PacketScoreboard = 7;
 	public const byte PacketHitMarker = 8;
+	public const byte PacketMatchState = 9;
+	public const byte PacketTeamAssignment = 10;
+	public const byte PacketScoreUpdate = 11;
 
 	public const int CarSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
 	public const int PlayerSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
@@ -72,6 +75,7 @@ public static partial class NetworkSerializer
 		buffer.PutU8((byte)(state.WeaponToggle ? 1 : 0));
 		buffer.PutU8((byte)(state.Aim ? 1 : 0));
 		buffer.PutU8((byte)(state.Interact ? 1 : 0));
+		buffer.PutU8((byte)(state.InteractJustPressed ? 1 : 0));
 		buffer.PutU8((byte)(state.Sprint ? 1 : 0));
 		buffer.PutFloat(state.ViewYaw);
 		buffer.PutFloat(state.ViewPitch);
@@ -86,7 +90,7 @@ public static partial class NetworkSerializer
 		if (buffer.GetAvailableBytes() < 1) return null;
 		var packetType = buffer.GetU8();
 		if (packetType != PacketPlayerInput) return null;
-		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 4) return null;
+		if (buffer.GetAvailableBytes() < 4 + 4 + 4 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 4) return null;
 		var state = new PlayerInputState
 		{
 			Tick = (int)buffer.GetU32(),
@@ -100,6 +104,7 @@ public static partial class NetworkSerializer
 			WeaponToggle = buffer.GetU8() == 1,
 			Aim = buffer.GetU8() == 1,
 			Interact = buffer.GetU8() == 1,
+			InteractJustPressed = buffer.GetU8() == 1,
 			Sprint = buffer.GetU8() == 1,
 			ViewYaw = buffer.GetFloat(),
 			ViewPitch = buffer.GetFloat()
@@ -494,5 +499,155 @@ public static partial class NetworkSerializer
 	{
 		public int PlayerId { get; set; }
 		public PlayerStateSnapshot Snapshot { get; set; }
+	}
+
+	public static byte[] SerializeMatchState(MatchStateSnapshot snapshot)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.PutU8(PacketMatchState);
+		buffer.PutU8((byte)snapshot.Phase);
+		buffer.PutU8((byte)snapshot.GameModePhase);
+		buffer.PutFloat(snapshot.PhaseTimeRemaining);
+		buffer.PutU16((ushort)snapshot.RoundNumber);
+		buffer.PutU32((uint)snapshot.ServerTick);
+		buffer.PutU8((byte)(snapshot.WinningTeam + 1));
+		buffer.PutU8((byte)(snapshot.WeaponsEnabled ? 1 : 0));
+
+		var scores = snapshot.TeamScores ?? System.Array.Empty<int>();
+		buffer.PutU8((byte)System.Math.Min(scores.Length, MatchState.MaxTeams));
+		for (int i = 0; i < System.Math.Min(scores.Length, MatchState.MaxTeams); i++)
+		{
+			buffer.PutU16((ushort)Mathf.Clamp(scores[i], 0, ushort.MaxValue));
+		}
+
+		var modeId = snapshot.ModeId ?? string.Empty;
+		var modeIdBytes = System.Text.Encoding.UTF8.GetBytes(modeId);
+		buffer.PutU8((byte)System.Math.Min(modeIdBytes.Length, 255));
+		if (modeIdBytes.Length > 0)
+			buffer.PutData(modeIdBytes);
+
+		return buffer.DataArray;
+	}
+
+	public static MatchStateSnapshot? DeserializeMatchState(byte[] packet)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.DataArray = packet;
+
+		if (buffer.GetAvailableBytes() < 13)
+			return null;
+
+		if (buffer.GetU8() != PacketMatchState)
+			return null;
+
+		var snapshot = new MatchStateSnapshot
+		{
+			Phase = (MatchPhase)buffer.GetU8(),
+			GameModePhase = (GameModePhaseType)buffer.GetU8(),
+			PhaseTimeRemaining = buffer.GetFloat(),
+			RoundNumber = buffer.GetU16(),
+			ServerTick = (int)buffer.GetU32(),
+			WinningTeam = buffer.GetU8() - 1,
+			WeaponsEnabled = buffer.GetU8() == 1
+		};
+
+		var scoreCount = buffer.GetU8();
+		snapshot.TeamScores = new int[MatchState.MaxTeams];
+		for (int i = 0; i < scoreCount && buffer.GetAvailableBytes() >= 2; i++)
+		{
+			snapshot.TeamScores[i] = buffer.GetU16();
+		}
+
+		if (buffer.GetAvailableBytes() >= 1)
+		{
+			var modeIdLen = buffer.GetU8();
+			if (modeIdLen > 0 && buffer.GetAvailableBytes() >= modeIdLen)
+			{
+				var modeIdData = buffer.GetData(modeIdLen);
+				if ((Error)(int)modeIdData[0] == Error.Ok)
+				{
+					snapshot.ModeId = System.Text.Encoding.UTF8.GetString(modeIdData[1].AsByteArray());
+				}
+			}
+		}
+
+		return snapshot;
+	}
+
+	public static byte[] SerializeTeamAssignment(int peerId, int teamId)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.PutU8(PacketTeamAssignment);
+		buffer.PutU32((uint)peerId);
+		buffer.PutU8((byte)(teamId + 1));
+		return buffer.DataArray;
+	}
+
+	public static (int PeerId, int TeamId)? DeserializeTeamAssignment(byte[] packet)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.DataArray = packet;
+
+		if (buffer.GetAvailableBytes() < 6)
+			return null;
+
+		if (buffer.GetU8() != PacketTeamAssignment)
+			return null;
+
+		var peerId = (int)buffer.GetU32();
+		var teamId = buffer.GetU8() - 1;
+
+		return (peerId, teamId);
+	}
+
+	public static byte[] SerializeScoreUpdate(int teamId, int score, int peerId, int playerScore, int kills, int deaths)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.PutU8(PacketScoreUpdate);
+		buffer.PutU8((byte)(teamId + 1));
+		buffer.PutU16((ushort)Mathf.Clamp(score, 0, ushort.MaxValue));
+		buffer.PutU32((uint)peerId);
+		buffer.PutU16((ushort)Mathf.Clamp(playerScore, 0, ushort.MaxValue));
+		buffer.PutU16((ushort)Mathf.Clamp(kills, 0, ushort.MaxValue));
+		buffer.PutU16((ushort)Mathf.Clamp(deaths, 0, ushort.MaxValue));
+		return buffer.DataArray;
+	}
+
+	public static ScoreUpdateData? DeserializeScoreUpdate(byte[] packet)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.DataArray = packet;
+
+		if (buffer.GetAvailableBytes() < 12)
+			return null;
+
+		if (buffer.GetU8() != PacketScoreUpdate)
+			return null;
+
+		return new ScoreUpdateData
+		{
+			TeamId = buffer.GetU8() - 1,
+			TeamScore = buffer.GetU16(),
+			PeerId = (int)buffer.GetU32(),
+			PlayerScore = buffer.GetU16(),
+			Kills = buffer.GetU16(),
+			Deaths = buffer.GetU16()
+		};
+	}
+
+	public struct ScoreUpdateData
+	{
+		public int TeamId;
+		public int TeamScore;
+		public int PeerId;
+		public int PlayerScore;
+		public int Kills;
+		public int Deaths;
 	}
 }

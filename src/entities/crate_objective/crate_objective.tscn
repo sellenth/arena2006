@@ -1,0 +1,23 @@
+[gd_scene load_steps=5 format=3 uid="uid://c4i47ig3667aj"]
+
+[ext_resource type="PackedScene" uid="uid://bc808ouja3kmk" path="res://src/entities/props/sci-fi-props/objective.tscn" id="1_85dip"]
+[ext_resource type="Script" uid="uid://xrf8qhmhh0fk" path="res://src/entities/crate_objective/BombSite.cs" id="2_bombsite"]
+[ext_resource type="PackedScene" uid="uid://b0l4ku55mwj2o" path="res://src/entities/weapon/bomb/bomb_base.tscn" id="3_bomb"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_6o0ru"]
+radius = 2.5
+
+[node name="BombSite" type="Area3D"]
+collision_layer = 8388608
+script = ExtResource("2_bombsite")
+PlantedBombScene = ExtResource("3_bomb")
+
+[node name="objective" parent="." instance=ExtResource("1_85dip")]
+transform = Transform3D(1.6, 0, 0, 0, -6.9938224e-08, 1.6, 0, -1.6, -6.9938224e-08, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.38402498, 0)
+shape = SubResource("SphereShape3D_6o0ru")
+
+[node name="BombSpawnPoint" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
