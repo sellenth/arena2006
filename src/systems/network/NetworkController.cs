@@ -13,6 +13,7 @@ public partial class NetworkController : Node
 	private VehicleSessionManager _vehicleManager;
 	private PlayerSpawnManager _spawnManager;
 	private ScoreboardManager _scoreboardManager;
+	private RespawnService _respawnService;
 
 	private PackedScene _playerCharacterScene;
 	private PackedScene _scoreboardUiScene;
@@ -61,6 +62,7 @@ public partial class NetworkController : Node
 		{
 			_serverManager = new ServerNetworkManager();
 			_serverManager.SetManagers(_vehicleManager, _spawnManager, _scoreboardManager);
+			_respawnService = new RespawnService();
 		}
 		else if (_role == NetworkRole.Client)
 		{
@@ -99,7 +101,18 @@ public partial class NetworkController : Node
 		if (gameModeManager != null)
 		{
 			gameModeManager.PlayerTeamColorChanged += _serverManager.OnPlayerTeamColorChanged;
-			gameModeManager.RespawnPlayersAtTeamSpawns += _serverManager.OnRespawnPlayersAtTeamSpawns;
+			gameModeManager.RespawnPlayersAtTeamSpawns += teamSpawnNodes =>
+			{
+				var root = GetTree()?.Root;
+				if (root == null)
+					return;
+
+				_respawnService?.RespawnPlayersAtTeamSpawns(
+					gameModeManager,
+					root,
+					_serverManager.GetAllPeers(),
+					teamSpawnNodes);
+			};
 		}
 	}
 
