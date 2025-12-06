@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://cukaeucupjo2e"]
+[gd_scene load_steps=7 format=3 uid="uid://cukaeucupjo2e"]
 
 [ext_resource type="Script" uid="uid://d0vm38pjoww3p" path="res://src/systems/ui/DebugUiController.cs" id="1_b4myk"]
 [ext_resource type="Script" uid="uid://dja75o5h84r1" path="res://src/systems/ui/HitMarkerUI.cs" id="2_nqq46"]
+[ext_resource type="PackedScene" uid="uid://bhym121ga6ypg" path="res://src/systems/ui/damage_ui.tscn" id="3_wh30l"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a5fxc"]
 bg_color = Color(0.853973, 1, 0.660156, 1)
@@ -170,6 +171,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_nqq46")
+
+[node name="DamageUI" parent="." instance=ExtResource("3_wh30l")]
 
 [node name="DeathUI" type="CanvasLayer" parent="."]
 visible = false

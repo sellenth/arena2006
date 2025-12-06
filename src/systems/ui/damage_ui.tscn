@@ -1,0 +1,61 @@
+[gd_scene load_steps=8 format=3 uid="uid://bhym121ga6ypg"]
+
+[ext_resource type="Script" uid="uid://s5tvvexxya4o" path="res://src/systems/ui/DamageUI.cs" id="1_hg8av"]
+
+[sub_resource type="Gradient" id="Gradient_8csr2"]
+colors = PackedColorArray(0, 0, 0, 0, 0.46612394, 0.5970814, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_5qtj0"]
+gradient = SubResource("Gradient_8csr2")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+
+[sub_resource type="Gradient" id="Gradient_mbkt8"]
+colors = PackedColorArray(0, 0, 0, 0, 0, 0.6680298, 0.95405036, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_k8t1h"]
+gradient = SubResource("Gradient_mbkt8")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+
+[sub_resource type="Gradient" id="Gradient_5qtj0"]
+colors = PackedColorArray(0, 0, 0, 0, 0.753414, 0.46130377, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_mbkt8"]
+gradient = SubResource("Gradient_5qtj0")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+
+[node name="DamageUI" type="CanvasLayer"]
+visible = false
+script = ExtResource("1_hg8av")
+
+[node name="DamageLow" type="TextureRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_5qtj0")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="DamageMedium" type="TextureRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_k8t1h")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="DamageCritical" type="TextureRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_mbkt8")
+expand_mode = 1
+stretch_mode = 6
