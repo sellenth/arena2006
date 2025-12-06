@@ -31,6 +31,14 @@ public partial class WeaponInstance : RefCounted
 		Reserve = Mathf.Clamp(Reserve + amount, 0, Definition.MaxReserveAmmo);
 	}
 
+	public void SetAmmoFromReplication(int magazine, int reserve)
+	{
+		if (Definition == null)
+			return;
+		Magazine = Mathf.Clamp(magazine, 0, Definition.MagazineSize);
+		Reserve = Mathf.Clamp(reserve, 0, Definition.MaxReserveAmmo);
+	}
+
 	public bool ConsumeRound()
 	{
 		if (!Definition.ConsumeAmmoPerShot)

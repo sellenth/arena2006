@@ -1,9 +1,8 @@
-[gd_scene load_steps=25 format=4 uid="uid://glg8yewwof8w"]
+[gd_scene load_steps=26 format=4 uid="uid://glg8yewwof8w"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xuydv"]
 resource_name = "skin"
-cull_mode = 2
-albedo_color = Color(0.16956016, 1, 0.4800247, 1)
+albedo_color = Color(0, 1, 0, 1)
 metallic = 0.87746173
 roughness = 0.12910284
 metadata/extras = {
@@ -13,7 +12,7 @@ metadata/extras = {
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u8mu0"]
 resource_name = "face"
 cull_mode = 2
-albedo_color = Color(1, 0.7686275, 0.48627457, 1)
+albedo_color = Color(1, 0.76862746, 0.4862745, 0.8784314)
 roughness = 0.5
 metadata/extras = {
 "mmd_material": {}
@@ -275,6 +274,9 @@ bind/47/pose = Transform3D(1.335937, 5.438871e-09, -3.1848282e-07, 3.3034717e-09
 bind/48/name = &"foot.R"
 bind/48/bone = -1
 bind/48/pose = Transform3D(1.3359369, -8.657507e-07, -4.04386e-07, 1.1181305e-12, -0.5653719, 1.2104071, -9.555378e-07, -1.2104061, -0.56537205, 0.09800004, 0.10566084, 0.048830602)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3d5q1"]
+albedo_color = Color(1, 0, 0, 1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lisdi"]
 transparency = 1
@@ -5280,6 +5282,7 @@ bones/48/scale = Vector3(1, 0.99999994, 0.99999994)
 [node name="body" type="MeshInstance3D" parent="metarig/Skeleton3D"]
 mesh = SubResource("ArrayMesh_7coep")
 skin = SubResource("Skin_2fkog")
+surface_material_override/0 = SubResource("StandardMaterial3D_3d5q1")
 surface_material_override/1 = SubResource("StandardMaterial3D_lisdi")
 surface_material_override/2 = SubResource("StandardMaterial3D_lisdi")
 surface_material_override/3 = SubResource("StandardMaterial3D_lisdi")

@@ -1,9 +1,9 @@
 [gd_scene load_steps=11 format=4 uid="uid://bb842jxg7q7hg"]
 
-[ext_resource type="Texture2D" uid="uid://c6ukfdfo728f7" path="res://src/entities/building/building_3/SMALL - 2 -  FLOOR - 2 - BUMP.png" id="3_b6nf2"]
-[ext_resource type="Texture2D" uid="uid://cext4iwaa55cb" path="res://src/entities/building/building_3/SMALL - 2 -  FLOOR - 1 - DIFFUSE.png" id="4_j068i"]
-[ext_resource type="Texture2D" uid="uid://b77jl1dg3i82a" path="res://src/entities/building/building_3/SMALL - 2 -  FLOOR - 1 - EMMISION.png" id="5_7l3y4"]
-[ext_resource type="Texture2D" uid="uid://8ym4ft4pavub" path="res://src/entities/building/building_3/BILLBOARDS - DIFFUSE-01.png" id="6_pfwn8"]
+[ext_resource type="Texture2D" uid="uid://bybju01yqm50c" path="res://src/entities/building/building_3/SMALL - 2 -  FLOOR - 2 - BUMP.png" id="3_b6nf2"]
+[ext_resource type="Texture2D" uid="uid://w5v4ptgmev24" path="res://src/entities/building/building_3/SMALL - 2 -  FLOOR - 1 - DIFFUSE.png" id="4_j068i"]
+[ext_resource type="Texture2D" uid="uid://dgd4k2fxx5wxi" path="res://src/entities/building/building_3/SMALL - 2 -  FLOOR - 1 - EMMISION.png" id="5_7l3y4"]
+[ext_resource type="Texture2D" uid="uid://ckrq0bdwtdmbk" path="res://src/entities/building/building_3/BILLBOARDS - DIFFUSE-01.png" id="6_pfwn8"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wfmsc"]
 resource_name = "FLOOR - 2"
@@ -26,6 +26,7 @@ resource_name = "Material"
 transparency = 2
 alpha_scissor_threshold = 0.5
 alpha_antialiasing_mode = 0
+cull_mode = 2
 vertex_color_use_as_albedo = true
 albedo_texture = ExtResource("6_pfwn8")
 emission_enabled = true

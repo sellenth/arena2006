@@ -33,7 +33,8 @@ public partial class ScoreboardManager : GodotObject
 			killer.Kills++;
 		}
 
-		if (victimPlayer != null)
+		var allowRespawns = GameModeManager.Instance?.ActiveScoreRules.AllowRespawns ?? true;
+		if (victimPlayer != null && allowRespawns)
 		{
 			victimPlayer.ForceRespawn(respawnTransform);
 		}

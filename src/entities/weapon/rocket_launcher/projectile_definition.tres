@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1")
-Speed = 60.0
+Speed = 400.0
 ExplosionRadius = 6.0
 Damage = 120.0
 ArmDelaySec = 0.05

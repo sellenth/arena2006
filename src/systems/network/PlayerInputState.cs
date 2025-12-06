@@ -13,6 +13,7 @@ public partial class PlayerInputState : RefCounted
 	public float ViewYaw { get; set; } = float.NaN;
 	public float ViewPitch { get; set; } = float.NaN;
 	public bool Interact { get; set; }
+	public bool InteractJustPressed { get; set; }
 	public bool Sprint { get; set; }
 	public bool Crouch { get; set; }
 	public bool CrouchPressed { get; set; }
@@ -32,6 +33,7 @@ public partial class PlayerInputState : RefCounted
 		ViewYaw = other.ViewYaw;
 		ViewPitch = other.ViewPitch;
 		Interact = other.Interact;
+		InteractJustPressed = other.InteractJustPressed;
 		Sprint = other.Sprint;
 	}
 
@@ -48,6 +50,7 @@ public partial class PlayerInputState : RefCounted
 		ViewYaw = float.NaN;
 		ViewPitch = float.NaN;
 		Interact = false;
+		InteractJustPressed = false;
 		Sprint = false;
 		Crouch = false;
 		CrouchPressed = false;

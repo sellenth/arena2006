@@ -83,6 +83,20 @@ public partial class ServerNetworkManager : GodotObject
 		UpdateServerPlayers();
 		CheckPeerTimeouts();
 		BroadcastEntitySnapshots();
+		BroadcastMatchStateIfNeeded();
+	}
+
+	private void BroadcastMatchStateIfNeeded()
+	{
+		if (_peers.Count == 0)
+			return;
+
+		var gameModeManager = GameModeManager.Instance;
+		if (gameModeManager == null)
+			return;
+
+		var snapshot = gameModeManager.GetMatchStateSnapshot();
+		BroadcastMatchState(snapshot);
 	}
 
 	private void HandleServerPacket(int peerId, byte[] packet)
@@ -152,10 +166,10 @@ public partial class ServerNetworkManager : GodotObject
 						info.PlayerCharacter.SetWorldActive(true);
 						info.PlayerCharacter.ConfigureAuthority(true);
 						info.PlayerCharacter.SetInputState(info.PlayerInputState);
-						if (info.PlayerInputState.Interact)
+						if (info.PlayerInputState.InteractJustPressed)
 						{
 							_vehicleManager.TryEnterVehicle(info);
-							info.PlayerInputState.Interact = false;
+							info.PlayerInputState.InteractJustPressed = false;
 						}
 					}
 					break;
@@ -290,6 +304,8 @@ public partial class ServerNetworkManager : GodotObject
 
 		_scoreboardManager?.NotifyKill(victimInfo, killerInfo, victim, spawn);
 		_scoreboardManager?.UpdateScoreboard(_peers.Values, BroadcastPacketToAllPeers);
+
+		NotifyGameModePlayerKilled(victimPeerId, (int)killerPeerId);
 	}
 
 	private void RegisterPeer(PacketPeerUdp newPeer)
@@ -303,6 +319,53 @@ public partial class ServerNetworkManager : GodotObject
 		GD.Print($"TEST_EVENT: CLIENT_CONNECTED id={peerId}");
 		newPeer.PutPacket(NetworkSerializer.SerializeWelcome(peerId));
 		_scoreboardManager?.UpdateScoreboard(_peers.Values, BroadcastPacketToAllPeers);
+
+		NotifyGameModePlayerJoined(peerId);
+
+		var gameModeManager = GameModeManager.Instance;
+		if (gameModeManager != null)
+		{
+			var teamId = gameModeManager.GetTeamForPlayer(peerId);
+			if (teamId != TeamManager.NoTeam)
+			{
+				BroadcastTeamAssignment(peerId, teamId);
+			}
+
+			ApplyTeamColorToPlayer(peerId);
+
+			if (gameModeManager.ActiveMode is IGameModeSpawnDelegate spawnDelegate)
+			{
+				if (spawnDelegate.TrySpawnPlayer(gameModeManager, info.PlayerCharacter, teamId, isLateJoin: true))
+				{
+					// Spawn handled by mode
+				}
+			}
+
+			var matchSnapshot = gameModeManager.GetMatchStateSnapshot();
+			var matchPacket = NetworkSerializer.SerializeMatchState(matchSnapshot);
+			newPeer.PutPacket(matchPacket);
+		}
+	}
+
+	private void ApplyTeamColorToPlayer(int peerId)
+	{
+		if (!_peers.TryGetValue(peerId, out var info) || info?.PlayerCharacter == null)
+			return;
+
+		var gameModeManager = GameModeManager.Instance;
+		if (gameModeManager == null)
+			return;
+
+		var color = gameModeManager.GetTeamColorForPlayer(peerId);
+		info.PlayerCharacter.SetPlayerColor(color);
+	}
+
+	public void OnPlayerTeamColorChanged(int peerId, Color color)
+	{
+		if (!_peers.TryGetValue(peerId, out var info) || info?.PlayerCharacter == null)
+			return;
+
+		info.PlayerCharacter.SetPlayerColor(color);
 	}
 
 	private void CheckPeerTimeouts()
@@ -342,6 +405,7 @@ public partial class ServerNetworkManager : GodotObject
 			}
 		}
 		_scoreboardManager?.UpdateScoreboard(_peers.Values, BroadcastPacketToAllPeers);
+		NotifyGameModePlayerLeft(peerId);
 		GD.Print($"Client {peerId} removed");
 	}
 
@@ -349,32 +413,32 @@ public partial class ServerNetworkManager : GodotObject
 	{
 		if (_peers.Count == 0)
 			return;
-		
+
 		var registry = EntityReplicationRegistry.Instance;
 		if (registry == null)
 			return;
-		
+
 		_entitySnapshotBuffer.Clear();
-		
+
 		foreach (var kvp in registry.GetAllEntities())
 		{
 			var entityId = kvp.Key;
 			var entity = kvp.Value;
-			
+
 			var buffer = new StreamPeerBuffer();
 			buffer.BigEndian = false;
 			entity.WriteSnapshot(buffer);
-			
+
 			_entitySnapshotBuffer.Add(new NetworkSerializer.EntitySnapshotData
 			{
 				EntityId = entityId,
 				Data = buffer.DataArray
 			});
 		}
-		
+
 		if (_entitySnapshotBuffer.Count == 0)
 			return;
-		
+
 		var packet = NetworkSerializer.SerializeEntitySnapshots(_entitySnapshotBuffer);
 		foreach (var peer in _peers.Values)
 			peer?.Peer.PutPacket(packet);
@@ -406,6 +470,57 @@ public partial class ServerNetworkManager : GodotObject
 	public IEnumerable<PeerInfo> GetAllPeers()
 	{
 		return _peers.Values;
+	}
+
+	public void BroadcastMatchState(MatchStateSnapshot snapshot)
+	{
+		if (_peers.Count == 0)
+			return;
+
+		var packet = NetworkSerializer.SerializeMatchState(snapshot);
+		BroadcastPacketToAllPeers(packet);
+	}
+
+	public void BroadcastTeamAssignment(int peerId, int teamId)
+	{
+		if (_peers.Count == 0)
+			return;
+
+		var packet = NetworkSerializer.SerializeTeamAssignment(peerId, teamId);
+		BroadcastPacketToAllPeers(packet);
+	}
+
+	public void SendTeamAssignment(int targetPeerId, int peerId, int teamId)
+	{
+		if (!_peers.TryGetValue(targetPeerId, out var info) || info?.Peer == null)
+			return;
+
+		var packet = NetworkSerializer.SerializeTeamAssignment(peerId, teamId);
+		info.Peer.PutPacket(packet);
+	}
+
+	public void BroadcastScoreUpdate(int teamId, int teamScore, int peerId, int playerScore, int kills, int deaths)
+	{
+		if (_peers.Count == 0)
+			return;
+
+		var packet = NetworkSerializer.SerializeScoreUpdate(teamId, teamScore, peerId, playerScore, kills, deaths);
+		BroadcastPacketToAllPeers(packet);
+	}
+
+	public void NotifyGameModePlayerKilled(int victimPeerId, int killerPeerId)
+	{
+		GameModeManager.Instance?.NotifyPlayerKilled(victimPeerId, killerPeerId);
+	}
+
+	public void NotifyGameModePlayerJoined(int peerId)
+	{
+		GameModeManager.Instance?.NotifyPlayerJoined(peerId);
+	}
+
+	public void NotifyGameModePlayerLeft(int peerId)
+	{
+		GameModeManager.Instance?.NotifyPlayerLeft(peerId);
 	}
 
 	private int GetPlayerEntityId(int peerId) => NetworkConfig.PlayerEntityIdOffset + peerId;

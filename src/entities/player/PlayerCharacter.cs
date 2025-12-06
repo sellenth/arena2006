@@ -6,6 +6,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	[Export] public NodePath HeadPath { get; set; } = "Head";
 	[Export] public NodePath CameraPath { get; set; } = "Head/Cam";
 	[Export] public NodePath MeshPath { get; set; } = "MeshInstance3D";
+	[Export] public NodePath BodyMeshPath { get; set; } = "Body/metarig/Skeleton3D/body";
 	[Export] public NodePath AnimationPlayerPath { get; set; } = "Body/AnimationPlayer";
 	[Export] public NodePath CollisionShapePath { get; set; } = "Collision";
 	[Export] public bool AutoRegisterWithNetwork { get; set; } = true;
@@ -20,6 +21,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private Node3D _head;
 	private Camera3D _camera;
 	private MeshInstance3D _mesh;
+	private MeshInstance3D _bodyMesh;
+	private StandardMaterial3D _bodyMaterial;
 	private CollisionShape3D _collisionShape;
 	private NetworkController _networkController;
 	private readonly PlayerInputState _inputState = new PlayerInputState();
@@ -56,6 +59,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private ReplicatedInt _weaponReloadMsProperty;
 	private ReplicatedInt _weaponReloadingProperty;
 	private ReplicatedInt _adsStateProperty;
+	private ReplicatedInt _teamColorProperty;
 	public int Health => _healthComponent?.Health ?? MaxHealth;
 	public int Armor => _healthComponent?.Armor ?? MaxArmor;
 	private WeaponInventory _weaponInventory;
@@ -86,9 +90,11 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_head = GetNodeOrNull<Node3D>(HeadPath);
 		_camera = GetNodeOrNull<Camera3D>(CameraPath);
 		_mesh = GetNodeOrNull<MeshInstance3D>(MeshPath);
+		_bodyMesh = GetNodeOrNull<MeshInstance3D>(BodyMeshPath);
 		_collisionShape = GetNodeOrNull<CollisionShape3D>(CollisionShapePath);
 		_networkController = GetNodeOrNull<NetworkController>("/root/NetworkController");
 		_animationController.Initialize(this, AnimationPlayerPath);
+		InitializeBodyMaterial();
 
 		if (_head == null || _camera == null)
 		{
@@ -279,14 +285,14 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_weaponMagProperty = new ReplicatedInt(
 			"WeaponMag",
 			() => GetEquippedMagazine(),
-			value => _repWeaponMag = value,
+			value => { _repWeaponMag = value; SyncWeaponAmmoFromReplication(); },
 			ReplicationMode.Always
 		);
 
 		_weaponReserveProperty = new ReplicatedInt(
 			"WeaponReserve",
 			() => GetEquippedReserve(),
-			value => _repWeaponReserve = value,
+			value => { _repWeaponReserve = value; SyncWeaponAmmoFromReplication(); },
 			ReplicationMode.Always
 		);
 
@@ -317,6 +323,41 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			value => _repAdsState = value,
 			ReplicationMode.Always
 		);
+
+		_teamColorProperty = new ReplicatedInt(
+			"TeamColor",
+			() => PackColor(_playerColor),
+			value => ApplyColorFromReplication(value),
+			ReplicationMode.OnChange
+		);
+	}
+
+	private static int PackColor(Color color)
+	{
+		int r = Mathf.Clamp((int)(color.R * 255), 0, 255);
+		int g = Mathf.Clamp((int)(color.G * 255), 0, 255);
+		int b = Mathf.Clamp((int)(color.B * 255), 0, 255);
+		int a = Mathf.Clamp((int)(color.A * 255), 0, 255);
+		return (r << 24) | (g << 16) | (b << 8) | a;
+	}
+
+	private static Color UnpackColor(int packed)
+	{
+		float r = ((packed >> 24) & 0xFF) / 255f;
+		float g = ((packed >> 16) & 0xFF) / 255f;
+		float b = ((packed >> 8) & 0xFF) / 255f;
+		float a = (packed & 0xFF) / 255f;
+		return new Color(r, g, b, a);
+	}
+
+	private void ApplyColorFromReplication(int packedColor)
+	{
+		if (_isAuthority)
+			return;
+
+		var color = UnpackColor(packedColor);
+		_playerColor = color;
+		ApplyColor(color);
 	}
 
 	public void RegisterAsAuthority()
@@ -442,10 +483,17 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 
 	public override void _PhysicsProcess(double delta)
 	{
+		var deltaFloat = (float)delta;
+
+		if (_cameraActive && IsDead)
+		{
+			ApplyPendingLookInput();
+			_lookController?.Update(deltaFloat, Vector3.Zero, true);
+			return;
+		}
+
 		if (!_worldActive)
 			return;
-
-		var deltaFloat = (float)delta;
 
 		if (_simulateLocally)
 		{
@@ -490,7 +538,8 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		{
 			MoveInput = Input.GetVector("move_right", "move_left", "move_backward", "move_forward"),
 			Jump = Input.IsActionPressed("jump"),
-			Interact = Input.IsActionJustPressed("interact"),
+			Interact = InputMap.HasAction("interact") && Input.IsActionPressed("interact"),
+			InteractJustPressed = InputMap.HasAction("interact") && Input.IsActionJustPressed("interact"),
 			Crouch = InputMap.HasAction("crouch") && Input.IsActionPressed("crouch"),
 			CrouchPressed = InputMap.HasAction("crouch") && Input.IsActionJustPressed("crouch"),
 			Sprint = InputMap.HasAction("sprint") && Input.IsActionPressed("sprint"),
@@ -503,6 +552,20 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			ViewPitch = _lookController?.Pitch ?? 0f
 		};
 		return state;
+	}
+
+	public PlayerInputState GetCurrentInputState()
+	{
+		return _inputState;
+	}
+
+	public bool IsInteractHeld()
+	{
+		if (_isAuthority && _cameraActive)
+		{
+			return InputMap.HasAction("interact") && Input.IsActionPressed("interact");
+		}
+		return _inputState?.Interact ?? false;
 	}
 
 	public void SetInputState(PlayerInputState state)
@@ -592,9 +655,43 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	}
 
 
+	private void InitializeBodyMaterial()
+	{
+		if (_bodyMesh == null)
+			return;
+
+		_bodyMaterial = new StandardMaterial3D();
+		_bodyMaterial.AlbedoColor = new Color(1f, 1f, 1f, 0f);
+
+		_bodyMesh.SetSurfaceOverrideMaterial(0, _bodyMaterial);
+
+		if (AutoRegisterWithNetwork)
+		{
+			var headHideMaterial = new StandardMaterial3D();
+			headHideMaterial.Transparency = BaseMaterial3D.TransparencyEnum.Alpha;
+			headHideMaterial.AlbedoColor = new Color(1f, 1f, 1f, 0f);
+
+			for (int i = 1; i < _bodyMesh.GetSurfaceOverrideMaterialCount(); i++)
+			{
+				_bodyMesh.SetSurfaceOverrideMaterial(i, headHideMaterial);
+			}
+		}
+		else
+		{
+			for (int i = 1; i < _bodyMesh.GetSurfaceOverrideMaterialCount(); i++)
+			{
+				_bodyMesh.SetSurfaceOverrideMaterial(i, null);
+			}
+		}
+	}
+
 	private void ApplyColor(Color color)
 	{
-		if (_mesh?.MaterialOverlay is StandardMaterial3D mat)
+		if (_bodyMaterial != null)
+		{
+			_bodyMaterial.AlbedoColor = new Color(color.R, color.G, color.B, 0.6f);
+		}
+		else if (_mesh?.MaterialOverlay is StandardMaterial3D mat)
 		{
 			mat.AlbedoColor = color;
 		}
@@ -672,21 +769,54 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 	private void OnReplicatedWeaponId(int value)
 	{
 		_repWeaponId = value;
-		if (_isAuthority)
+
+		var isServer = _networkController != null && _networkController.IsServer;
+		if (isServer && _isAuthority)
 		{
 			_weaponIdProperty.MarkClean();
 			return;
 		}
 
 		var type = (WeaponType)value;
-		if (_weaponInventory != null && _weaponInventory.Equip(type))
+
+		if (_weaponInventory == null)
+			return;
+
+		if (type == WeaponType.None)
 		{
-			_weaponInventory.EmitAmmo();
+			_weaponInventory.Clear();
+			return;
 		}
-		else
+
+		if (_weaponInventory.Get(type) == null)
 		{
-			GD.PushWarning($"PlayerCharacter ({Name}): Missing weapon {type} locally, cannot show remote view.");
+			var def = WeaponRegistry.Get(type);
+			if (def != null)
+			{
+				_weaponInventory.AddOrReplace(def, _repWeaponMag, _repWeaponReserve, equip: false);
+				GD.Print($"PlayerCharacter ({Name}): Added missing weapon {type} from registry");
+			}
+			else
+			{
+				GD.PushWarning($"PlayerCharacter ({Name}): Cannot find weapon {type} in registry");
+				return;
+			}
 		}
+
+		if (_weaponInventory.Equip(type))
+		{
+			SyncWeaponAmmoFromReplication();
+		}
+	}
+
+	private void SyncWeaponAmmoFromReplication()
+	{
+		var isServer = _networkController != null && _networkController.IsServer;
+		if ((isServer && _isAuthority) || _weaponInventory?.Equipped == null)
+			return;
+
+		_weaponInventory.Equipped.SetAmmoFromReplication(_repWeaponMag, _repWeaponReserve);
+		_weaponInventory.EmitAmmo();
 	}
 
 	private void OnReplicatedFireSequence(int value)
@@ -790,11 +920,29 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		{
 			_networkController.NotifyPlayerKilled(this, instigatorPeerId);
 		}
-		else
+		else if (AreRespawnsAllowed())
 		{
 			RespawnLocally();
 		}
 	}
+
+	private bool AreRespawnsAllowed()
+	{
+		var matchClient = MatchStateClient.Instance;
+		if (matchClient == null)
+			return true;
+
+		if (matchClient.CurrentModeId == SearchAndDestroyMode.ModeId)
+		{
+			var phase = matchClient.GameModePhase;
+			if (phase == GameModePhaseType.FragWindow)
+				return false;
+		}
+
+		return true;
+	}
+
+	public bool IsDead => _healthComponent?.IsDead == true;
 
 	private void RespawnLocally()
 	{
@@ -817,6 +965,37 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		else
 		{
 			GlobalTransform = transform;
+		}
+	}
+
+	public void ResetInventory(bool includeStartingWeapons = true)
+	{
+		if (_weaponInventory != null)
+		{
+			_weaponInventory.Clear();
+			_weaponController?.ResetState();
+
+			if (includeStartingWeapons)
+			{
+				foreach (var def in _weaponInventory.StartingWeapons)
+				{
+					_weaponInventory.AddOrReplace(def, def.MagazineSize, def.MaxReserveAmmo, equip: true);
+				}
+			}
+			
+			// Reset replication fields to ensure client syncs 'None' or new default
+			var equipped = _weaponInventory.Equipped;
+			_repWeaponId = (int)(_weaponInventory.EquippedType);
+			_repWeaponMag = equipped?.Magazine ?? 0;
+			_repWeaponReserve = equipped?.Reserve ?? 0;
+			_repWeaponFireSeq = 0;
+			_repWeaponReloadMs = 0;
+			_repWeaponReloading = 0;
+
+			if (!includeStartingWeapons)
+			{
+				_weaponInventory.EmitAmmo();
+			}
 		}
 	}
 
@@ -885,6 +1064,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_weaponReloadMsProperty.Write(buffer);
 		_weaponReloadingProperty.Write(buffer);
 		_adsStateProperty.Write(buffer);
+		_teamColorProperty.Write(buffer);
 	}
 
 	public void ReadSnapshot(StreamPeerBuffer buffer)
@@ -905,6 +1085,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_weaponReloadMsProperty.Read(buffer);
 		_weaponReloadingProperty.Read(buffer);
 		_adsStateProperty.Read(buffer);
+		_teamColorProperty.Read(buffer);
 
 		if (_hasPendingReplicatedTransform)
 		{
@@ -937,6 +1118,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 			 + _weaponFireSeqProperty.GetSizeBytes()
 			 + _weaponReloadMsProperty.GetSizeBytes()
 			 + _weaponReloadingProperty.GetSizeBytes()
-			 + _adsStateProperty.GetSizeBytes();
+			 + _adsStateProperty.GetSizeBytes()
+			 + _teamColorProperty.GetSizeBytes();
 	}
 }

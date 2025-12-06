@@ -5,7 +5,7 @@ public partial class WeaponController : Node
 {
 	[Export] public NodePath InventoryPath { get; set; } = "../WeaponInventory";
 	[Export] public NodePath ProjectileParentPath { get; set; } = "";
-	[Export] public bool IgnoreGameModeWeapons { get; set; } = true;
+	[Export] public bool IgnoreGameModeWeapons { get; set; } = false;
 
 	private WeaponInventory _inventory;
 	private PlayerCharacter _player;
@@ -68,6 +68,17 @@ public partial class WeaponController : Node
 		_lastInput.CopyFrom(input);
 	}
 
+	public void ResetState()
+	{
+		_state = WeaponState.Idle;
+		_cooldownTimer = 0f;
+		_reloadTimer = 0f;
+		if (_inventory != null && _inventory.TryGetEquipped(out var instance) && instance != null)
+		{
+			instance.CancelReload();
+		}
+	}
+
 	private void UpdateTimers(float dt)
 	{
 		if (_cooldownTimer > 0f)
@@ -91,9 +102,20 @@ public partial class WeaponController : Node
 
 	private bool WeaponsAllowed()
 	{
-		if (IgnoreGameModeWeapons || _gameMode == null)
+		if (IgnoreGameModeWeapons)
 			return true;
-		return _gameMode.WeaponsEnabled;
+
+		if (_network != null && _network.IsClient)
+		{
+			var matchStateClient = MatchStateClient.Instance;
+			if (matchStateClient != null)
+				return matchStateClient.WeaponsEnabled;
+		}
+
+		if (_gameMode != null)
+			return _gameMode.WeaponsEnabled;
+
+		return true;
 	}
 
 	private void ProcessInputFrame()

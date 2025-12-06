@@ -1,0 +1,36 @@
+[gd_scene load_steps=7 format=3 uid="uid://b0l4ku55mwj2o"]
+
+[ext_resource type="Script" uid="uid://ci0wmdf2b1r52" path="res://src/entities/weapon/bomb/PlantedBomb.cs" id="1_plantedbomb"]
+[ext_resource type="Material" uid="uid://db8vaei0l3gbe" path="res://src/materials/blue_square.tres" id="2_4pr1y"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_2t3jj"]
+size = Vector3(0.4, 0.25, 0.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_defuse"]
+size = Vector3(4, 2, 4)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_b4etl"]
+lifetime_randomness = 0.46
+spread = 180.0
+initial_velocity_min = 4.0
+initial_velocity_max = 8.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_clqxn"]
+material = ExtResource("2_4pr1y")
+size = Vector3(0.13, 1.06, 0.13)
+
+[node name="PlantedBomb" type="Area3D"]
+collision_layer = 8388608
+script = ExtResource("1_plantedbomb")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.125, 0)
+mesh = SubResource("BoxMesh_2t3jj")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("BoxShape3D_defuse")
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="."]
+process_material = SubResource("ParticleProcessMaterial_b4etl")
+draw_pass_1 = SubResource("BoxMesh_clqxn")
