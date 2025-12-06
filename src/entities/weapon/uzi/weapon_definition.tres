@@ -1,4 +1,4 @@
-[gd_resource type="Resource" load_steps=9 format=3 uid="uid://d15ym5203pcrq"]
+[gd_resource type="Resource" load_steps=10 format=3 uid="uid://d15ym5203pcrq"]
 
 [ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="1"]
 [ext_resource type="Resource" uid="uid://da3ubl2cb64fl" path="res://src/entities/weapon/uzi/ads_config.tres" id="1_qbyje"]
@@ -7,6 +7,7 @@
 [ext_resource type="Resource" uid="uid://csnebb1wgohcx" path="res://src/entities/weapon/uzi/projectile_definition.tres" id="4"]
 [ext_resource type="PackedScene" uid="uid://4ma0m5prboee" path="res://src/entities/weapon/uzi/smg_base.tscn" id="4_8am7p"]
 [ext_resource type="Resource" uid="uid://c2c33f5ec4a4" path="res://src/entities/weapon/uzi/fire_audio.tres" id="5"]
+[ext_resource type="Resource" path="res://src/entities/weapon/uzi/recoil.tres" id="6"]
 
 [sub_resource type="CSharpScript" id="CSharpScript_gx7kp"]
 
@@ -28,5 +29,6 @@ IsAutomatic = true
 EquipTimeSec = 0.2
 UnequipTimeSec = 0.2
 ProjectilePoolPrewarm = 32
+Recoil = ExtResource("6")
 FireAudio = ExtResource("5")
 Ads = ExtResource("1_qbyje")

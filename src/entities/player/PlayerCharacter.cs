@@ -1039,6 +1039,19 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		return _lookController?.GetViewDirection(this) ?? -GlobalTransform.Basis.Z;
 	}
 
+	public void ApplyRecoil(Vector2 recoilRad)
+	{
+		// Only local authority should adjust the camera.
+		if (!_isAuthority)
+			return;
+		_lookController?.ApplyRecoil(recoilRad);
+	}
+
+	public float GetAdsBlend()
+	{
+		return _adsBlend;
+	}
+
 	public float DistanceTo(Node3D other)
 	{
 		if (other == null)

@@ -100,22 +100,22 @@ SiteName = "B"
 [node name="Pickups" type="Node3D" parent="."]
 
 [node name="UziPickup2" parent="Pickups" instance=ExtResource("4_bhhkb")]
-transform = Transform3D(-0.504196, 0, 0.8635892, 0, 1, 0, -0.8635892, 0, -0.504196, 65.50029, 19.705198, 55.550194)
+transform = Transform3D(0.9569505, 0, 0.2902512, 0, 1, 0, -0.2902512, 0, 0.9569505, 31.097347, 19.705198, 74.45557)
 
 [node name="AKWorldmodel" parent="Pickups" instance=ExtResource("5_ifq3f")]
-transform = Transform3D(-0.78857994, 0, -0.61493224, 0, 1, 0, 0.61493224, 0, -0.78857994, 61.71154, 19.605623, 53.784866)
+transform = Transform3D(-0.41536012, 0, 0.90965706, 0, 1, 0, -0.90965706, 0, -0.41536012, 33.692936, 19.605623, 71.1793)
 
 [node name="SniperPickup" parent="Pickups" instance=ExtResource("6_b3shj")]
-transform = Transform3D(-0.78857994, 0, -0.61493224, 0, 1, 0, 0.61493224, 0, -0.78857994, 61.684315, 19.222132, 66.861084)
+transform = Transform3D(-0.41536012, 0, 0.90965706, 0, 1, 0, -0.90965706, 0, -0.41536012, 20.979282, 19.222132, 68.12132)
 
 [node name="UziPickup3" parent="Pickups" instance=ExtResource("4_bhhkb")]
-transform = Transform3D(0.8847925, 0, 0.46598512, 0, 1, 0, -0.46598512, 0, 0.8847925, 60.54048, 19.705198, 44.692482)
+transform = Transform3D(0.24816574, 0, -0.9687176, 0, 1, 0, 0.9687176, 0, 0.24816574, 42.809093, 19.705198, 72.148056)
 
 [node name="AKWorldmodel2" parent="Pickups" instance=ExtResource("5_ifq3f")]
-transform = Transform3D(-0.57989275, 0, 0.81469285, 0, 1, 0, -0.81469285, 0, -0.57989275, 62.46965, 19.605623, 40.984474)
+transform = Transform3D(0.92693526, 0, 0.37522143, 0, 1, 0, -0.37522143, 0, 0.92693526, 45.968838, 19.605623, 74.88431)
 
 [node name="SniperPickup2" parent="Pickups" instance=ExtResource("6_b3shj")]
-transform = Transform3D(-0.57989275, 0, 0.81469285, 0, 1, 0, -0.81469285, 0, -0.57989275, 49.407104, 19.222132, 40.385986)
+transform = Transform3D(0.92693526, 0, 0.37522143, 0, 1, 0, -0.37522143, 0, 0.92693526, 49.57934, 19.222132, 62.316387)
 
 [node name="UziPickup4" parent="Pickups" instance=ExtResource("4_bhhkb")]
 transform = Transform3D(-0.504196, 0, 0.8635892, 0, 1, 0, -0.8635892, 0, -0.504196, 60.669174, 0.7161608, 163.16588)

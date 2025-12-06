@@ -17,6 +17,7 @@ public partial class WeaponController : Node
 	private float _reloadTimer = 0f;
 	private int _fireSequence = 0;
 	private PlayerInputState _lastInput = new PlayerInputState();
+	private Vector2 _recoilOffsetRad = Vector2.Zero;
 	private long _ownerPeerId = 0;
 	private Node _poolRoot;
 	private readonly System.Collections.Generic.Dictionary<string, ProjectilePool> _pools = new();
@@ -60,6 +61,7 @@ public partial class WeaponController : Node
 		if (_player != null && !_player.IsAuthority())
 			return;
 
+		RecoverRecoil(dt);
 		ProcessInputFrame();
 	}
 
@@ -169,7 +171,12 @@ public partial class WeaponController : Node
 		}
 
 		_fireSequence++;
-		SpawnProjectile(instance.Definition, true, _fireSequence, ResolveProjectileTransform(instance.Definition), _ownerPeerId);
+		var shotIndex = _fireSequence;
+		var adsBlend = GetAdsBlend();
+		var spawnTransform = BuildFiringTransform(instance.Definition, instance, shotIndex, _ownerPeerId, adsBlend, out var spreadRad);
+		SpawnProjectile(instance.Definition, true, shotIndex, spawnTransform, _ownerPeerId);
+		ApplyVisualSpread(spreadRad);
+		ApplyRecoilKick(instance, shotIndex, adsBlend);
 		PlayAudio(instance.Definition.FireAudio, _player?.GlobalPosition ?? Vector3.Zero);
 		SpawnMuzzleFx(instance.Definition);
 		_inventory?.EmitAmmo();
@@ -423,12 +430,182 @@ public partial class WeaponController : Node
 		if (_inventory == null)
 			return;
 
-		var def = _inventory.Get(type)?.Definition ?? _inventory.Equipped?.Definition;
+		var instance = _inventory.Get(type) ?? _inventory.Equipped;
+		var def = instance?.Definition ?? _inventory.Equipped?.Definition;
 		if (def == null)
 			return;
 
-		var spawnTransform = ResolveProjectileTransform(def);
+		var adsBlend = GetAdsBlend();
+		var spawnTransform = BuildFiringTransform(def, instance, fireSequence, ownerPeerId, adsBlend, out _);
 		SpawnProjectile(def, serverAuthority: false, fireSequence: fireSequence, spawnTransform: spawnTransform, ownerPeerId: ownerPeerId);
+	}
+
+	private float GetAdsBlend()
+	{
+		return _player?.GetAdsBlend() ?? 0f;
+	}
+
+	private void ApplyRecoilKick(WeaponInstance instance, int shotIndex, float adsBlend)
+	{
+		if (instance?.Definition?.Recoil == null || _player == null)
+			return;
+
+		var kickDeg = ComputeRecoilKickDegrees(instance, shotIndex, adsBlend);
+		if (kickDeg == Vector2.Zero)
+			return;
+
+		var kickRad = new Vector2(Mathf.DegToRad(kickDeg.X), Mathf.DegToRad(kickDeg.Y));
+		_recoilOffsetRad += kickRad;
+		_player.ApplyRecoil(kickRad);
+	}
+
+	private Vector2 ComputeRecoilKickDegrees(WeaponInstance instance, int shotIndex, float adsBlend)
+	{
+		var def = instance?.Definition;
+		var profile = def?.Recoil;
+		if (profile == null)
+			return Vector2.Zero;
+
+		var baseKick = GetPatternKick(profile, shotIndex);
+		var ads = def?.Ads;
+		var adsScale = ads != null
+			? Mathf.Lerp(ads.HipRecoilScale, ads.AdsRecoilScale, adsBlend)
+			: 1f;
+		var attachmentDelta = GetAttachmentRecoilDelta(instance);
+		return (baseKick + new Vector2(attachmentDelta, attachmentDelta)) * adsScale;
+	}
+
+	private Vector2 GetPatternKick(RecoilProfile profile, int shotIndex)
+	{
+		if (profile?.Pattern != null && profile.Pattern.Count > 0)
+		{
+			var index = Mathf.Clamp(shotIndex - 1, 0, profile.Pattern.Count - 1);
+			return profile.Pattern[index];
+		}
+		return profile?.Kick ?? Vector2.Zero;
+	}
+
+	private float GetAttachmentRecoilDelta(WeaponInstance instance)
+	{
+		if (instance == null)
+			return 0f;
+
+		var delta = 0f;
+		foreach (var attachment in instance.Attachments.Values)
+		{
+			if (attachment != null)
+			{
+				delta += attachment.RecoilDelta;
+			}
+		}
+		return delta;
+	}
+
+	private float GetAttachmentSpreadDelta(WeaponInstance instance)
+	{
+		if (instance == null)
+			return 0f;
+
+		var delta = 0f;
+		foreach (var attachment in instance.Attachments.Values)
+		{
+			if (attachment != null)
+			{
+				delta += attachment.SpreadDelta;
+			}
+		}
+		return delta;
+	}
+
+	private float ComputeSpreadDegrees(WeaponDefinition def, WeaponInstance instance, int shotIndex, float adsBlend)
+	{
+		if (def == null)
+			return 0f;
+
+		var profile = def.Recoil;
+		var baseSpread = profile?.EvaluateSpread(shotIndex) ?? 0f;
+		var ads = def.Ads;
+		var hip = ads?.HipSpreadDegrees ?? baseSpread;
+		var adsSpread = ads?.AdsSpreadDegrees ?? baseSpread;
+		var spread = Mathf.Max(baseSpread, Mathf.Lerp(hip, adsSpread, adsBlend));
+		spread += GetAttachmentSpreadDelta(instance);
+		return Mathf.Max(spread, 0f);
+	}
+
+	private Vector2 ComputeSpreadRotation(float spreadDegrees, int shotIndex, WeaponDefinition def, long ownerPeerId)
+	{
+		if (spreadDegrees <= 0f || def == null)
+			return Vector2.Zero;
+
+		var seed = ComputeRecoilSeed(shotIndex, def.Id, ownerPeerId);
+		var rng = new RandomNumberGenerator { Seed = seed };
+		var yaw = Mathf.DegToRad(rng.RandfRange(-spreadDegrees, spreadDegrees));
+		var pitch = Mathf.DegToRad(rng.RandfRange(-spreadDegrees, spreadDegrees));
+		return new Vector2(pitch, yaw);
+	}
+
+	private Transform3D BuildFiringTransform(WeaponDefinition def, WeaponInstance instance, int fireSequence, long ownerPeerId, float adsBlend, out Vector2 spreadRad)
+	{
+		var baseTransform = ResolveProjectileTransform(def);
+		var spreadDeg = ComputeSpreadDegrees(def, instance, fireSequence, adsBlend);
+		spreadRad = ComputeSpreadRotation(spreadDeg, fireSequence, def, ownerPeerId);
+		return ApplySpreadToTransform(baseTransform, spreadRad);
+	}
+
+	private Transform3D ApplySpreadToTransform(Transform3D transform, Vector2 spreadRad)
+	{
+		if (spreadRad == Vector2.Zero)
+			return transform;
+
+		var basis = transform.Basis;
+		basis = basis.Rotated(basis.X, spreadRad.X);
+		basis = basis.Rotated(Vector3.Up, spreadRad.Y);
+		return new Transform3D(basis, transform.Origin);
+	}
+
+	private ulong ComputeRecoilSeed(int fireSequence, WeaponType weaponId, long ownerPeerId)
+	{
+		unchecked
+		{
+			var a = (ulong)(fireSequence * 73856093);
+			var b = (ulong)((int)weaponId * 19349663);
+			var c = (ulong)(ownerPeerId * 83492791);
+			return a ^ b ^ c;
+		}
+	}
+
+	private void RecoverRecoil(float dt)
+	{
+		if (_recoilOffsetRad == Vector2.Zero)
+			return;
+
+		var recoil = _inventory?.Equipped?.Definition?.Recoil;
+		if (recoil == null)
+			return;
+
+		var recoveryRate = Mathf.DegToRad(recoil.RecoveryRate);
+		if (recoveryRate <= 0f)
+			return;
+
+		var previous = _recoilOffsetRad;
+		_recoilOffsetRad = _recoilOffsetRad.MoveToward(Vector2.Zero, recoveryRate * dt);
+		var delta = _recoilOffsetRad - previous;
+		if (delta != Vector2.Zero)
+		{
+			_player?.ApplyRecoil(delta);
+		}
+	}
+
+	private void ApplyVisualSpread(Vector2 spreadRad)
+	{
+		if (spreadRad == Vector2.Zero)
+			return;
+
+		if (_player == null || !_player.IsAuthority())
+			return;
+
+		_recoilOffsetRad += spreadRad;
+		_player.ApplyRecoil(spreadRad);
 	}
 }
 

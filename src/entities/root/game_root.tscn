@@ -1,9 +1,9 @@
 [gd_scene load_steps=8 format=3 uid="uid://pgudwlq5efn0"]
 
 [ext_resource type="PackedScene" uid="uid://c7m8fswqpshy4" path="res://src/systems/ui/pause_menu.tscn" id="7_liv0r"]
+[ext_resource type="PackedScene" uid="uid://b421r5btdjnjk" path="res://src/maps/level_1.tscn" id="7_njg2t"]
 [ext_resource type="PackedScene" uid="uid://ch2s1v2av6f0p" path="res://src/systems/ui/options_menu.tscn" id="8_njg2t"]
 [ext_resource type="PackedScene" uid="uid://cukaeucupjo2e" path="res://src/systems/ui/debug_ui_controller.tscn" id="9_73xoc"]
-[ext_resource type="PackedScene" uid="uid://dv5m8ikw04ngs" path="res://src/maps/level_2.tscn" id="9_k6g81"]
 [ext_resource type="PackedScene" uid="uid://bp5wletrm4dw2" path="res://src/entities/player/player_character.tscn" id="10_player"]
 [ext_resource type="Script" uid="uid://dw3owa0i2p1f2" path="res://src/entities/player/PlayerWrapper.cs" id="11_pwrap"]
 [ext_resource type="Script" uid="uid://ca88x4ouq2s6u" path="res://src/systems/network/RemoteEntityManager.cs" id="16_cxv46"]
@@ -34,4 +34,4 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52.38363, 1.05, -28.664124)
 [node name="RemoteVehicles" type="Node3D" parent="."]
 transform = Transform3D(0.65677005, 0, -0.75409085, 0, 1, 0, 0.75409085, 0, 0.65677005, -19.183643, 2.540793, -100.64766)
 
-[node name="Level" parent="." instance=ExtResource("9_k6g81")]
+[node name="Level" parent="." instance=ExtResource("7_njg2t")]

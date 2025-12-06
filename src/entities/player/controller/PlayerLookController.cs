@@ -117,6 +117,14 @@ public sealed class PlayerLookController
 		return fallback != null ? -fallback.GlobalTransform.Basis.Z : Vector3.Forward;
 	}
 
+	public void ApplyRecoil(Vector2 recoilRad)
+	{
+		// Positive X raises pitch, positive Y rotates yaw to the right.
+		Yaw += recoilRad.Y;
+		Pitch = Mathf.Clamp(Pitch + recoilRad.X, MinPitch, MaxPitch);
+		ApplyViewToNodes();
+	}
+
 	private void UpdateCameraEffects(float delta, Vector3 velocity, bool grounded)
 	{
 		if (_camera == null)
