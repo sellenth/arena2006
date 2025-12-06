@@ -1,0 +1,183 @@
+[gd_scene load_steps=6 format=3 uid="uid://cukaeucupjo2e"]
+
+[ext_resource type="Script" uid="uid://d0vm38pjoww3p" path="res://src/systems/ui/DebugUiController.cs" id="1_b4myk"]
+[ext_resource type="Script" uid="uid://dja75o5h84r1" path="res://src/systems/ui/HitMarkerUI.cs" id="2_nqq46"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a5fxc"]
+bg_color = Color(0.853973, 1, 0.660156, 1)
+
+[sub_resource type="Gradient" id="Gradient_nqq46"]
+offsets = PackedFloat32Array(0.35795453, 1)
+colors = PackedColorArray(0.5660922, 1.7688051e-06, 3.3691526e-07, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_ggt3y"]
+gradient = SubResource("Gradient_nqq46")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+
+[node name="UiController" type="Node"]
+script = ExtResource("1_b4myk")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="BOTTOM" type="VBoxContainer" parent="CanvasLayer"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = -40.0
+offset_right = 67.0
+grow_vertical = 0
+
+[node name="AmmoLabel" type="Label" parent="CanvasLayer/BOTTOM"]
+layout_mode = 2
+
+[node name="HealthLabel" type="Label" parent="CanvasLayer/BOTTOM"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Health: "
+
+[node name="ArmorLabel" type="Label" parent="CanvasLayer/BOTTOM"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Armor: "
+
+[node name="DebugUi" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer/DebugUi"]
+custom_minimum_size = Vector2(12.28, 16.78)
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.015000001
+anchor_right = 5.5490003
+anchor_bottom = 5.6450005
+offset_left = 6.0
+offset_top = 9.4
+offset_right = 1.0399933
+offset_bottom = -1.8000183
+color = Color(0, 0, 0, 0.43137255)
+
+[node name="TOP" type="VBoxContainer" parent="CanvasLayer/DebugUi"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 183.0
+offset_bottom = 238.0
+
+[node name="FramerateLabel" type="Label" parent="CanvasLayer/DebugUi/TOP"]
+layout_mode = 2
+text = "FPS: "
+
+[node name="AllForcesCB" type="CheckBox" parent="CanvasLayer/DebugUi/TOP"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+button_pressed = true
+button_mask = 0
+text = "All forces (C)
+"
+alignment = 1
+
+[node name="PullForcesCB" type="CheckBox" parent="CanvasLayer/DebugUi/TOP"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+button_pressed = true
+button_mask = 0
+text = "Pull forces (V)"
+alignment = 1
+
+[node name="HandBreakCB" type="CheckBox" parent="CanvasLayer/DebugUi/TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+button_mask = 0
+text = "Handbreak (space)"
+
+[node name="SlippingCB" type="CheckBox" parent="CanvasLayer/DebugUi/TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+button_mask = 0
+text = "Is slipping
+"
+
+[node name="WeaponLabel" type="Label" parent="CanvasLayer/DebugUi/TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Weapon: "
+
+[node name="TimeScaleLabel" type="Label" parent="CanvasLayer/DebugUi/TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GameModeLabel" type="Label" parent="CanvasLayer/DebugUi/TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MoveStateLabel" type="Label" parent="CanvasLayer/DebugUi/TOP"]
+layout_mode = 2
+
+[node name="RIGHT_TOP" type="VBoxContainer" parent="CanvasLayer"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -201.90002
+offset_top = 12.79
+offset_right = -11.901367
+offset_bottom = 132.79001
+grow_horizontal = 0
+
+[node name="SpeedLabel" type="Label" parent="CanvasLayer/RIGHT_TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Speed"
+
+[node name="MotorRatio" type="ProgressBar" parent="CanvasLayer/RIGHT_TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 12
+theme_override_styles/fill = SubResource("StyleBoxFlat_a5fxc")
+max_value = 1.0
+
+[node name="AccelLabel" type="Label" parent="CanvasLayer/RIGHT_TOP"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "AccelForce"
+
+[node name="TurnRatio" type="ProgressBar" parent="CanvasLayer/RIGHT_TOP"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 15)
+layout_mode = 2
+theme_override_constants/outline_size = 6
+theme_override_styles/fill = SubResource("StyleBoxFlat_a5fxc")
+min_value = -1.0
+max_value = 1.0
+show_percentage = false
+
+[node name="HitMarkerUI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_nqq46")
+
+[node name="DeathUI" type="CanvasLayer" parent="."]
+visible = false
+
+[node name="TextureRect" type="TextureRect" parent="DeathUI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_ggt3y")

@@ -1,0 +1,65 @@
+[gd_scene load_steps=11 format=3 uid="uid://bp5wletrm4dw2"]
+
+[ext_resource type="Script" uid="uid://dpian2gawtw4a" path="res://src/entities/player/PlayerCharacter.cs" id="1_qj4xw"]
+[ext_resource type="PackedScene" uid="uid://glg8yewwof8w" path="res://src/entities/player/player_body.tscn" id="2_23jjq"]
+[ext_resource type="Script" uid="uid://dfsnhvsmrh8yr" path="res://src/systems/ui/CrosshairUI.cs" id="2_b8iv8"]
+[ext_resource type="Script" uid="uid://cdpug6k574ola" path="res://src/entities/weapon/_shared/WeaponInventory.cs" id="3_qfbsq"]
+[ext_resource type="PackedScene" uid="uid://077fwctsfy01" path="res://src/entities/weapon/rocket_launcher/rocket_launcher_viewmodel.tscn" id="5_bclnc"]
+[ext_resource type="PackedScene" uid="uid://dup2aagbps5gb" path="res://src/entities/weapon/uzi/smg_viewmodel.tscn" id="5_tpgr7"]
+[ext_resource type="PackedScene" uid="uid://5b41c2j5uq3h" path="res://src/entities/weapon/ak/ak_viewmodel.tscn" id="6_bclnc"]
+[ext_resource type="Script" uid="uid://c073mhvc68m23" path="res://src/entities/player/WeaponView.cs" id="7_o2wml"]
+[ext_resource type="PackedScene" uid="uid://cqto61hugwqiw" path="res://src/entities/weapon/sniper/sniper_viewmodel.tscn" id="8_sniper"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_s6pao"]
+resource_local_to_scene = true
+radius = 0.25
+height = 1.8
+
+[node name="PlayerCharacter" type="CharacterBody3D"]
+floor_stop_on_slope = false
+floor_block_on_wall = false
+floor_snap_length = 0.5
+script = ExtResource("1_qj4xw")
+MeshPath = NodePath("Body")
+
+[node name="Body" parent="." instance=ExtResource("2_23jjq")]
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(-4.3711402e-08, 0, 1, 0, 1, 0, -1, 0, -4.3711402e-08, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_s6pao")
+
+[node name="Head" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 1.75, 0)
+
+[node name="Cam" type="Camera3D" parent="Head"]
+fov = 100.0
+near = 0.01
+
+[node name="WeaponView" type="Node3D" parent="Head/Cam"]
+script = ExtResource("7_o2wml")
+
+[node name="RocketLauncher" parent="Head/Cam/WeaponView" instance=ExtResource("5_bclnc")]
+transform = Transform3D(1, 0, 0, 0, 0.9617413, 0.27395922, 0, -0.27395922, 0.9617413, 0.22, -0.22, -0.45)
+visible = false
+
+[node name="AK" parent="Head/Cam/WeaponView" instance=ExtResource("6_bclnc")]
+transform = Transform3D(0.99999464, -5.7874237e-05, -0.0033156232, 7.9028485e-11, 0.9998476, -0.0174524, 0.0033161216, 0.017452309, 0.99984217, 0.15, -0.18000007, -0.42)
+
+[node name="MachineGun" parent="Head/Cam/WeaponView" instance=ExtResource("5_tpgr7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.174, -0.274, -0.372)
+
+[node name="Sniper" parent="Head/Cam/WeaponView" instance=ExtResource("8_sniper")]
+transform = Transform3D(0.052335974, 0, 0.9986295, 0, 1, 0, -0.9986295, 0, 0.052335974, 0.09, -0.12, -0.27)
+visible = false
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_b8iv8")
+
+[node name="WeaponInventory" type="Node3D" parent="."]
+script = ExtResource("3_qfbsq")

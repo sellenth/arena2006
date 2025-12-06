@@ -1,0 +1,8 @@
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://da3ubl2cb64fl"]
+
+[ext_resource type="Script" uid="uid://b1gmenpn0ti3g" path="res://src/entities/weapon/_shared/AdsConfig.cs" id="1_2wmvo"]
+
+[resource]
+script = ExtResource("1_2wmvo")
+Mode = 1
+ViewOffset = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.175, 0.1, 0)

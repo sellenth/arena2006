@@ -1,0 +1,17 @@
+# This file defines the Kubernetes Service for the Arena2006 game server.
+# It exposes the server to the internet using a LoadBalancer,
+# mapping the external port to the container's port.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: arena2006-server
+spec:
+  type: NodePort
+  selector:
+    app: arena2006-server
+  ports:
+  - protocol: UDP
+    port: 12345
+    nodePort: 30000
+    targetPort: 30000

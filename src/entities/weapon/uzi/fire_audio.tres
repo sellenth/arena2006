@@ -1,0 +1,8 @@
+[gd_resource type="Resource" load_steps=3 format=3 uid="uid://c2c33f5ec4a4"]
+
+[ext_resource type="Script" uid="uid://2s2tpshsud30" path="res://src/entities/weapon/_shared/WeaponAudioSet.cs" id="1"]
+[ext_resource type="AudioStream" uid="uid://kfl7gwei0ihg" path="res://src/entities/weapon/uzi/Maps/smg_loop.mp3" id="2"]
+
+[resource]
+script = ExtResource("1")
+Stream = ExtResource("2")

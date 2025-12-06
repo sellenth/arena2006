@@ -1,0 +1,10 @@
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://53maa486k4ky"]
+
+[ext_resource type="Script" uid="uid://chhigb78hn2p5" path="res://src/entities/weapon/_shared/ProjectileDefinition.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Speed = 400.0
+ExplosionRadius = 6.0
+Damage = 120.0
+ArmDelaySec = 0.05

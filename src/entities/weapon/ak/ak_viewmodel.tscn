@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://5b41c2j5uq3h"]
+
+[ext_resource type="PackedScene" uid="uid://cjbqme3c0e05w" path="res://src/entities/weapon/ak/ak_base.tscn" id="1_lydfi"]
+
+[node name="AKViewmodel" type="Node3D"]
+
+[node name="ak2" parent="." instance=ExtResource("1_lydfi")]

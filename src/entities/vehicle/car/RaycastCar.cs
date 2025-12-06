@@ -1,0 +1,631 @@
+using Godot;
+using Godot.Collections;
+
+public partial class RaycastCar : RigidBody3D, IReplicatedEntity
+{
+	public enum NetworkRegistrationMode
+	{
+		None,
+		LocalPlayer,
+		AuthoritativeVehicle
+	}
+
+	[Export] public Array<RaycastWheel> Wheels { get; set; }
+	[Export] public float Acceleration { get; set; } = 600.0f;
+	[Export] public float MaxSpeed { get; set; } = 20.0f;
+	[Export] public Curve AccelCurve { get; set; }
+	[Export] public float TireTurnSpeed { get; set; } = 2.0f;
+	[Export] public float TireMaxTurnDegrees { get; set; } = 25;
+	[Export] public float SteerAccelerationRate { get; set; } = 3.0f;
+	[Export] public float SteerDecelerationRate { get; set; } = 5.0f;
+
+	[Export] public Array<GpuParticles3D> SkidMarks { get; set; }
+	[Export] public bool ShowDebug { get; set; } = false;
+	[Export] public NetworkRegistrationMode RegistrationMode { get; set; } = NetworkRegistrationMode.LocalPlayer;
+	[Export] public bool AutoRespawnOnReady { get; set; } = true;
+	[Export] public NodePath CameraPath { get; set; } = "CameraPivot/Camera";
+	[Export] public int NetworkId { get; set; } = 0;
+	[Export] public int MaxHealth { get; set; } = 100;
+	[Export] public int MaxArmor { get; set; } = 100;
+
+	public int TotalWheels { get; private set; }
+
+	public float MotorInput { get; set; } = 0.0f;
+	public float SteerInput => _smoothedSteerInput;
+	public bool HandBreak { get; set; } = false;
+	public bool IsSlipping { get; set; } = false;
+	public int Health => _health;
+	public int Armor => _armor;
+
+	private CarInputState _inputState = new CarInputState();
+	private float _smoothedSteerInput = 0.0f;
+	private bool _brakePressed = false;
+	private CarSnapshot _pendingSnapshot;
+
+	private const float SnapBlend = 0.35f;
+	private const float SnapPosEps = 0.05f;
+	private const float SnapVelEps = 0.1f;
+	private static readonly float SnapAngEps = Mathf.DegToRad(2.0f);
+
+	private bool _isNetworked = false;
+	private bool _hasLoggedSpawn = false;
+	private Vector3 _initialSpawnPosition = Vector3.Zero;
+	private Camera3D _camera;
+	private bool _simulateLocally = true;
+	private bool _cameraActive = false;
+	private bool _registeredWithRemoteManager = false;
+	private int _occupantPeerId = 0;
+	private bool _hasPendingReplicatedTransform = false;
+	private Transform3D _pendingReplicatedTransform = Transform3D.Identity;
+	private int _health = 100;
+	private int _armor = 100;
+	private float _targetSteerNorm = 0.0f;
+
+	private ReplicatedTransform3D _transformProperty;
+	private ReplicatedVector3 _linearVelocityProperty;
+	private ReplicatedVector3 _angularVelocityProperty;
+	private ReplicatedInt _occupantProperty;
+	private ReplicatedInt _healthProperty;
+	private ReplicatedInt _armorProperty;
+
+	public override void _Ready()
+	{
+		TotalWheels = Wheels.Count;
+
+		_camera = GetNodeOrNull<Camera3D>(CameraPath);
+
+		InitializeReplication();
+
+		var network = GetTree().Root.GetNodeOrNull<NetworkController>("/root/NetworkController");
+
+		switch (RegistrationMode)
+		{
+			case NetworkRegistrationMode.LocalPlayer:
+				if (network != null && network.IsClient)
+				{
+					if (NetworkId != 0)
+						RegisterAsRemoteReplica();
+					network.RegisterLocalPlayerCar(this);
+					_isNetworked = true;
+				}
+				break;
+			case NetworkRegistrationMode.AuthoritativeVehicle:
+				if (network != null && network.IsServer)
+				{
+					// Let the NetworkController assign the authoritative NetworkId (2000+ range)
+					network.RegisterAuthoritativeVehicle(this);
+					_isNetworked = true;
+				}
+				break;
+			default:
+				_simulateLocally = false;
+				break;
+		}
+
+		if (AutoRespawnOnReady && _simulateLocally)
+			RespawnAtManagedPoint();
+
+		ClampVitals();
+		ApplySimulationMode();
+	}
+
+	private void InitializeReplication()
+	{
+		_transformProperty = new ReplicatedTransform3D(
+			"Transform",
+			() => GlobalTransform,
+			(value) => ApplyTransformFromReplication(value),
+			ReplicationMode.Always,
+			positionThreshold: SnapPosEps,
+			rotationThreshold: SnapAngEps
+		);
+
+		_linearVelocityProperty = new ReplicatedVector3(
+			"LinearVelocity",
+			() => LinearVelocity,
+			(value) => LinearVelocity = value,
+			ReplicationMode.Always
+		);
+
+		_angularVelocityProperty = new ReplicatedVector3(
+			"AngularVelocity",
+			() => AngularVelocity,
+		(value) => AngularVelocity = value,
+		ReplicationMode.Always
+	);
+
+		_healthProperty = new ReplicatedInt(
+			"Health",
+			() => _health,
+			value => SetHealth(value),
+			ReplicationMode.OnChange
+		);
+
+		_armorProperty = new ReplicatedInt(
+			"Armor",
+			() => _armor,
+			value => SetArmor(value),
+			ReplicationMode.OnChange
+		);
+
+		_occupantProperty = new ReplicatedInt(
+			"OccupantPeerId",
+			() => _occupantPeerId,
+			value => ApplyOccupantPeer(value),
+			ReplicationMode.OnChange
+		);
+	}
+
+	public void SetNetworkId(int id)
+	{
+		if (NetworkId == id)
+			return;
+
+		if (EntityReplicationRegistry.Instance != null && NetworkId != 0)
+		{
+			EntityReplicationRegistry.Instance.UnregisterEntity(NetworkId);
+		}
+
+		if (_registeredWithRemoteManager)
+		{
+			var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
+			remoteManager?.UnregisterRemoteEntity(NetworkId);
+			_registeredWithRemoteManager = false;
+		}
+
+		NetworkId = id;
+	}
+
+	public void RegisterAsAuthority(int? desiredId = null)
+	{
+		if (EntityReplicationRegistry.Instance == null)
+		{
+			GD.PushError($"RaycastCar ({Name}): EntityReplicationRegistry.Instance is NULL! Cannot register.");
+			return;
+		}
+
+		if (desiredId.HasValue && desiredId.Value != 0)
+			SetNetworkId(desiredId.Value);
+
+		var assignedId = EntityReplicationRegistry.Instance.RegisterEntity(this, this);
+		if (assignedId == 0)
+		{
+			GD.PushWarning($"RaycastCar ({Name}): Registered but got NetworkId 0");
+		}
+
+		NetworkId = assignedId;
+		GD.Print($"RaycastCar ({Name}): Registered as authority with NetworkId {NetworkId}");
+	}
+
+	public void SetOccupantPeerId(int peerId)
+	{
+		_occupantPeerId = peerId;
+	}
+
+	private void ApplyOccupantPeer(int peerId)
+	{
+		if (_occupantPeerId == peerId)
+			return;
+
+		_occupantPeerId = peerId;
+		var network = GetTree().Root.GetNodeOrNull<NetworkController>("/root/NetworkController");
+
+		if (network != null && network.IsClient)
+		{
+			var vehicleId = GetVehicleIdForReplication();
+			if (peerId == network.ClientPeerId)
+			{
+				network.AttachLocalVehicle(vehicleId, this);
+				SetCameraActive(true);
+			}
+			else
+			{
+				network.DetachLocalVehicle(vehicleId, this);
+				SetCameraActive(peerId != 0 && peerId == network.ClientPeerId);
+			}
+		}
+	}
+
+	private int GetVehicleIdForReplication()
+	{
+		var offset = 2000;
+		if (NetworkId >= offset)
+			return NetworkId - offset;
+		return NetworkId;
+	}
+
+	public void RegisterAsRemoteReplica()
+	{
+		if (NetworkId == 0)
+		{
+			GD.PushWarning($"RaycastCar ({Name}): NetworkId is 0, cannot register as remote.");
+			return;
+		}
+
+		var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
+		if (remoteManager != null)
+		{
+			if (!_registeredWithRemoteManager)
+			{
+				remoteManager.RegisterRemoteEntity(NetworkId, this);
+				_registeredWithRemoteManager = true;
+				GD.Print($"RaycastCar: Registered as remote with NetworkId {NetworkId}");
+			}
+		}
+		else
+		{
+			GD.PushWarning("RaycastCar: RemoteEntityManager not found in scene!");
+		}
+	}
+
+	private void ApplyTransformFromReplication(Transform3D value)
+	{
+		if (_simulateLocally)
+		{
+			_pendingReplicatedTransform = value;
+			_hasPendingReplicatedTransform = true;
+			return;
+		}
+
+		GlobalTransform = value;
+	}
+
+	public override void _Input(InputEvent @event)
+	{
+		if (!_simulateLocally)
+			return;
+
+		if (!_isNetworked && @event is InputEventKey keyEvent && keyEvent.Pressed && !keyEvent.Echo)
+		{
+			if (keyEvent.Keycode == Key.R)
+			{
+				Respawn();
+			}
+		}
+	}
+
+	public void Respawn()
+	{
+		if (!_simulateLocally)
+			return;
+
+		RespawnAtManagedPoint();
+		_pendingSnapshot = null;
+	}
+
+	private void RespawnAtManagedPoint()
+	{
+		var previousPosition = GlobalTransform.Origin;
+		var manager = RespawnManager.Instance;
+		var success = manager.RespawnEntityAtBestPoint(this, this);
+		if (!success)
+		{
+			var fallback = RespawnManager.RespawnRequest.Create(GlobalTransform);
+			manager.RespawnEntity(this, fallback);
+		}
+
+		var currentPosition = GlobalTransform.Origin;
+
+		var shouldLog = !Name.ToString().StartsWith("ServerCar_") && !Name.ToString().StartsWith("RemotePlayer_");
+
+		if (!shouldLog)
+			return;
+
+		if (!_hasLoggedSpawn)
+		{
+			_hasLoggedSpawn = true;
+			_initialSpawnPosition = currentPosition;
+			GD.Print($"TEST_EVENT: CAR_INITIAL_SPAWN name={Name} pos={FormatVector(currentPosition)}");
+		}
+		else
+		{
+			var distance = previousPosition.DistanceTo(currentPosition);
+			GD.Print($"TEST_EVENT: CAR_RESPAWNED name={Name} prev={FormatVector(previousPosition)} new={FormatVector(currentPosition)} distance={distance:F2}");
+		}
+	}
+
+	private static string FormatVector(Vector3 value)
+	{
+		return $"{value.X:F2},{value.Y:F2},{value.Z:F2}";
+	}
+
+	public Vector3 GetPointVelocity(Vector3 point)
+	{
+		return LinearVelocity + AngularVelocity.Cross(point - GlobalPosition);
+	}
+
+	private void SetHealth(int value)
+	{
+		_health = Mathf.Clamp(value, 0, MaxHealth);
+	}
+
+	private void SetArmor(int value)
+	{
+		_armor = Mathf.Clamp(value, 0, MaxArmor);
+	}
+
+	private void ClampVitals()
+	{
+		SetHealth(_health);
+		SetArmor(_armor);
+	}
+
+	public void ApplyDamage(int amount)
+	{
+		if (amount <= 0)
+			return;
+
+		var remaining = amount;
+		if (_armor > 0)
+		{
+			var armorDamage = Mathf.Min(_armor, remaining);
+			SetArmor(_armor - armorDamage);
+			remaining -= armorDamage;
+		}
+
+		if (remaining > 0)
+		{
+			SetHealth(_health - remaining);
+		}
+	}
+
+	public void SetInputState(CarInputState state)
+	{
+		_inputState.CopyFrom(state);
+		MotorInput = Mathf.Clamp(_inputState.Throttle, -1.0f, 1.0f);
+		HandBreak = _inputState.Handbrake;
+		_brakePressed = _inputState.Brake;
+		if (_inputState.Handbrake)
+			IsSlipping = true;
+		if (_inputState.Respawn)
+			Respawn();
+	}
+
+	public CarSnapshot CaptureSnapshot(int tick)
+	{
+		var snapshot = new CarSnapshot
+		{
+			Tick = tick,
+			Transform = GlobalTransform,
+			LinearVelocity = LinearVelocity,
+			AngularVelocity = AngularVelocity
+		};
+		return snapshot;
+	}
+
+	public void QueueSnapshot(CarSnapshot snapshot)
+	{
+		_pendingSnapshot = snapshot;
+	}
+
+	private void BasicSteeringRotation(RaycastWheel wheel, float delta)
+	{
+		if (!wheel.IsSteer) return;
+
+		var targetAngle = Mathf.DegToRad(TireMaxTurnDegrees) * _targetSteerNorm;
+		var steerLerp = Mathf.Clamp(TireTurnSpeed * delta, 0f, 1f);
+		wheel.Rotation = new Vector3(
+			wheel.Rotation.X,
+			Mathf.LerpAngle(wheel.Rotation.Y, targetAngle, steerLerp),
+			wheel.Rotation.Z);
+	}
+
+	public override void _PhysicsProcess(double delta)
+	{
+		if (!_simulateLocally)
+			return;
+
+		var raw = Mathf.Clamp(_inputState.Steer, -1f, 1f);
+		var df = (float)delta;
+
+		float speed = LinearVelocity.Length();
+		float speed01 = Mathf.Clamp(speed / MaxSpeed, 0f, 1f);
+
+		float accel = SteerAccelerationRate * df;
+		float decel = SteerDecelerationRate * df;
+
+		bool reversing = Mathf.Sign(raw) != Mathf.Sign(_smoothedSteerInput) && Mathf.Abs(_smoothedSteerInput) > 0.1f;
+		float rate = reversing ? decel * 1.6f : accel;
+
+		_smoothedSteerInput = Mathf.MoveToward(_smoothedSteerInput, raw, rate);
+
+		if (Mathf.Abs(raw) < 0.01f)
+		{
+			_smoothedSteerInput = Mathf.MoveToward(_smoothedSteerInput, 0f, decel);
+		}
+
+		var steerLimitNorm = Mathf.Lerp(1f, 0.25f, speed01 * speed01);
+		_targetSteerNorm = Mathf.Clamp(_smoothedSteerInput * steerLimitNorm, -1f, 1f);
+
+		// if (ShowDebug) 
+		// 	DebugDraw.DrawArrowRay(GlobalPosition, LinearVelocity, 2.5f, 0.5f, Colors.Green);
+
+		var id = 0;
+		var grounded = false;
+		foreach (var wheel in Wheels)
+		{
+			wheel.ApplyWheelPhysics(this);
+			BasicSteeringRotation(wheel, (float)delta);
+
+			wheel.IsBraking = _brakePressed;
+
+			// Only update skid marks if the array is properly configured
+			if (SkidMarks != null && id < SkidMarks.Count)
+			{
+				SkidMarks[id].GlobalPosition = wheel.GetCollisionPoint() + Vector3.Up * 0.01f;
+				SkidMarks[id].LookAt(SkidMarks[id].GlobalPosition + GlobalBasis.Z);
+
+				if (!HandBreak && wheel.GripFactor < 0.2f)
+				{
+					IsSlipping = false;
+					SkidMarks[id].Emitting = false;
+				}
+
+				if (HandBreak && !SkidMarks[id].Emitting)
+					SkidMarks[id].Emitting = true;
+			}
+
+			if (wheel.IsColliding())
+				grounded = true;
+
+			id++;
+		}
+
+		if (grounded)
+		{
+			CenterOfMass = Vector3.Zero;
+		}
+		else
+		{
+			CenterOfMassMode = CenterOfMassModeEnum.Custom;
+			CenterOfMass = Vector3.Down * 0.5f;
+		}
+	}
+
+	public override void _IntegrateForces(PhysicsDirectBodyState3D state)
+	{
+		if (_pendingSnapshot == null) return;
+
+		var target = _pendingSnapshot;
+		var currentTransform = state.Transform;
+		var blendedOrigin = currentTransform.Origin.Lerp(target.Transform.Origin, SnapBlend);
+		var currentQuat = currentTransform.Basis.GetRotationQuaternion();
+		var targetQuat = target.Transform.Basis.GetRotationQuaternion();
+		var blendedQuat = currentQuat.Slerp(targetQuat, SnapBlend);
+		state.Transform = new Transform3D(new Basis(blendedQuat), blendedOrigin);
+
+		var blendedLinear = state.LinearVelocity.Lerp(target.LinearVelocity, SnapBlend);
+		state.LinearVelocity = blendedLinear;
+		var blendedAngular = state.AngularVelocity.Lerp(target.AngularVelocity, SnapBlend);
+		state.AngularVelocity = blendedAngular;
+
+		var posError = blendedOrigin.DistanceTo(target.Transform.Origin);
+		var angError = blendedQuat.AngleTo(targetQuat);
+		var linError = blendedLinear.DistanceTo(target.LinearVelocity);
+		var angVelError = blendedAngular.DistanceTo(target.AngularVelocity);
+		if (posError <= SnapPosEps && angError <= SnapAngEps &&
+			linError <= SnapVelEps && angVelError <= SnapVelEps)
+		{
+			_pendingSnapshot = null;
+		}
+	}
+
+	public new Vector3 GetGravity()
+	{
+		var gravityMagnitude = (float)PhysicsServer3D.AreaGetParam(GetWorld3D().Space, PhysicsServer3D.AreaParameter.Gravity);
+		var gravityVector = (Vector3)PhysicsServer3D.AreaGetParam(GetWorld3D().Space, PhysicsServer3D.AreaParameter.GravityVector);
+		return gravityMagnitude * gravityVector;
+	}
+
+	public void SetSimulationEnabled(bool enabled)
+	{
+		_simulateLocally = enabled;
+		ApplySimulationMode();
+	}
+
+	private void ApplySimulationMode()
+	{
+		if (_simulateLocally)
+		{
+			Freeze = false;
+			FreezeMode = FreezeModeEnum.Static;
+		}
+		else
+		{
+			FreezeMode = FreezeModeEnum.Kinematic;
+			Freeze = true;
+		}
+	}
+
+	public void SetCameraActive(bool active)
+	{
+		_cameraActive = active;
+		if (_camera != null)
+			_camera.Current = active;
+	}
+
+	public void ApplyRemoteSnapshot(VehicleStateSnapshot snapshot, float blend = 0.35f)
+	{
+		if (snapshot == null)
+			return;
+
+		if (_simulateLocally)
+		{
+			QueueSnapshot(snapshot.ToCarSnapshot());
+			return;
+		}
+
+		var appliedBlend = Mathf.Clamp(blend, 0.01f, 1.0f);
+		var current = GlobalTransform;
+		var blendedOrigin = current.Origin.Lerp(snapshot.Transform.Origin, appliedBlend);
+		var currentQuat = current.Basis.GetRotationQuaternion();
+		var targetQuat = snapshot.Transform.Basis.GetRotationQuaternion();
+		var blendedQuat = currentQuat.Slerp(targetQuat, appliedBlend);
+		GlobalTransform = new Transform3D(new Basis(blendedQuat), blendedOrigin);
+		LinearVelocity = LinearVelocity.Lerp(snapshot.LinearVelocity, appliedBlend);
+		AngularVelocity = AngularVelocity.Lerp(snapshot.AngularVelocity, appliedBlend);
+	}
+
+	public void ConfigureForLocalDriver(bool enable)
+	{
+		SetSimulationEnabled(enable);
+		if (!enable)
+		{
+			SetCameraActive(false);
+		}
+	}
+
+	public void WriteSnapshot(StreamPeerBuffer buffer)
+	{
+		_transformProperty.Write(buffer);
+		_linearVelocityProperty.Write(buffer);
+		_angularVelocityProperty.Write(buffer);
+		_healthProperty.Write(buffer);
+		_armorProperty.Write(buffer);
+		_occupantProperty.Write(buffer);
+	}
+
+	public void ReadSnapshot(StreamPeerBuffer buffer)
+	{
+		_transformProperty.Read(buffer);
+		_linearVelocityProperty.Read(buffer);
+		_angularVelocityProperty.Read(buffer);
+		_healthProperty.Read(buffer);
+		_armorProperty.Read(buffer);
+		_occupantProperty.Read(buffer);
+
+		if (_simulateLocally && _hasPendingReplicatedTransform)
+		{
+			var snapshot = new CarSnapshot
+			{
+				Transform = _pendingReplicatedTransform,
+				LinearVelocity = LinearVelocity,
+				AngularVelocity = AngularVelocity
+			};
+			QueueSnapshot(snapshot);
+			_hasPendingReplicatedTransform = false;
+		}
+	}
+
+	public int GetSnapshotSizeBytes()
+	{
+		return _transformProperty.GetSizeBytes()
+			 + _linearVelocityProperty.GetSizeBytes()
+			 + _angularVelocityProperty.GetSizeBytes()
+			 + _healthProperty.GetSizeBytes()
+			 + _armorProperty.GetSizeBytes()
+			 + _occupantProperty.GetSizeBytes();
+	}
+
+	public override void _ExitTree()
+	{
+		if (_registeredWithRemoteManager)
+		{
+			var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
+			remoteManager?.UnregisterRemoteEntity(NetworkId);
+			_registeredWithRemoteManager = false;
+		}
+
+		base._ExitTree();
+	}
+}

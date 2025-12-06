@@ -1,0 +1,90 @@
+[gd_scene load_steps=12 format=3 uid="uid://bqfluf8q56o4k"]
+
+[ext_resource type="Script" uid="uid://ufgjflvqoju" path="res://src/entities/weapon/rocket_launcher/RocketProjectile.cs" id="1_rocket"]
+[ext_resource type="Texture2D" uid="uid://b0wroodgrvako" path="res://src/systems/fx/decal/scorch.png" id="2_6c3m4"]
+[ext_resource type="ArrayMesh" uid="uid://c56bjerteekjn" path="res://src/entities/weapon/rocket_launcher/agm65.obj" id="3_2lask"]
+[ext_resource type="Texture2D" uid="uid://doon3diu68x7x" path="res://src/entities/weapon/rocket_launcher/skin.png" id="4_ohvn3"]
+[ext_resource type="AudioStream" uid="uid://4djifcgjrul3" path="res://src/entities/weapon/rocket_launcher/rocket_loop.mp3" id="5_i1tbh"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
+radius = 0.1
+height = 0.5
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_1"]
+radius = 0.15
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2"]
+transparency = 1
+albedo_color = Color(1, 0.8, 0.4, 0.7)
+emission_enabled = true
+emission = Color(1, 0.5, 0, 1)
+emission_energy_multiplier = 0.5
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_1"]
+emission_shape = 1
+emission_sphere_radius = 0.05
+direction = Vector3(0, 0, 1)
+initial_velocity_min = 2.0
+initial_velocity_max = 3.0
+angular_velocity_min = -180.0
+angular_velocity_max = 180.0
+gravity = Vector3(0, 0, 0)
+linear_accel_min = -2.0
+linear_accel_max = -1.0
+scale_min = 0.3
+scale_max = 0.8
+color = Color(1, 0.6, 0.2, 1)
+hue_variation_min = -0.1
+hue_variation_max = 0.1
+
+[sub_resource type="SphereMesh" id="SphereMesh_1"]
+radial_segments = 4
+rings = 5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q20ru"]
+albedo_texture = ExtResource("4_ohvn3")
+uv1_offset = Vector3(-1.28, 0, 0)
+
+[node name="RocketProjectile" type="RigidBody3D"]
+collision_layer = 4
+collision_mask = 3
+gravity_scale = 0.0
+continuous_cd = true
+contact_monitor = true
+max_contacts_reported = 10
+script = ExtResource("1_rocket")
+FlightLoopSfx = ExtResource("5_i1tbh")
+ExplosionDecalTexture = ExtResource("2_6c3m4")
+ExplosionDecalSize = 5.0
+ExplosionDecalLifetimeSec = 300.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
+shape = SubResource("CapsuleShape3D_1")
+
+[node name="HitDetectionArea" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HitDetectionArea"]
+shape = SubResource("SphereShape3D_1")
+
+[node name="TrailParticles" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.3)
+material_override = SubResource("StandardMaterial3D_2")
+amount = 30
+lifetime = 0.5
+visibility_aabb = AABB(-2, -2, -2, 4, 4, 4)
+process_material = SubResource("ParticleProcessMaterial_1")
+draw_pass_1 = SubResource("SphereMesh_1")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+light_color = Color(1, 0.5, 0, 1)
+light_energy = 2.0
+omni_range = 10.0
+omni_attenuation = 2.0
+
+[node name="Agm65" type="MeshInstance3D" parent="."]
+transform = Transform3D(-2.73087e-08, 0, -1, 0, 1, 0, 0.62475, 0, -4.37114e-08, 0, 0, 0)
+mesh = ExtResource("3_2lask")
+surface_material_override/2 = SubResource("StandardMaterial3D_q20ru")

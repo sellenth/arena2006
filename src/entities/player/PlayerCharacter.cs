@@ -1,0 +1,1124 @@
+using System.Diagnostics;
+using Godot;
+
+public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
+{
+	[Export] public NodePath HeadPath { get; set; } = "Head";
+	[Export] public NodePath CameraPath { get; set; } = "Head/Cam";
+	[Export] public NodePath MeshPath { get; set; } = "MeshInstance3D";
+	[Export] public NodePath BodyMeshPath { get; set; } = "Body/metarig/Skeleton3D/body";
+	[Export] public NodePath AnimationPlayerPath { get; set; } = "Body/AnimationPlayer";
+	[Export] public NodePath CollisionShapePath { get; set; } = "Collision";
+	[Export] public bool AutoRegisterWithNetwork { get; set; } = true;
+	[Export] public int NetworkId { get; set; } = 0;
+	[Export] public int MaxHealth { get; set; } = 100;
+	[Export] public int MaxArmor { get; set; } = 100;
+	[Export] public float StandingHeight { get; set; } = 1.8f;
+	[Export] public float CrouchHeight { get; set; } = 1.3f;
+	[Export] public float CrouchTransitionSpeed { get; set; } = 10f;
+	public long OwnerPeerId => GetOwnerPeerId();
+
+	private Node3D _head;
+	private Camera3D _camera;
+	private MeshInstance3D _mesh;
+	private MeshInstance3D _bodyMesh;
+	private StandardMaterial3D _bodyMaterial;
+	private CollisionShape3D _collisionShape;
+	private NetworkController _networkController;
+	private readonly PlayerInputState _inputState = new PlayerInputState();
+	private readonly PlayerLookController _lookController = new PlayerLookController();
+	private PlayerMovementComponent _movementComponent;
+	private HealthComponent _healthComponent;
+	private readonly PlayerReconciliationController _reconciliation = new PlayerReconciliationController();
+	private readonly PlayerAnimationController _animationController = new PlayerAnimationController();
+	private Color _playerColor = Colors.Red;
+	private bool _isAuthority = true;
+	private bool _simulateLocally = true;
+	private bool _cameraActive = false;
+	private bool _worldActive = true;
+	private bool _managesMouseMode = false;
+	private bool _registeredWithRemoteManager = false;
+	private bool _hasPendingReplicatedTransform = false;
+	private Transform3D _pendingReplicatedTransform = Transform3D.Identity;
+	private int _replicatedMode = (int)PlayerMode.Foot;
+	private int _replicatedVehicleId = 0;
+
+	private ReplicatedTransform3D _transformProperty;
+	private ReplicatedVector3 _velocityProperty;
+	private ReplicatedFloat _viewYawProperty;
+	private ReplicatedFloat _viewPitchProperty;
+	private ReplicatedInt _modeProperty;
+	private ReplicatedInt _vehicleIdProperty;
+	private ReplicatedInt _movementStateProperty;
+	private ReplicatedInt _healthProperty;
+	private ReplicatedInt _armorProperty;
+	private ReplicatedInt _weaponIdProperty;
+	private ReplicatedInt _weaponMagProperty;
+	private ReplicatedInt _weaponReserveProperty;
+	private ReplicatedInt _weaponFireSeqProperty;
+	private ReplicatedInt _weaponReloadMsProperty;
+	private ReplicatedInt _weaponReloadingProperty;
+	private ReplicatedInt _adsStateProperty;
+	private ReplicatedInt _teamColorProperty;
+	public int Health => _healthComponent?.Health ?? MaxHealth;
+	public int Armor => _healthComponent?.Armor ?? MaxArmor;
+	private WeaponInventory _weaponInventory;
+	private WeaponController _weaponController;
+	private AmmoUI _ammoUi;
+	private int _repWeaponId = (int)WeaponType.None;
+	private int _repWeaponMag = 0;
+	private int _repWeaponReserve = 0;
+	private int _repWeaponFireSeq = 0;
+	private int _repWeaponReloadMs = 0;
+	private int _repWeaponReloading = 0;
+	private int _replicatedMovementState = (int)PlayerMovementStateKind.Grounded;
+	private int _adsState = 0;
+	private int _repAdsState = 0;
+	private float _adsBlend = 0f;
+	private WeaponView _weaponView;
+
+	public PlayerCharacter()
+	{
+		// CharacterBody defaults for surf-style movement
+		FloorStopOnSlope = false;
+		FloorBlockOnWall = false;
+		WallMinSlideAngle = 0f;
+	}
+
+	public override void _Ready()
+	{
+		_head = GetNodeOrNull<Node3D>(HeadPath);
+		_camera = GetNodeOrNull<Camera3D>(CameraPath);
+		_mesh = GetNodeOrNull<MeshInstance3D>(MeshPath);
+		_bodyMesh = GetNodeOrNull<MeshInstance3D>(BodyMeshPath);
+		_collisionShape = GetNodeOrNull<CollisionShape3D>(CollisionShapePath);
+		_networkController = GetNodeOrNull<NetworkController>("/root/NetworkController");
+		_animationController.Initialize(this, AnimationPlayerPath);
+		InitializeBodyMaterial();
+
+		if (_head == null || _camera == null)
+		{
+			Debug.Assert(false, "head or camera not found :o");
+		}
+
+		InitializeMovementModules();
+		InitializeHealthComponent();
+
+		InitializeReplication();
+
+		if (AutoRegisterWithNetwork)
+		{
+			if (_networkController != null && _networkController.IsClient)
+			{
+				if (NetworkId != 0)
+					RegisterAsRemoteReplica();
+				_networkController.RegisterPlayerCharacter(this);
+				SetCameraActive(true);
+			}
+		}
+
+		RefreshMouseModeManagement();
+
+		ApplyColor(_playerColor);
+
+		EnsureWeaponSystems();
+	}
+
+	private void RefreshMouseModeManagement()
+	{
+		if (_networkController == null && IsInsideTree())
+		{
+			_networkController = GetNodeOrNull<NetworkController>("/root/NetworkController");
+		}
+
+		_managesMouseMode = AutoRegisterWithNetwork && (_networkController == null || _networkController.IsClient);
+	}
+
+	private void EnsureWeaponSystems()
+	{
+		_weaponInventory = GetNodeOrNull<WeaponInventory>("WeaponInventory");
+		if (_weaponInventory == null)
+		{
+			_weaponInventory = new WeaponInventory { Name = "WeaponInventory" };
+			AddChild(_weaponInventory);
+		}
+
+		if (_weaponInventory.StartingWeapons.Count == 0)
+		{
+			var rocketDefPath = "res://src/entities/weapon/rocket_launcher/weapon_definition.tres";
+			if (ResourceLoader.Exists(rocketDefPath))
+			{
+				var rocketDef = ResourceLoader.Load<WeaponDefinition>(rocketDefPath);
+				if (rocketDef != null)
+				{
+					_weaponInventory.StartingWeapons.Add(rocketDef);
+				}
+			}
+		}
+
+		_weaponController = GetNodeOrNull<WeaponController>("WeaponController");
+		if (_weaponController == null)
+		{
+			_weaponController = new WeaponController { Name = "WeaponController" };
+			AddChild(_weaponController);
+		}
+
+		if (_weaponView == null)
+		{
+			_weaponView = FindWeaponView();
+		}
+
+		ConnectAmmoUi();
+	}
+
+	private void ConnectAmmoUi()
+	{
+		if (_weaponInventory == null)
+			return;
+
+		if (_ammoUi == null)
+		{
+			_ammoUi = FindAmmoUi();
+		}
+
+		if (_ammoUi != null)
+		{
+			_weaponInventory.AmmoChanged -= _ammoUi.UpdateAmmo;
+			_weaponInventory.AmmoChanged += _ammoUi.UpdateAmmo;
+			_weaponInventory.EmitAmmo();
+		}
+	}
+
+	private AmmoUI FindAmmoUi()
+	{
+		var scene = GetTree()?.CurrentScene;
+		if (scene == null)
+			return null;
+		// Search by name to avoid hard-coded paths.
+		var node = scene.FindChild("AmmoUI", recursive: true, owned: false);
+		return node as AmmoUI;
+	}
+
+	private WeaponView FindWeaponView()
+	{
+		var scene = GetTree()?.CurrentScene;
+		if (scene == null)
+			return null;
+		var node = scene.FindChild("WeaponView", recursive: true, owned: false);
+		return node as WeaponView;
+	}
+
+	private void InitializeReplication()
+	{
+		_transformProperty = new ReplicatedTransform3D(
+			"Transform",
+			() => GlobalTransform,
+			(value) => ApplyTransformFromReplication(value),
+			ReplicationMode.Always,
+			positionThreshold: 0.01f,
+			rotationThreshold: Mathf.DegToRad(1.0f)
+		);
+
+		_velocityProperty = new ReplicatedVector3(
+			"Velocity",
+			() => Velocity,
+			(value) => Velocity = value,
+			ReplicationMode.Always
+		);
+
+		_viewYawProperty = new ReplicatedFloat(
+			"ViewYaw",
+			() => _lookController?.Yaw ?? 0f,
+			(value) => SetViewYaw(value),
+			ReplicationMode.Always
+		);
+
+		_viewPitchProperty = new ReplicatedFloat(
+			"ViewPitch",
+			() => _lookController?.Pitch ?? 0f,
+			(value) => SetViewPitch(value),
+			ReplicationMode.Always
+		);
+
+		_modeProperty = new ReplicatedInt(
+			"PlayerMode",
+			() => _replicatedMode,
+			value => ApplyReplicatedMode((PlayerMode)value),
+			ReplicationMode.OnChange
+		);
+
+		_vehicleIdProperty = new ReplicatedInt(
+			"VehicleId",
+			() => _replicatedVehicleId,
+			value => _replicatedVehicleId = value,
+			ReplicationMode.OnChange
+		);
+
+		_movementStateProperty = new ReplicatedInt(
+			"MovementState",
+			() => (int)(_movementComponent?.State ?? PlayerMovementStateKind.Grounded),
+			value => _replicatedMovementState = value,
+			ReplicationMode.OnChange
+		);
+
+		_healthProperty = new ReplicatedInt(
+			"Health",
+			() => Health,
+			value => _healthComponent?.SetHealthFromReplication(value),
+			ReplicationMode.OnChange
+		);
+
+		_armorProperty = new ReplicatedInt(
+			"Armor",
+			() => Armor,
+			value => _healthComponent?.SetArmorFromReplication(value),
+			ReplicationMode.OnChange
+		);
+
+		_weaponIdProperty = new ReplicatedInt(
+			"WeaponId",
+			() => (int)GetEquippedWeaponId(),
+			value => OnReplicatedWeaponId(value),
+			ReplicationMode.Always
+		);
+
+		_weaponMagProperty = new ReplicatedInt(
+			"WeaponMag",
+			() => GetEquippedMagazine(),
+			value => { _repWeaponMag = value; SyncWeaponAmmoFromReplication(); },
+			ReplicationMode.Always
+		);
+
+		_weaponReserveProperty = new ReplicatedInt(
+			"WeaponReserve",
+			() => GetEquippedReserve(),
+			value => { _repWeaponReserve = value; SyncWeaponAmmoFromReplication(); },
+			ReplicationMode.Always
+		);
+
+		_weaponFireSeqProperty = new ReplicatedInt(
+			"WeaponFireSeq",
+			() => GetEquippedFireSequence(),
+			value => OnReplicatedFireSequence(value),
+			ReplicationMode.Always
+		);
+
+		_weaponReloadMsProperty = new ReplicatedInt(
+			"WeaponReloadMs",
+			() => GetEquippedReloadMs(),
+			value => _repWeaponReloadMs = value,
+			ReplicationMode.Always
+		);
+
+		_weaponReloadingProperty = new ReplicatedInt(
+			"WeaponReloading",
+			() => GetEquippedReloadingFlag(),
+			value => _repWeaponReloading = value,
+			ReplicationMode.Always
+		);
+
+		_adsStateProperty = new ReplicatedInt(
+			"AdsState",
+			() => _adsState,
+			value => _repAdsState = value,
+			ReplicationMode.Always
+		);
+
+		_teamColorProperty = new ReplicatedInt(
+			"TeamColor",
+			() => PackColor(_playerColor),
+			value => ApplyColorFromReplication(value),
+			ReplicationMode.OnChange
+		);
+	}
+
+	private static int PackColor(Color color)
+	{
+		int r = Mathf.Clamp((int)(color.R * 255), 0, 255);
+		int g = Mathf.Clamp((int)(color.G * 255), 0, 255);
+		int b = Mathf.Clamp((int)(color.B * 255), 0, 255);
+		int a = Mathf.Clamp((int)(color.A * 255), 0, 255);
+		return (r << 24) | (g << 16) | (b << 8) | a;
+	}
+
+	private static Color UnpackColor(int packed)
+	{
+		float r = ((packed >> 24) & 0xFF) / 255f;
+		float g = ((packed >> 16) & 0xFF) / 255f;
+		float b = ((packed >> 8) & 0xFF) / 255f;
+		float a = (packed & 0xFF) / 255f;
+		return new Color(r, g, b, a);
+	}
+
+	private void ApplyColorFromReplication(int packedColor)
+	{
+		if (_isAuthority)
+			return;
+
+		var color = UnpackColor(packedColor);
+		_playerColor = color;
+		ApplyColor(color);
+	}
+
+	public void RegisterAsAuthority()
+	{
+		if (_isAuthority && EntityReplicationRegistry.Instance != null)
+		{
+			NetworkId = EntityReplicationRegistry.Instance.RegisterEntity(this, this);
+			GD.Print($"PlayerCharacter ({Name}): Registered as authority with NetworkId {NetworkId}");
+		}
+		else if (_isAuthority)
+		{
+			GD.PushWarning($"PlayerCharacter ({Name}): Cannot register authority, registry missing.");
+		}
+	}
+
+	public void SetReplicatedMode(PlayerMode mode, int vehicleId)
+	{
+		_replicatedMode = (int)mode;
+		_replicatedVehicleId = vehicleId;
+	}
+
+	public void SetNetworkId(int id)
+	{
+		if (NetworkId == id)
+			return;
+
+		if (_registeredWithRemoteManager)
+		{
+			var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
+			if (remoteManager != null)
+				remoteManager.UnregisterRemoteEntity(NetworkId);
+			_registeredWithRemoteManager = false;
+		}
+
+		NetworkId = id;
+	}
+
+	public void RegisterAsRemoteReplica()
+	{
+		if (NetworkId == 0)
+		{
+			GD.PushWarning($"PlayerCharacter ({Name}): NetworkId is 0, cannot register remote replica.");
+			return;
+		}
+
+		var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
+		if (remoteManager != null)
+		{
+			if (!_registeredWithRemoteManager)
+			{
+				remoteManager.RegisterRemoteEntity(NetworkId, this);
+				_registeredWithRemoteManager = true;
+				GD.Print($"PlayerCharacter ({Name}): Registered as remote with NetworkId {NetworkId}");
+			}
+		}
+		else
+		{
+			GD.PushWarning("PlayerCharacter: RemoteEntityManager not found in scene!");
+		}
+	}
+
+	public override void _ExitTree()
+	{
+		if (_weaponInventory != null && _ammoUi != null)
+		{
+			_weaponInventory.AmmoChanged -= _ammoUi.UpdateAmmo;
+		}
+
+		if (_healthComponent != null)
+		{
+			_healthComponent.Died -= HandleDeath;
+		}
+
+		if (_registeredWithRemoteManager)
+		{
+			var remoteManager = GetTree().CurrentScene?.GetNodeOrNull<RemoteEntityManager>("RemoteEntityManager");
+			remoteManager?.UnregisterRemoteEntity(NetworkId);
+			_registeredWithRemoteManager = false;
+		}
+		base._ExitTree();
+	}
+
+	private void ApplyTransformFromReplication(Transform3D value)
+	{
+		_hasPendingReplicatedTransform = true;
+		_pendingReplicatedTransform = value;
+	}
+
+	private void SetViewYaw(float yaw)
+	{
+		if (_lookController != null && !_isAuthority)
+		{
+			_lookController.SetYawPitch(yaw, _lookController.Pitch);
+		}
+	}
+
+	private void SetViewPitch(float pitch)
+	{
+		if (_lookController != null && !_isAuthority)
+		{
+			_lookController.SetYawPitch(_lookController.Yaw, pitch);
+		}
+	}
+
+	private void ApplyReplicatedMode(PlayerMode mode)
+	{
+		_replicatedMode = (int)mode;
+		if (_isAuthority)
+			return;
+
+		// Toggle visibility/physics based on replicated mode
+		SetWorldActive(mode == PlayerMode.Foot);
+	}
+
+	public long GetOwnerPeerId()
+	{
+		if (NetworkId >= 3000 && NetworkId < 4000)
+		{
+			return NetworkId - 3000;
+		}
+		return 0;
+	}
+
+	public override void _PhysicsProcess(double delta)
+	{
+		var deltaFloat = (float)delta;
+
+		if (_cameraActive && IsDead)
+		{
+			ApplyPendingLookInput();
+			_lookController?.Update(deltaFloat, Vector3.Zero, true);
+			return;
+		}
+
+		if (!_worldActive)
+			return;
+
+		if (_simulateLocally)
+		{
+			_movementComponent?.Step(_inputState, deltaFloat);
+
+			if (_networkController != null && _networkController.IsClient)
+			{
+				_networkController.RecordLocalPlayerPrediction(_inputState.Tick, GlobalTransform, Velocity);
+			}
+		}
+		var capsuleState = _isAuthority
+			? _movementComponent?.State ?? PlayerMovementStateKind.Grounded
+			: (PlayerMovementStateKind)_replicatedMovementState;
+		_movementComponent?.UpdateCapsuleHeight(deltaFloat, capsuleState, _isAuthority);
+
+		UpdateAdsState(deltaFloat);
+
+
+		ApplySnapshotCorrection(deltaFloat);
+
+		ApplyPendingLookInput();
+		_lookController?.Update(deltaFloat, Velocity, IsOnFloor());
+		UpdateAnimations();
+	}
+
+	public override void _UnhandledInput(InputEvent @event)
+	{
+		if (!_cameraActive)
+			return;
+
+		if (@event is InputEventMouseMotion motion)
+		{
+			_lookController?.QueueLookDelta(motion.Relative);
+		}
+	}
+
+	public PlayerInputState CollectClientInputState()
+	{
+		ApplyPendingLookInput();
+
+		var state = new PlayerInputState
+		{
+			MoveInput = Input.GetVector("move_right", "move_left", "move_backward", "move_forward"),
+			Jump = Input.IsActionPressed("jump"),
+			Interact = InputMap.HasAction("interact") && Input.IsActionPressed("interact"),
+			InteractJustPressed = InputMap.HasAction("interact") && Input.IsActionJustPressed("interact"),
+			Crouch = InputMap.HasAction("crouch") && Input.IsActionPressed("crouch"),
+			CrouchPressed = InputMap.HasAction("crouch") && Input.IsActionJustPressed("crouch"),
+			Sprint = InputMap.HasAction("sprint") && Input.IsActionPressed("sprint"),
+			PrimaryFire = InputMap.HasAction("fire") && Input.IsActionPressed("fire"),
+			PrimaryFireJustPressed = InputMap.HasAction("fire") && Input.IsActionJustPressed("fire"),
+			Reload = (InputMap.HasAction("reload") && Input.IsActionJustPressed("reload")) || Input.IsKeyPressed(Key.R),
+			WeaponToggle = InputMap.HasAction("weapon_toggle") && Input.IsActionJustPressed("weapon_toggle"),
+			Aim = InputMap.HasAction("aim") && Input.IsActionPressed("aim"),
+			ViewYaw = _lookController?.Yaw ?? 0f,
+			ViewPitch = _lookController?.Pitch ?? 0f
+		};
+		return state;
+	}
+
+	public PlayerInputState GetCurrentInputState()
+	{
+		return _inputState;
+	}
+
+	public bool IsInteractHeld()
+	{
+		if (_isAuthority && _cameraActive)
+		{
+			return InputMap.HasAction("interact") && Input.IsActionPressed("interact");
+		}
+		return _inputState?.Interact ?? false;
+	}
+
+	public void SetInputState(PlayerInputState state)
+	{
+		if (state == null)
+			return;
+
+		_inputState.CopyFrom(state);
+		_adsState = _inputState.Aim ? 1 : 0;
+		if (!float.IsNaN(state.ViewYaw) && !float.IsNaN(state.ViewPitch))
+		{
+			SetYawPitch(state.ViewYaw, state.ViewPitch);
+		}
+
+		_weaponController?.SetInput(_inputState);
+	}
+
+	public PlayerSnapshot CaptureSnapshot(int tick)
+	{
+		return new PlayerSnapshot
+		{
+			Tick = tick,
+			Transform = GlobalTransform,
+			Velocity = Velocity,
+			ViewYaw = _lookController?.Yaw ?? 0f,
+			ViewPitch = _lookController?.Pitch ?? 0f
+		};
+	}
+
+	public void QueueSnapshot(PlayerSnapshot snapshot)
+	{
+		_reconciliation.Queue(snapshot);
+	}
+
+	public void ClearPendingSnapshot()
+	{
+		_reconciliation.Clear();
+	}
+
+	public void ConfigureAuthority(bool isAuthority)
+	{
+		_isAuthority = isAuthority;
+		_simulateLocally = isAuthority;
+		SetPhysicsProcess(_worldActive);
+	}
+
+	public bool HasAuthority()
+	{
+		return _isAuthority;
+	}
+
+	public void SetCameraActive(bool active)
+	{
+		RefreshMouseModeManagement();
+
+		_cameraActive = active;
+		if (_camera != null)
+		{
+			_camera.Current = active;
+		}
+
+		if (_managesMouseMode)
+			Input.MouseMode = active ? Input.MouseModeEnum.Captured : Input.MouseModeEnum.Visible;
+	}
+
+	public void SetWorldActive(bool active)
+	{
+		_worldActive = active;
+		Visible = active;
+		if (_collisionShape != null)
+		{
+			_collisionShape.Disabled = !active;
+		}
+		SetPhysicsProcess(active);
+		_weaponController?.SetPhysicsProcess(active);
+	}
+
+	public void SetPlayerColor(Color color)
+	{
+		_playerColor = color;
+		ApplyColor(color);
+	}
+
+	public void SetYawPitch(float yaw, float pitch)
+	{
+		_lookController?.SetYawPitch(yaw, pitch);
+	}
+
+
+	private void InitializeBodyMaterial()
+	{
+		if (_bodyMesh == null)
+			return;
+
+		_bodyMaterial = new StandardMaterial3D();
+		_bodyMaterial.AlbedoColor = new Color(1f, 1f, 1f, 0f);
+
+		_bodyMesh.SetSurfaceOverrideMaterial(0, _bodyMaterial);
+
+		if (AutoRegisterWithNetwork)
+		{
+			var headHideMaterial = new StandardMaterial3D();
+			headHideMaterial.Transparency = BaseMaterial3D.TransparencyEnum.Alpha;
+			headHideMaterial.AlbedoColor = new Color(1f, 1f, 1f, 0f);
+
+			for (int i = 1; i < _bodyMesh.GetSurfaceOverrideMaterialCount(); i++)
+			{
+				_bodyMesh.SetSurfaceOverrideMaterial(i, headHideMaterial);
+			}
+		}
+		else
+		{
+			for (int i = 1; i < _bodyMesh.GetSurfaceOverrideMaterialCount(); i++)
+			{
+				_bodyMesh.SetSurfaceOverrideMaterial(i, null);
+			}
+		}
+	}
+
+	private void ApplyColor(Color color)
+	{
+		if (_bodyMaterial != null)
+		{
+			_bodyMaterial.AlbedoColor = new Color(color.R, color.G, color.B, 0.6f);
+		}
+		else if (_mesh?.MaterialOverlay is StandardMaterial3D mat)
+		{
+			mat.AlbedoColor = color;
+		}
+	}
+
+	private void InitializeMovementModules()
+	{
+		_movementComponent = new PlayerMovementComponent(this);
+		_movementComponent.ConfigureCollision(_collisionShape, _head, StandingHeight, CrouchHeight, CrouchTransitionSpeed);
+
+		if (_collisionShape?.Shape is CapsuleShape3D capsule)
+		{
+			StandingHeight = capsule.Height;
+		}
+
+		var initialYaw = Rotation.Y;
+		var initialPitch = _camera != null ? _camera.Rotation.X : 0f;
+		_lookController.Initialize(this, _head, _camera, initialYaw, initialPitch);
+	}
+
+	private void InitializeHealthComponent()
+	{
+		_healthComponent = GetNodeOrNull<HealthComponent>("HealthComponent");
+		if (_healthComponent == null)
+		{
+			_healthComponent = new HealthComponent { Name = "HealthComponent" };
+			AddChild(_healthComponent);
+		}
+
+		_healthComponent.Initialize(MaxHealth, 0);
+		_healthComponent.Died += HandleDeath;
+	}
+
+	private WeaponType GetEquippedWeaponId()
+	{
+		return _weaponInventory?.EquippedType ?? WeaponType.None;
+	}
+
+	private int GetEquippedMagazine()
+	{
+		return _weaponInventory?.Equipped?.Magazine ?? 0;
+	}
+
+	private int GetEquippedReserve()
+	{
+		return _weaponInventory?.Equipped?.Reserve ?? 0;
+	}
+
+	private int GetEquippedFireSequence()
+	{
+		return _weaponController?.GetFireSequence() ?? 0;
+	}
+
+	private int GetEquippedReloadMs()
+	{
+		if (_weaponInventory?.Equipped == null)
+			return 0;
+		return _weaponInventory.Equipped.IsReloading
+			? Mathf.Max(0, (int)(_weaponInventory.Equipped.ReloadEndTimeMs - Time.GetTicksMsec()))
+			: 0;
+	}
+
+	private int GetEquippedReloadingFlag()
+	{
+		return _weaponInventory?.Equipped?.IsReloading == true ? 1 : 0;
+	}
+
+	private AdsConfig GetActiveAdsConfig()
+	{
+		return _weaponInventory?.Equipped?.AdsConfig
+			?? _weaponInventory?.Equipped?.Definition?.Ads
+			?? new AdsConfig();
+	}
+
+	private void OnReplicatedWeaponId(int value)
+	{
+		_repWeaponId = value;
+
+		var isServer = _networkController != null && _networkController.IsServer;
+		if (isServer && _isAuthority)
+		{
+			_weaponIdProperty.MarkClean();
+			return;
+		}
+
+		var type = (WeaponType)value;
+
+		if (_weaponInventory == null)
+			return;
+
+		if (type == WeaponType.None)
+		{
+			_weaponInventory.Clear();
+			return;
+		}
+
+		if (_weaponInventory.Get(type) == null)
+		{
+			var def = WeaponRegistry.Get(type);
+			if (def != null)
+			{
+				_weaponInventory.AddOrReplace(def, _repWeaponMag, _repWeaponReserve, equip: false);
+				GD.Print($"PlayerCharacter ({Name}): Added missing weapon {type} from registry");
+			}
+			else
+			{
+				GD.PushWarning($"PlayerCharacter ({Name}): Cannot find weapon {type} in registry");
+				return;
+			}
+		}
+
+		if (_weaponInventory.Equip(type))
+		{
+			SyncWeaponAmmoFromReplication();
+		}
+	}
+
+	private void SyncWeaponAmmoFromReplication()
+	{
+		var isServer = _networkController != null && _networkController.IsServer;
+		if ((isServer && _isAuthority) || _weaponInventory?.Equipped == null)
+			return;
+
+		_weaponInventory.Equipped.SetAmmoFromReplication(_repWeaponMag, _repWeaponReserve);
+		_weaponInventory.EmitAmmo();
+	}
+
+	private void OnReplicatedFireSequence(int value)
+	{
+		if (_isAuthority)
+		{
+			_weaponFireSeqProperty.MarkClean();
+			return;
+		}
+
+		if (value != _repWeaponFireSeq)
+		{
+			var ownerPeerId = GetOwnerPeerId();
+			_weaponController?.PlayRemoteFireFx((WeaponType)_repWeaponId);
+			_weaponController?.SpawnRemoteProjectile((WeaponType)_repWeaponId, ownerPeerId, value);
+		}
+
+		_repWeaponFireSeq = value;
+	}
+
+	private void ApplySnapshotCorrection(float delta)
+	{
+		_reconciliation.Apply(this, _lookController, delta);
+	}
+
+	private void ApplyPendingLookInput()
+	{
+		_lookController?.ApplyQueuedLook();
+	}
+
+	private void UpdateAdsState(float delta)
+	{
+		var config = GetActiveAdsConfig() ?? new AdsConfig();
+		var allowsAds = config.Mode != AdsMode.None;
+		var desired = allowsAds
+			? (_isAuthority ? (_inputState.Aim ? 1 : 0) : _repAdsState)
+			: 0;
+		_adsState = desired;
+
+		var targetBlend = desired > 0 ? 1f : 0f;
+		var time = targetBlend > _adsBlend ? config.EnterTimeSec : config.ExitTimeSec;
+		var step = time <= 0f ? 1f : Mathf.Clamp(delta / time, 0f, 1f);
+		_adsBlend = Mathf.MoveToward(_adsBlend, targetBlend, step);
+
+		var adsFov = config.TargetFov > 0f ? config.TargetFov : _lookController?.BaseFov ?? 75f;
+		var sensScale = config.SensitivityScale > 0f ? config.SensitivityScale : 1f;
+
+		if (_isAuthority)
+		{
+			_lookController?.SetAdsBlend(_adsBlend, adsFov, sensScale);
+			_weaponView?.SetAdsVisual(_adsBlend, config);
+		}
+		else
+		{
+			_weaponView?.SetAdsVisual(0f, null);
+		}
+	}
+
+	public string GetMovementStateName()
+	{
+		if (_movementComponent == null)
+			return "None";
+		return _movementComponent.State.ToString();
+	}
+
+	private bool ShouldProcessDamage()
+	{
+		// In networked games the server is authoritative over damage.
+		if (_networkController == null)
+			return true;
+		return _networkController.IsServer;
+	}
+
+	public void ApplyDamage(int amount, long instigatorPeerId = 0)
+	{
+		if (amount <= 0)
+			return;
+
+		if (_healthComponent == null)
+			return;
+
+		if (_healthComponent?.IsDead == true)
+			return;
+
+		if (!ShouldProcessDamage())
+			return;
+
+		_healthComponent?.ApplyDamage(amount, instigatorPeerId);
+	}
+
+	private void HandleDeath(long instigatorPeerId)
+	{
+		if (_healthComponent?.IsDead != true)
+			return;
+
+		Velocity = Vector3.Zero;
+		_movementComponent?.Reset();
+		SetWorldActive(false);
+
+		if (_networkController != null && _networkController.IsServer)
+		{
+			_networkController.NotifyPlayerKilled(this, instigatorPeerId);
+		}
+		else if (AreRespawnsAllowed())
+		{
+			RespawnLocally();
+		}
+	}
+
+	private bool AreRespawnsAllowed()
+	{
+		var matchClient = MatchStateClient.Instance;
+		if (matchClient == null)
+			return true;
+
+		if (matchClient.CurrentModeId == SearchAndDestroyMode.ModeId)
+		{
+			var phase = matchClient.GameModePhase;
+			if (phase == GameModePhaseType.FragWindow)
+				return false;
+		}
+
+		return true;
+	}
+
+	public bool IsDead => _healthComponent?.IsDead == true;
+
+	private void RespawnLocally()
+	{
+		var transform = GlobalTransform;
+		transform.Origin += Vector3.Up * 1.5f;
+		ForceRespawn(transform);
+	}
+
+	public void ForceRespawn(Transform3D transform)
+	{
+		Velocity = Vector3.Zero;
+		_movementComponent?.Reset();
+		SetWorldActive(true);
+		_healthComponent?.ResetVitals();
+		_animationController.ResetToIdle();
+		if (RespawnManager.Instance != null)
+		{
+			RespawnManager.Instance.TeleportEntity(this, transform);
+		}
+		else
+		{
+			GlobalTransform = transform;
+		}
+	}
+
+	public void ResetInventory(bool includeStartingWeapons = true)
+	{
+		if (_weaponInventory != null)
+		{
+			_weaponInventory.Clear();
+			_weaponController?.ResetState();
+
+			if (includeStartingWeapons)
+			{
+				foreach (var def in _weaponInventory.StartingWeapons)
+				{
+					_weaponInventory.AddOrReplace(def, def.MagazineSize, def.MaxReserveAmmo, equip: true);
+				}
+			}
+			
+			// Reset replication fields to ensure client syncs 'None' or new default
+			var equipped = _weaponInventory.Equipped;
+			_repWeaponId = (int)(_weaponInventory.EquippedType);
+			_repWeaponMag = equipped?.Magazine ?? 0;
+			_repWeaponReserve = equipped?.Reserve ?? 0;
+			_repWeaponFireSeq = 0;
+			_repWeaponReloadMs = 0;
+			_repWeaponReloading = 0;
+
+			if (!includeStartingWeapons)
+			{
+				_weaponInventory.EmitAmmo();
+			}
+		}
+	}
+
+	private void UpdateAnimations()
+	{
+		var state = _isAuthority
+			? _movementComponent?.State ?? PlayerMovementStateKind.Airborne
+			: (PlayerMovementStateKind)_replicatedMovementState;
+		_animationController.Update(Velocity, state, _healthComponent?.IsDead == true || Health <= 0);
+	}
+
+	public void ApplyExternalImpulse(Vector3 impulse)
+	{
+		if (impulse == Vector3.Zero)
+			return;
+
+		if (_movementComponent != null)
+		{
+			_movementComponent.ApplyImpulse(impulse);
+		}
+		else
+		{
+			Velocity += impulse;
+		}
+	}
+
+	public void ApplyLaunchVelocity(Vector3 velocity)
+	{
+		if (_movementComponent != null)
+		{
+			_movementComponent.ApplyLaunchVelocity(velocity);
+		}
+		else
+		{
+			Velocity += velocity;
+		}
+	}
+
+	public Vector3 GetViewDirection()
+	{
+		return _lookController?.GetViewDirection(this) ?? -GlobalTransform.Basis.Z;
+	}
+
+	public float DistanceTo(Node3D other)
+	{
+		if (other == null)
+			return float.MaxValue;
+		return GlobalPosition.DistanceTo(other.GlobalPosition);
+	}
+
+	public void WriteSnapshot(StreamPeerBuffer buffer)
+	{
+		_transformProperty.Write(buffer);
+		_velocityProperty.Write(buffer);
+		_viewYawProperty.Write(buffer);
+		_viewPitchProperty.Write(buffer);
+		_modeProperty.Write(buffer);
+		_vehicleIdProperty.Write(buffer);
+		_movementStateProperty.Write(buffer);
+		_healthProperty.Write(buffer);
+		_armorProperty.Write(buffer);
+		_weaponIdProperty.Write(buffer);
+		_weaponMagProperty.Write(buffer);
+		_weaponReserveProperty.Write(buffer);
+		_weaponFireSeqProperty.Write(buffer);
+		_weaponReloadMsProperty.Write(buffer);
+		_weaponReloadingProperty.Write(buffer);
+		_adsStateProperty.Write(buffer);
+		_teamColorProperty.Write(buffer);
+	}
+
+	public void ReadSnapshot(StreamPeerBuffer buffer)
+	{
+		_transformProperty.Read(buffer);
+		_velocityProperty.Read(buffer);
+		_viewYawProperty.Read(buffer);
+		_viewPitchProperty.Read(buffer);
+		_modeProperty.Read(buffer);
+		_vehicleIdProperty.Read(buffer);
+		_movementStateProperty.Read(buffer);
+		_healthProperty.Read(buffer);
+		_armorProperty.Read(buffer);
+		_weaponIdProperty.Read(buffer);
+		_weaponMagProperty.Read(buffer);
+		_weaponReserveProperty.Read(buffer);
+		_weaponFireSeqProperty.Read(buffer);
+		_weaponReloadMsProperty.Read(buffer);
+		_weaponReloadingProperty.Read(buffer);
+		_adsStateProperty.Read(buffer);
+		_teamColorProperty.Read(buffer);
+
+		if (_hasPendingReplicatedTransform)
+		{
+			var snapshot = new PlayerSnapshot
+			{
+				Transform = _pendingReplicatedTransform,
+				Velocity = Velocity,
+				ViewYaw = _lookController?.Yaw ?? 0f,
+				ViewPitch = _lookController?.Pitch ?? 0f
+			};
+			QueueSnapshot(snapshot);
+			_hasPendingReplicatedTransform = false;
+		}
+	}
+
+	public int GetSnapshotSizeBytes()
+	{
+		return _transformProperty.GetSizeBytes()
+			 + _velocityProperty.GetSizeBytes()
+			 + _viewYawProperty.GetSizeBytes()
+			 + _viewPitchProperty.GetSizeBytes()
+			 + _modeProperty.GetSizeBytes()
+			 + _vehicleIdProperty.GetSizeBytes()
+			 + _movementStateProperty.GetSizeBytes()
+			 + _healthProperty.GetSizeBytes()
+			 + _armorProperty.GetSizeBytes()
+			 + _weaponIdProperty.GetSizeBytes()
+			 + _weaponMagProperty.GetSizeBytes()
+			 + _weaponReserveProperty.GetSizeBytes()
+			 + _weaponFireSeqProperty.GetSizeBytes()
+			 + _weaponReloadMsProperty.GetSizeBytes()
+			 + _weaponReloadingProperty.GetSizeBytes()
+			 + _adsStateProperty.GetSizeBytes()
+			 + _teamColorProperty.GetSizeBytes();
+	}
+}
