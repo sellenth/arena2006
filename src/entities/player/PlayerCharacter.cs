@@ -968,25 +968,34 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		}
 	}
 
-	public void ResetInventory()
+	public void ResetInventory(bool includeStartingWeapons = true)
 	{
 		if (_weaponInventory != null)
 		{
 			_weaponInventory.Clear();
 			_weaponController?.ResetState();
 
-			foreach (var def in _weaponInventory.StartingWeapons)
+			if (includeStartingWeapons)
 			{
-				_weaponInventory.AddOrReplace(def, def.MagazineSize, def.MaxReserveAmmo, equip: true);
+				foreach (var def in _weaponInventory.StartingWeapons)
+				{
+					_weaponInventory.AddOrReplace(def, def.MagazineSize, def.MaxReserveAmmo, equip: true);
+				}
 			}
 			
 			// Reset replication fields to ensure client syncs 'None' or new default
+			var equipped = _weaponInventory.Equipped;
 			_repWeaponId = (int)(_weaponInventory.EquippedType);
-			_repWeaponMag = _weaponInventory.Equipped?.Magazine ?? 0;
-			_repWeaponReserve = _weaponInventory.Equipped?.Reserve ?? 0;
+			_repWeaponMag = equipped?.Magazine ?? 0;
+			_repWeaponReserve = equipped?.Reserve ?? 0;
 			_repWeaponFireSeq = 0;
 			_repWeaponReloadMs = 0;
 			_repWeaponReloading = 0;
+
+			if (!includeStartingWeapons)
+			{
+				_weaponInventory.EmitAmmo();
+			}
 		}
 	}
 

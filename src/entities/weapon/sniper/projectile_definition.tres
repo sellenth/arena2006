@@ -4,5 +4,5 @@
 
 [resource]
 script = ExtResource("1")
-Speed = 1200.0
+Speed = 12000.0
 LifetimeSec = 2.0

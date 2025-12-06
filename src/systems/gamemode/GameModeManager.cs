@@ -837,6 +837,8 @@ public partial class GameModeManager : Node
 		{
 			dict[kvp.Key] = kvp.Value;
 		}
+
+		// Emit signal for external handlers (e.g., ServerNetworkManager).
 		EmitSignal(SignalName.RespawnPlayersAtTeamSpawns, dict);
 	}
 

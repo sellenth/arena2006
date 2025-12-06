@@ -147,10 +147,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 111.68457, 27.568861, -120.45
 
 [node name="BombSiteA" parent="." instance=ExtResource("20_2p0sj")]
 transform = Transform3D(2, 0, 0, 0, 1.9996954, -0.03490481, 0, 0.03490481, 1.9996954, 125.933556, 0, -19.987411)
+SiteIndex = 1
 
 [node name="BombSiteB" parent="." instance=ExtResource("20_2p0sj")]
 transform = Transform3D(-1.9146186, 0, 0.57813036, 0, 1.9999998, 0, -0.5781303, 0, -1.9146187, -7.1844583, 0, -102.27804)
 SiteName = "B"
+SiteIndex = 2
 
 [node name="Loop" type="Path3D" parent="."]
 transform = Transform3D(0.65677005, -0.013108061, -0.7539769, 0, 0.9998489, -0.017382601, 0.75409085, 0.011416372, 0.6566708, -300.63852, -25.697042, -189.62827)

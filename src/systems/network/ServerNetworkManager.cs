@@ -333,6 +333,14 @@ public partial class ServerNetworkManager : GodotObject
 
 			ApplyTeamColorToPlayer(peerId);
 
+			if (gameModeManager.ActiveMode is IGameModeSpawnDelegate spawnDelegate)
+			{
+				if (spawnDelegate.TrySpawnPlayer(gameModeManager, info.PlayerCharacter, teamId, isLateJoin: true))
+				{
+					// Spawn handled by mode
+				}
+			}
+
 			var matchSnapshot = gameModeManager.GetMatchStateSnapshot();
 			var matchPacket = NetworkSerializer.SerializeMatchState(matchSnapshot);
 			newPeer.PutPacket(matchPacket);
@@ -405,32 +413,32 @@ public partial class ServerNetworkManager : GodotObject
 	{
 		if (_peers.Count == 0)
 			return;
-		
+
 		var registry = EntityReplicationRegistry.Instance;
 		if (registry == null)
 			return;
-		
+
 		_entitySnapshotBuffer.Clear();
-		
+
 		foreach (var kvp in registry.GetAllEntities())
 		{
 			var entityId = kvp.Key;
 			var entity = kvp.Value;
-			
+
 			var buffer = new StreamPeerBuffer();
 			buffer.BigEndian = false;
 			entity.WriteSnapshot(buffer);
-			
+
 			_entitySnapshotBuffer.Add(new NetworkSerializer.EntitySnapshotData
 			{
 				EntityId = entityId,
 				Data = buffer.DataArray
 			});
 		}
-		
+
 		if (_entitySnapshotBuffer.Count == 0)
 			return;
-		
+
 		var packet = NetworkSerializer.SerializeEntitySnapshots(_entitySnapshotBuffer);
 		foreach (var peer in _peers.Values)
 			peer?.Peer.PutPacket(packet);
@@ -528,7 +536,7 @@ public partial class ServerNetworkManager : GodotObject
 		if (root == null)
 			return;
 
-		var spawnTransforms = new System.Collections.Generic.Dictionary<int, Transform3D>();
+		var spawnTransformsByTeam = new System.Collections.Generic.Dictionary<int, Transform3D>();
 		foreach (var key in teamSpawnNodes.Keys)
 		{
 			var teamId = (int)key;
@@ -536,7 +544,7 @@ public partial class ServerNetworkManager : GodotObject
 			var spawnNode = root.FindChild(nodeName, true, false) as Node3D;
 			if (spawnNode != null)
 			{
-				spawnTransforms[teamId] = spawnNode.GlobalTransform;
+				spawnTransformsByTeam[teamId] = spawnNode.GlobalTransform;
 				GD.Print($"[ServerNetworkManager] Found spawn '{nodeName}' for team {teamId}");
 			}
 			else
@@ -548,29 +556,76 @@ public partial class ServerNetworkManager : GodotObject
 		var rng = new RandomNumberGenerator();
 		rng.Randomize();
 
+		var playerList = new System.Collections.Generic.List<(PlayerCharacter player, int teamId)>();
 		foreach (var peerId in _peers.Keys.ToList())
 		{
 			if (!_peers.TryGetValue(peerId, out var info) || info?.PlayerCharacter == null)
 				continue;
 
 			var teamId = gameModeManager.GetTeamForPlayer(peerId);
-			if (!spawnTransforms.TryGetValue(teamId, out var baseTransform))
+			playerList.Add((info.PlayerCharacter, teamId));
+		}
+
+		// There's got to be a cleaner way to do spawning than in the server network manager...
+		// Mode-specific bulk handling (e.g., S&D) with jittered transforms.
+		var transformsAreJittered = false;
+		if (gameModeManager.ActiveMode is IGameModeSpawnDelegate spawnDelegate)
+		{
+			var jittered = new System.Collections.Generic.Dictionary<int, Transform3D>();
+			foreach (var kvp in spawnTransformsByTeam)
 			{
-				GD.PrintErr($"[ServerNetworkManager] No spawn transform for player {peerId} on team {teamId}");
+				var jitterOffset = new Vector3(
+					rng.RandfRange(-2f, 2f),
+					0f,
+					rng.RandfRange(-2f, 2f));
+				var t = kvp.Value;
+				t.Origin += jitterOffset;
+				jittered[kvp.Key] = t;
+			}
+
+			if (spawnDelegate.TryHandleTeamRespawns(gameModeManager, jittered, playerList))
+				return;
+
+			// If mode didn't handle bulk, fall back to per-player handling below.
+			spawnTransformsByTeam = jittered;
+			transformsAreJittered = true;
+		}
+
+		// Fallback per-player spawn.
+		foreach (var entry in playerList)
+		{
+			var teamId = entry.teamId;
+			var player = entry.player;
+
+			if (!spawnTransformsByTeam.TryGetValue(teamId, out var baseTransform))
+			{
+				GD.PrintErr($"[ServerNetworkManager] No spawn transform for player {player.Name} on team {teamId}");
 				continue;
 			}
 
-			var jitterOffset = new Vector3(
-				rng.RandfRange(-2f, 2f),
-				0f,
-				rng.RandfRange(-2f, 2f));
-
 			var spawnTransform = baseTransform;
-			spawnTransform.Origin += jitterOffset;
+			if (!transformsAreJittered)
+			{
+				var jitterOffset = new Vector3(
+					rng.RandfRange(-2f, 2f),
+					0f,
+					rng.RandfRange(-2f, 2f));
+				spawnTransform.Origin += jitterOffset;
+			}
 
-			info.PlayerCharacter.ResetInventory();
-			info.PlayerCharacter.ForceRespawn(spawnTransform);
-			GD.Print($"[ServerNetworkManager] Respawned player {peerId} at team {teamId} spawn");
+			var handled = false;
+			if (gameModeManager.ActiveMode is IGameModeSpawnDelegate spawnDelegatePerPlayer)
+			{
+				handled = spawnDelegatePerPlayer.TrySpawnPlayer(gameModeManager, player, teamId, isLateJoin: false);
+			}
+
+			if (!handled)
+			{
+				var includeStartingWeapons = gameModeManager.ActiveMode is not SearchAndDestroyMode;
+				player.ResetInventory(includeStartingWeapons);
+				player.ForceRespawn(spawnTransform);
+				GD.Print($"[ServerNetworkManager] Respawned player {player.Name} at team {teamId} spawn (fallback)");
+			}
 		}
 	}
 

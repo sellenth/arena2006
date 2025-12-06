@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveDelegate
+public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveDelegate, IGameModeSpawnDelegate
 {
 	public const string ModeId = "search_and_destroy";
 
@@ -41,6 +41,72 @@ public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveD
 	{
 		if (_manager == null) return false;
 		return _manager.GetTeamForPlayer(playerId) == GetAttackersTeamId();
+	}
+
+	public bool TrySpawnPlayer(GameModeManager manager, PlayerCharacter player, int teamId, bool isLateJoin)
+	{
+		if (manager == null || player == null)
+			return false;
+
+		var root = manager.GetTree()?.Root;
+		if (root == null)
+			return false;
+
+		var spawnName = teamId == GetAttackersTeamId()
+			? "AttackerSpawn"
+			: teamId == GetDefendersTeamId()
+				? "DefenderSpawn"
+				: null;
+
+		if (string.IsNullOrEmpty(spawnName))
+			return false;
+
+		var spawnNode = root.FindChild(spawnName, true, false) as Node3D;
+		if (spawnNode == null)
+			return false;
+
+		var rng = new RandomNumberGenerator();
+		rng.Randomize();
+		var jitterOffset = new Vector3(
+			rng.RandfRange(-2f, 2f),
+			0f,
+			rng.RandfRange(-2f, 2f));
+
+		var spawnTransform = spawnNode.GlobalTransform;
+		spawnTransform.Origin += jitterOffset;
+
+		player.ResetInventory(includeStartingWeapons: false);
+		player.ForceRespawn(spawnTransform);
+		GD.Print($"[{DisplayName}] Spawned player {player.Name} on team {teamId} ({(isLateJoin ? "late join" : "round start")})");
+		return true;
+	}
+
+	public bool TryHandleTeamRespawns(
+		GameModeManager manager,
+		System.Collections.Generic.Dictionary<int, Transform3D> teamSpawns,
+		System.Collections.Generic.IEnumerable<(PlayerCharacter player, int teamId)> players)
+	{
+		if (manager == null || teamSpawns == null || players == null)
+			return false;
+
+		var anyHandled = false;
+		foreach (var entry in players)
+		{
+			var player = entry.player;
+			var teamId = entry.teamId;
+			if (player == null)
+				continue;
+
+			if (!teamSpawns.TryGetValue(teamId, out var spawn))
+				continue;
+
+			player.ResetInventory(includeStartingWeapons: false);
+			player.ForceRespawn(spawn);
+			GD.Print($"[{DisplayName}] Bulk respawn player {player.Name} on team {teamId}");
+			anyHandled = true;
+		}
+
+		return anyHandled;
 	}
 
 	public bool IsDefender(int playerId)
