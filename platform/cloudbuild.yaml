@@ -15,7 +15,7 @@ steps:
         printf "https://oauth2:%s@gitlab.com\n" "$$GITLAB_TOKEN" > ~/.git-credentials
         git config --global lfs.https://gitlab.com/halston1/arena2006.git/info/lfs.access basic
         git lfs install --skip-repo
-        git lfs fetch origin "${BRANCH_NAME:-main}"
+        git lfs fetch origin
         git lfs checkout
     dir: '/workspace'
     secretEnv:
