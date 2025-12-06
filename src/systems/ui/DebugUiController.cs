@@ -1,4 +1,5 @@
 using Godot;
+using System.Linq;
 
 public partial class DebugUiController : Node
 {
@@ -251,23 +252,51 @@ public partial class DebugUiController : Node
 			// Client source
 			attackersScore = matchStateClient.GetTeamScore(0);
 			defendersScore = matchStateClient.GetTeamScore(1);
-			roundsToWin = 7; // Hardcoded or needs to be in MatchState? MatchState doesn't sync RoundsToWin yet.
+			roundsToWin = matchStateClient.RoundsToWin;
 			currentRound = matchStateClient.RoundNumber;
 			objState = matchStateClient.Objective;
 		}
 
-		string bombStatus = "Inactive";
-		if (objState.Status == 1) // Planted
-		{
-			// Convert index to name if possible, or just index
-			bombStatus = $"PLANTED at Site Index {objState.SiteIndex} ({objState.TimeRemaining:F1}s)";
-		}
+		string bombStatus = FormatBombStatus(objState);
 
 		string info = $"S&D: {attackersName} {attackersScore} - {defendersName} {defendersScore} | First to {roundsToWin}\n";
 		info += $"Round: {currentRound} | ATK={attackersName} DEF={defendersName}" + (teamsSwapped ? " (swapped)" : "") + "\n";
 		info += $"Bomb: {bombStatus}";
 
 		_sndInfoLabel.Text = info;
+	}
+
+	private string FormatBombStatus(ObjectiveState state)
+	{
+		if (state.Status == 0)
+			return "Not planted";
+
+		var siteName = GetSiteNameForIndex(state.SiteIndex);
+		switch (state.Status)
+		{
+			case 1:
+				return $"PLANTED at {siteName} ({state.TimeRemaining:F1}s)";
+			case 2:
+				return $"DEFUSED at {siteName}";
+			case 3:
+				return $"EXPLODED at {siteName}";
+			default:
+				return "Unknown";
+		}
+	}
+
+	private string GetSiteNameForIndex(int siteIndex)
+	{
+		var site = BombSite.AllSites.FirstOrDefault(s => s.SiteIndex == siteIndex);
+		if (site != null)
+		{
+			return site.SiteName;
+		}
+
+		if (siteIndex >= 0)
+			return $"Site {siteIndex}";
+
+		return "Unknown site";
 	}
 
 	private string GetCurrentPhaseName()

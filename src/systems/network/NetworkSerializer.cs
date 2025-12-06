@@ -527,6 +527,14 @@ public static partial class NetworkSerializer
 		if (modeIdBytes.Length > 0)
 			buffer.PutData(modeIdBytes);
 
+		// Objective state (6 bytes)
+		buffer.PutU8((byte)snapshot.Objective.Status);
+		buffer.PutFloat(snapshot.Objective.TimeRemaining);
+		buffer.Put8((sbyte)snapshot.Objective.SiteIndex);
+
+		// Extra S&D metadata
+		buffer.PutU16((ushort)Mathf.Clamp(snapshot.RoundsToWin, 0, ushort.MaxValue));
+
 		return buffer.DataArray;
 	}
 
@@ -571,6 +579,21 @@ public static partial class NetworkSerializer
 					snapshot.ModeId = System.Text.Encoding.UTF8.GetString(modeIdData[1].AsByteArray());
 				}
 			}
+		}
+
+		if (buffer.GetAvailableBytes() >= 1 + 4 + 1)
+		{
+			snapshot.Objective = new ObjectiveState
+			{
+				Status = buffer.GetU8(),
+				TimeRemaining = buffer.GetFloat(),
+				SiteIndex = buffer.Get8()
+			};
+		}
+
+		if (buffer.GetAvailableBytes() >= 2)
+		{
+			snapshot.RoundsToWin = buffer.GetU16();
 		}
 
 		return snapshot;

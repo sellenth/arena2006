@@ -1,10 +1,13 @@
 using Godot;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 [GlobalClass]
 public partial class BombSite : Area3D
 {
 	[Export] public string SiteName { get; set; } = "A";
+	[Export(PropertyHint.Range, "0,32,1")] public int SiteIndex { get; set; } = -1;
 	[Export] public float PlantTime { get; set; } = 4f;
 	[Export] public PackedScene PlantedBombScene { get; set; }
 	[Export] public Marker3D BombSpawnPoint { get; set; }
@@ -39,6 +42,7 @@ public partial class BombSite : Area3D
 	{
 		_gameModeManager = GetNodeOrNull<GameModeManager>("/root/GameModeManager");
 		_allSites.Add(this);
+		AssignSiteIndexIfNeeded();
 
 		BodyEntered += OnBodyEntered;
 		BodyExited += OnBodyExited;
@@ -186,6 +190,7 @@ public partial class BombSite : Area3D
 			var bomb = PlantedBombScene.Instantiate<PlantedBomb>();
 			bomb.PlanterId = playerId;
 			bomb.SiteName = SiteName;
+			bomb.SiteIndex = SiteIndex;
 			GetTree().CurrentScene.AddChild(bomb);
 			bomb.GlobalPosition = spawnPos;
 		}
@@ -195,10 +200,15 @@ public partial class BombSite : Area3D
 			Type = ObjectiveEventType.BombPlanted,
 			PlayerId = playerId,
 			TeamId = _gameModeManager?.GetTeamForPlayer(playerId) ?? -1,
-			ObjectiveId = _allSites.IndexOf(this),
+			ObjectiveId = SiteIndex,
 			Position = spawnPos
 		};
 		_gameModeManager?.NotifyObjectiveEvent(evt);
+
+		if (_gameModeManager?.ActiveMode is IGameModeObjectiveDelegate objectiveMode)
+		{
+			objectiveMode.OnPlantCompleted(_playerInZone, this);
+		}
 
 		EmitSignal(SignalName.BombPlanted, playerId, SiteName);
 		GD.Print($"[BombSite {SiteName}] BOMB PLANTED by Player {playerId}!");
@@ -217,6 +227,22 @@ public partial class BombSite : Area3D
 		foreach (var site in _allSites)
 		{
 			site.ResetForNewRound();
+		}
+	}
+
+	private void AssignSiteIndexIfNeeded()
+	{
+		// Use a deterministic ordering by site name to avoid index drift across clients.
+		var ordered = _allSites
+			.OrderBy(s => s.SiteName, StringComparer.Ordinal)
+			.ToList();
+
+		for (int i = 0; i < ordered.Count; i++)
+		{
+			if (ordered[i].SiteIndex < 0)
+			{
+				ordered[i].SiteIndex = i;
+			}
 		}
 	}
 }

@@ -18,7 +18,7 @@ public partial class MatchStateEntity : Node, IReplicatedEntity
 	{
 		if (IsAuthority)
 		{
-			_serverState = new MatchState();
+			_serverState = GameModeManager.Instance?.MatchState ?? new MatchState();
 			EntityReplicationRegistry.Instance?.RegisterEntity(this, this);
 		}
 		else
@@ -43,6 +43,11 @@ public partial class MatchStateEntity : Node, IReplicatedEntity
 
 	public void WriteSnapshot(StreamPeerBuffer buffer)
 	{
+		if (_serverState == null)
+		{
+			_serverState = GameModeManager.Instance?.MatchState;
+		}
+
 		if (_serverState == null)
 			return;
 
@@ -75,6 +80,13 @@ public partial class MatchStateEntity : Node, IReplicatedEntity
 		buffer.PutU8((byte)objState.Status);
 		buffer.PutFloat(objState.TimeRemaining);
 		buffer.Put8((sbyte)objState.SiteIndex);
+
+		var roundsToWin = 0;
+		if (manager?.ActiveMode is SearchAndDestroyMode sndMode)
+		{
+			roundsToWin = sndMode.RoundsToWin;
+		}
+		buffer.PutU16((ushort)Mathf.Clamp(roundsToWin, 0, ushort.MaxValue));
 	}
 
 	public void ReadSnapshot(StreamPeerBuffer buffer)
@@ -121,6 +133,11 @@ public partial class MatchStateEntity : Node, IReplicatedEntity
 			};
 		}
 
+		if (buffer.GetAvailableBytes() >= 2)
+		{
+			snapshot.RoundsToWin = buffer.GetU16();
+		}
+
 		_clientState?.ApplySnapshot(snapshot);
 		SnapshotReceived?.Invoke(snapshot);
 	}
@@ -129,8 +146,7 @@ public partial class MatchStateEntity : Node, IReplicatedEntity
 	{
 		var modeIdLen = _serverState?.CurrentModeId?.Length ?? 0;
 		// Base: 1+4+2+4+1 + 1+(Teams*2) + 1+Len
-		// Objective: 1+4+1 = 6 bytes
-		return 1 + 4 + 2 + 4 + 1 + 1 + (MatchState.MaxTeams * 2) + 1 + modeIdLen + 6;
+		// Objective: 1+4+1 = 6 bytes, RoundsToWin: 2 bytes
+		return 1 + 4 + 2 + 4 + 1 + 1 + (MatchState.MaxTeams * 2) + 1 + modeIdLen + 6 + 2;
 	}
 }
-

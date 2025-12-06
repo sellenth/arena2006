@@ -32,6 +32,7 @@ public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveD
 	private float _bombTimer;
 	private int _bombPlanterId;
 	private int _plantedSiteIndex = -1;
+	private int _objectiveStatus = 0; // 0=None,1=Planted,2=Defused,3=Exploded
 	private readonly HashSet<int> _eliminatedThisRound = new();
 
 	public bool IsRoundActive => _roundState == RoundState.Active;
@@ -69,8 +70,8 @@ public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveD
 	{
 		return new ObjectiveState
 		{
-			Status = _bombPlanted ? 1 : 0,
-			TimeRemaining = _bombTimer,
+			Status = _objectiveStatus,
+			TimeRemaining = _objectiveStatus == 1 ? _bombTimer : 0f,
 			SiteIndex = _plantedSiteIndex
 		};
 	}
@@ -195,6 +196,8 @@ public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveD
 		_bombPlanted = false;
 		_bombTimer = 0f;
 		_bombPlanterId = 0;
+		_plantedSiteIndex = -1;
+		_objectiveStatus = 0;
 
 		SetupTeamDefinitions(manager);
 		GD.Print($"[{DisplayName}] Mode activated. First to {_roundsToWin} round wins.");
@@ -204,6 +207,9 @@ public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveD
 	{
 		_manager = null;
 		_roundState = RoundState.None;
+		_objectiveStatus = 0;
+		_plantedSiteIndex = -1;
+		_bombTimer = 0f;
 		GD.Print($"[{DisplayName}] Mode deactivated.");
 	}
 
@@ -309,6 +315,7 @@ public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveD
 		_bombTimer = 0f;
 		_bombPlanterId = 0;
 		_plantedSiteIndex = -1;
+		_objectiveStatus = 0;
 		_eliminatedThisRound.Clear();
 
 		BombSite.ResetAllSites();
@@ -411,6 +418,7 @@ public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveD
 		_bombTimer = _bombTimerDuration;
 		_bombPlanterId = evt.PlayerId;
 		_plantedSiteIndex = evt.ObjectiveId;
+		_objectiveStatus = 1;
 		_roundState = RoundState.BombPlanted;
 
 		var stats = ctx.State.GetPlayerStats(evt.PlayerId);
@@ -430,6 +438,8 @@ public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveD
 		defuserStats.Score += 500;
 
 		GD.Print($"[{DisplayName}] BOMB DEFUSED by Player {evt.PlayerId}!");
+		_objectiveStatus = 2;
+		_plantedSiteIndex = evt.ObjectiveId;
 		EndRound(ctx.ModeManager, GetDefendersTeamId(), "Bomb defused");
 	}
 
@@ -446,6 +456,7 @@ public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveD
 		}
 
 		GD.Print($"[{DisplayName}] BOMB DETONATED!");
+		_objectiveStatus = 3;
 		EndRound(manager, GetAttackersTeamId(), "Bomb detonated");
 	}
 
@@ -470,6 +481,11 @@ public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveD
 
 		_roundState = RoundState.RoundEnd;
 		_bombPlanted = false;
+		if (_objectiveStatus == 0)
+		{
+			_plantedSiteIndex = -1;
+		}
+		_bombTimer = 0f;
 
 		if (winningTeam == GetAttackersTeamId())
 		{
@@ -553,6 +569,8 @@ public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveD
 		_bombPlanted = false;
 		_bombTimer = 0f;
 		_bombPlanterId = 0;
+		_plantedSiteIndex = -1;
+		_objectiveStatus = 0;
 		_eliminatedThisRound.Clear();
 
 		manager.ScoreTracker.Reset();
@@ -561,4 +579,3 @@ public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveD
 		GD.Print($"[{DisplayName}] Match restarted. First to {_roundsToWin} round wins.");
 	}
 }
-

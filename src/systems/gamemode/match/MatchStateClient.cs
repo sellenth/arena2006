@@ -17,6 +17,7 @@ public partial class MatchStateClient : Node
 	private int _localTeamId = TeamManager.NoTeam;
 	private bool _weaponsEnabled;
 	private ObjectiveState _objectiveState;
+	private int _roundsToWin;
 
 	public event Action<MatchPhase> PhaseChanged;
 	public event Action<int, int> TeamScoreChanged;
@@ -36,6 +37,7 @@ public partial class MatchStateClient : Node
 	public bool IsWarmup => _phase == MatchPhase.Warmup;
 	public bool WeaponsEnabled => _weaponsEnabled;
 	public ObjectiveState Objective => _objectiveState;
+	public int RoundsToWin => _roundsToWin;
 
 	public override void _EnterTree()
 	{
@@ -70,6 +72,7 @@ public partial class MatchStateClient : Node
 		_serverTick = snapshot.ServerTick;
 		_currentModeId = snapshot.ModeId;
 		_objectiveState = snapshot.Objective;
+		_roundsToWin = snapshot.RoundsToWin;
 
 		if (oldPhase != _phase)
 		{
@@ -141,6 +144,7 @@ public struct MatchStateSnapshot
 	public int ServerTick;
 	public bool WeaponsEnabled;
 	public ObjectiveState Objective;
+	public int RoundsToWin;
 
 	public static MatchStateSnapshot FromState(MatchState state, GameModeManager manager)
 	{
@@ -148,6 +152,12 @@ public struct MatchStateSnapshot
 		if (manager?.ActiveMode is IGameModeObjectiveDelegate objDelegate)
 		{
 			objState = objDelegate.GetObjectiveState();
+		}
+
+		int roundsToWin = 0;
+		if (manager?.ActiveMode is SearchAndDestroyMode sndMode)
+		{
+			roundsToWin = sndMode.RoundsToWin;
 		}
 
 		return new MatchStateSnapshot
@@ -161,8 +171,8 @@ public struct MatchStateSnapshot
 			ModeId = state.CurrentModeId,
 			ServerTick = state.ServerTick,
 			WeaponsEnabled = manager?.WeaponsEnabled ?? false,
-			Objective = objState
+			Objective = objState,
+			RoundsToWin = roundsToWin
 		};
 	}
 }
-

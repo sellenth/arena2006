@@ -11,6 +11,7 @@ public partial class PlantedBomb : Area3D
 
 	public int PlanterId { get; set; }
 	public string SiteName { get; set; } = "";
+	public int SiteIndex { get; set; } = -1;
 
 	private static PlantedBomb _activeBomb;
 	public static PlantedBomb ActiveBomb => _activeBomb;
@@ -200,9 +201,15 @@ public partial class PlantedBomb : Area3D
 			Type = ObjectiveEventType.BombDefused,
 			PlayerId = playerId,
 			TeamId = _gameModeManager?.GetTeamForPlayer(playerId) ?? -1,
+			ObjectiveId = SiteIndex,
 			Position = GlobalPosition
 		};
 		_gameModeManager?.NotifyObjectiveEvent(evt);
+
+		if (_gameModeManager?.ActiveMode is IGameModeObjectiveDelegate objectiveMode)
+		{
+			objectiveMode.OnDefuseCompleted(_defusingPlayer);
+		}
 
 		EmitSignal(SignalName.BombDefused, playerId);
 		GD.Print($"[PlantedBomb] BOMB DEFUSED by Player {playerId}!");
@@ -230,6 +237,7 @@ public partial class PlantedBomb : Area3D
 			Type = ObjectiveEventType.BombExploded,
 			PlayerId = PlanterId,
 			TeamId = _gameModeManager?.GetTeamForPlayer(PlanterId) ?? -1,
+			ObjectiveId = SiteIndex,
 			Position = GlobalPosition
 		};
 		_gameModeManager?.NotifyObjectiveEvent(evt);
