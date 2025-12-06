@@ -11,10 +11,15 @@ steps:
       - |
         apt-get update -qq
         apt-get install -y -qq git-lfs
+        git config --global credential.helper store
+        printf "https://oauth2:%s@gitlab.com\n" "$GITLAB_TOKEN" > ~/.git-credentials
+        git config --global lfs.https://gitlab.com/halston1/arena2006.git/info/lfs.access basic
         git lfs install --skip-repo
-        git lfs fetch
+        git lfs fetch origin "${BRANCH_NAME:-main}"
         git lfs checkout
     dir: '/workspace'
+    secretEnv:
+      - GITLAB_TOKEN
 
   # ==================================================================================================
   #  2. Build the C# project
@@ -164,6 +169,11 @@ artifacts:
   objects:
     location: 'gs://${_GCS_BUCKET_NAME}/builds/$COMMIT_SHA/'
     paths: ['build/linux_client/*']
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/gitlab-token/versions/latest
+      env: GITLAB_TOKEN
 
 options:
   logging: CLOUD_LOGGING_ONLY
