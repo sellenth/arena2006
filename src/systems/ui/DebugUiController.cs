@@ -208,112 +208,66 @@ public partial class DebugUiController : Node
 			_gameModeManager = GameModeManager.Instance;
 
 		var matchStateClient = MatchStateClient.Instance;
-		var snd = _gameModeManager?.ActiveMode as SearchAndDestroyMode;
-
 		var isServer = _network != null && _network.IsServer;
-		var isSndMode = (isServer && snd != null) || matchStateClient?.CurrentModeId == SearchAndDestroyMode.ModeId;
-		if (!isSndMode)
+		
+		// Check if we are in S&D mode
+		string modeId = isServer ? _gameModeManager?.ActiveMode?.Id : matchStateClient?.CurrentModeId;
+		if (modeId != "search_and_destroy")
 		{
 			_sndInfoLabel.Visible = false;
 			return;
 		}
+		
 		_sndInfoLabel.Visible = true;
 
-		int attackersScore, defendersScore;
-		string attackersName, defendersName;
-		int roundsToWin;
-		bool teamsSwapped;
-		string bombStatus;
+		int attackersScore = 0;
+		int defendersScore = 0;
+		string attackersName = "Attackers";
+		string defendersName = "Defenders";
+		int roundsToWin = 0;
+		int currentRound = 0;
+		bool teamsSwapped = false;
+		ObjectiveState objState = new ObjectiveState();
 
-		if (isServer && snd != null)
+		if (isServer)
 		{
-			var attackersTeam = snd.GetAttackersTeamId();
-			var defendersTeam = snd.GetDefendersTeamId();
-			attackersName = _gameModeManager.TeamManager.GetTeamDefinition(attackersTeam)?.Name ?? "Attackers";
-			defendersName = _gameModeManager.TeamManager.GetTeamDefinition(defendersTeam)?.Name ?? "Defenders";
-			attackersScore = snd.AttackersScore;
-			defendersScore = snd.DefendersScore;
-			roundsToWin = snd.RoundsToWin;
-			teamsSwapped = snd.TeamsSwapped;
-			bombStatus = GetBombSiteStatusServer(snd);
+			// Server source
+			if (_gameModeManager?.ActiveMode is SearchAndDestroyMode snd)
+			{
+				var attackersTeam = snd.GetAttackersTeamId();
+				var defendersTeam = snd.GetDefendersTeamId();
+				attackersName = _gameModeManager.TeamManager.GetTeamDefinition(attackersTeam)?.Name ?? "Attackers";
+				defendersName = _gameModeManager.TeamManager.GetTeamDefinition(defendersTeam)?.Name ?? "Defenders";
+				attackersScore = snd.AttackersScore;
+				defendersScore = snd.DefendersScore;
+				roundsToWin = snd.RoundsToWin;
+				teamsSwapped = snd.TeamsSwapped;
+				currentRound = snd.CurrentRound;
+				objState = snd.GetObjectiveState();
+			}
 		}
 		else if (matchStateClient != null)
 		{
-			attackersName = "Reds";
-			defendersName = "Greens";
+			// Client source
 			attackersScore = matchStateClient.GetTeamScore(0);
 			defendersScore = matchStateClient.GetTeamScore(1);
-			roundsToWin = 7;
-			teamsSwapped = false;
-			bombStatus = GetBombSiteStatusClient();
-		}
-		else
-		{
-			_sndInfoLabel.Visible = false;
-			return;
+			roundsToWin = 7; // Hardcoded or needs to be in MatchState? MatchState doesn't sync RoundsToWin yet.
+			currentRound = matchStateClient.RoundNumber;
+			objState = matchStateClient.Objective;
 		}
 
-		string info;
-		if (isServer && snd != null)
+		string bombStatus = "Inactive";
+		if (objState.Status == 1) // Planted
 		{
-			info = $"S&D: {attackersName} {attackersScore} - {defendersName} {defendersScore} | First to {roundsToWin}\n";
-			info += $"Round: {snd.CurrentRound} | ATK={attackersName} DEF={defendersName}" + (teamsSwapped ? " (swapped)" : "") + "\n";
-			info += $"Bomb: {bombStatus}";
+			// Convert index to name if possible, or just index
+			bombStatus = $"PLANTED at Site Index {objState.SiteIndex} ({objState.TimeRemaining:F1}s)";
 		}
-		else
-		{
-			info = $"S&D: {attackersName} {attackersScore} - {defendersName} {defendersScore} | First to {roundsToWin}\n";
-			info += $"Round: {matchStateClient?.RoundNumber ?? 0} | (client view)\n";
-			info += $"Bomb: {bombStatus}";
-		}
+
+		string info = $"S&D: {attackersName} {attackersScore} - {defendersName} {defendersScore} | First to {roundsToWin}\n";
+		info += $"Round: {currentRound} | ATK={attackersName} DEF={defendersName}" + (teamsSwapped ? " (swapped)" : "") + "\n";
+		info += $"Bomb: {bombStatus}";
 
 		_sndInfoLabel.Text = info;
-	}
-
-	private string GetBombSiteStatusServer(SearchAndDestroyMode snd)
-	{
-		if (snd.IsBombPlanted)
-		{
-			var activeBomb = PlantedBomb.ActiveBomb;
-			var siteName = activeBomb?.SiteName ?? "?";
-			var timeLeft = snd.BombTimeRemaining;
-			return $"PLANTED at {siteName} ({timeLeft:F1}s)";
-		}
-
-		foreach (var site in BombSite.AllSites)
-		{
-			if (site.IsPlanting)
-			{
-				var progress = site.CurrentPlantProgress / site.PlantTime * 100f;
-				return $"PLANTING at {site.SiteName} ({progress:F0}%)";
-			}
-		}
-
-		return "Not planted";
-	}
-
-	private string GetBombSiteStatusClient()
-	{
-		var activeBomb = PlantedBomb.ActiveBomb;
-		if (activeBomb != null)
-		{
-			return $"PLANTED at {activeBomb.SiteName} ({activeBomb.FuseRemaining:F1}s)";
-		}
-
-		foreach (var site in BombSite.AllSites)
-		{
-			if (site.IsPlanting)
-			{
-				var progress = site.CurrentPlantProgress / site.PlantTime * 100f;
-				return $"PLANTING at {site.SiteName} ({progress:F0}%)";
-			}
-			if (site.HasBomb)
-			{
-				return $"PLANTED at {site.SiteName}";
-			}
-		}
-
-		return "Not planted";
 	}
 
 	private string GetCurrentPhaseName()

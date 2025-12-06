@@ -968,6 +968,28 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		}
 	}
 
+	public void ResetInventory()
+	{
+		if (_weaponInventory != null)
+		{
+			_weaponInventory.Clear();
+			_weaponController?.ResetState();
+
+			foreach (var def in _weaponInventory.StartingWeapons)
+			{
+				_weaponInventory.AddOrReplace(def, def.MagazineSize, def.MaxReserveAmmo, equip: true);
+			}
+			
+			// Reset replication fields to ensure client syncs 'None' or new default
+			_repWeaponId = (int)(_weaponInventory.EquippedType);
+			_repWeaponMag = _weaponInventory.Equipped?.Magazine ?? 0;
+			_repWeaponReserve = _weaponInventory.Equipped?.Reserve ?? 0;
+			_repWeaponFireSeq = 0;
+			_repWeaponReloadMs = 0;
+			_repWeaponReloading = 0;
+		}
+	}
+
 	private void UpdateAnimations()
 	{
 		var state = _isAuthority

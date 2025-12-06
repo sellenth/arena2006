@@ -64,6 +64,17 @@ public partial class MatchStateEntity : Node, IReplicatedEntity
 		buffer.PutU8((byte)Math.Min(modeIdBytes.Length, 255));
 		if (modeIdBytes.Length > 0)
 			buffer.PutData(modeIdBytes);
+
+		// Objective State
+		var manager = GameModeManager.Instance;
+		var objState = new ObjectiveState();
+		if (manager?.ActiveMode is IGameModeObjectiveDelegate objDelegate)
+		{
+			objState = objDelegate.GetObjectiveState();
+		}
+		buffer.PutU8((byte)objState.Status);
+		buffer.PutFloat(objState.TimeRemaining);
+		buffer.Put8((sbyte)objState.SiteIndex);
 	}
 
 	public void ReadSnapshot(StreamPeerBuffer buffer)
@@ -100,6 +111,16 @@ public partial class MatchStateEntity : Node, IReplicatedEntity
 			}
 		}
 
+		if (buffer.GetAvailableBytes() >= 1 + 4 + 1)
+		{
+			snapshot.Objective = new ObjectiveState
+			{
+				Status = buffer.GetU8(),
+				TimeRemaining = buffer.GetFloat(),
+				SiteIndex = buffer.Get8()
+			};
+		}
+
 		_clientState?.ApplySnapshot(snapshot);
 		SnapshotReceived?.Invoke(snapshot);
 	}
@@ -107,7 +128,9 @@ public partial class MatchStateEntity : Node, IReplicatedEntity
 	public int GetSnapshotSizeBytes()
 	{
 		var modeIdLen = _serverState?.CurrentModeId?.Length ?? 0;
-		return 1 + 4 + 2 + 4 + 1 + 1 + (MatchState.MaxTeams * 2) + 1 + modeIdLen;
+		// Base: 1+4+2+4+1 + 1+(Teams*2) + 1+Len
+		// Objective: 1+4+1 = 6 bytes
+		return 1 + 4 + 2 + 4 + 1 + 1 + (MatchState.MaxTeams * 2) + 1 + modeIdLen + 6;
 	}
 }
 

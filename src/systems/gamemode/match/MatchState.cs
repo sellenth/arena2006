@@ -2,6 +2,13 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
+public struct ObjectiveState
+{
+	public int Status; // 0=None, 1=Active/Planted, 2=Completed/Defused, 3=Failed/Exploded
+	public float TimeRemaining;
+	public int SiteIndex;
+}
+
 public partial class MatchState : RefCounted
 {
 	public const int MaxTeams = 8;

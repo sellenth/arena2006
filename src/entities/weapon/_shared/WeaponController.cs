@@ -68,6 +68,17 @@ public partial class WeaponController : Node
 		_lastInput.CopyFrom(input);
 	}
 
+	public void ResetState()
+	{
+		_state = WeaponState.Idle;
+		_cooldownTimer = 0f;
+		_reloadTimer = 0f;
+		if (_inventory != null && _inventory.TryGetEquipped(out var instance) && instance != null)
+		{
+			instance.CancelReload();
+		}
+	}
+
 	private void UpdateTimers(float dt)
 	{
 		if (_cooldownTimer > 0f)

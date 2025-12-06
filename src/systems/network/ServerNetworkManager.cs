@@ -568,9 +568,7 @@ public partial class ServerNetworkManager : GodotObject
 			var spawnTransform = baseTransform;
 			spawnTransform.Origin += jitterOffset;
 
-			var inventory = info.PlayerCharacter.GetNodeOrNull<WeaponInventory>("WeaponInventory");
-			inventory?.Clear();
-
+			info.PlayerCharacter.ResetInventory();
 			info.PlayerCharacter.ForceRespawn(spawnTransform);
 			GD.Print($"[ServerNetworkManager] Respawned player {peerId} at team {teamId} spawn");
 		}

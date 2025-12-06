@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-public sealed partial class SearchAndDestroyMode : GameMode
+public sealed partial class SearchAndDestroyMode : GameMode, IGameModeObjectiveDelegate
 {
 	public const string ModeId = "search_and_destroy";
 
@@ -22,6 +22,7 @@ public sealed partial class SearchAndDestroyMode : GameMode
 	private readonly float _resultsSeconds;
 	private readonly GameModeScoreRules _scoreRules;
 
+	private GameModeManager _manager;
 	private int _currentRound;
 	private int _attackersScore;
 	private int _defendersScore;
@@ -30,7 +31,49 @@ public sealed partial class SearchAndDestroyMode : GameMode
 	private bool _bombPlanted;
 	private float _bombTimer;
 	private int _bombPlanterId;
+	private int _plantedSiteIndex = -1;
 	private readonly HashSet<int> _eliminatedThisRound = new();
+
+	public bool IsRoundActive => _roundState == RoundState.Active;
+
+	public bool IsAttacker(int playerId)
+	{
+		if (_manager == null) return false;
+		return _manager.GetTeamForPlayer(playerId) == GetAttackersTeamId();
+	}
+
+	public bool IsDefender(int playerId)
+	{
+		if (_manager == null) return false;
+		return _manager.GetTeamForPlayer(playerId) == GetDefendersTeamId();
+	}
+
+	public bool CanPlant(PlayerCharacter player, BombSite site)
+	{
+		if (_roundState != RoundState.Active) return false;
+		if (_bombPlanted) return false;
+		return IsAttacker((int)player.OwnerPeerId);
+	}
+
+	public void OnPlantCompleted(PlayerCharacter player, BombSite site)
+	{
+		// Handled via objective event
+	}
+
+	public void OnDefuseCompleted(PlayerCharacter player)
+	{
+		// Handled via objective event
+	}
+
+	public ObjectiveState GetObjectiveState()
+	{
+		return new ObjectiveState
+		{
+			Status = _bombPlanted ? 1 : 0,
+			TimeRemaining = _bombTimer,
+			SiteIndex = _plantedSiteIndex
+		};
+	}
 
 	public enum RoundState
 	{
@@ -143,6 +186,7 @@ public sealed partial class SearchAndDestroyMode : GameMode
 
 	public override void OnActivated(GameModeManager manager)
 	{
+		_manager = manager;
 		_currentRound = 0;
 		_attackersScore = 0;
 		_defendersScore = 0;
@@ -158,6 +202,7 @@ public sealed partial class SearchAndDestroyMode : GameMode
 
 	public override void OnDeactivated(GameModeManager manager)
 	{
+		_manager = null;
 		_roundState = RoundState.None;
 		GD.Print($"[{DisplayName}] Mode deactivated.");
 	}
@@ -263,6 +308,7 @@ public sealed partial class SearchAndDestroyMode : GameMode
 		_bombPlanted = false;
 		_bombTimer = 0f;
 		_bombPlanterId = 0;
+		_plantedSiteIndex = -1;
 		_eliminatedThisRound.Clear();
 
 		BombSite.ResetAllSites();
@@ -364,6 +410,7 @@ public sealed partial class SearchAndDestroyMode : GameMode
 		_bombPlanted = true;
 		_bombTimer = _bombTimerDuration;
 		_bombPlanterId = evt.PlayerId;
+		_plantedSiteIndex = evt.ObjectiveId;
 		_roundState = RoundState.BombPlanted;
 
 		var stats = ctx.State.GetPlayerStats(evt.PlayerId);

@@ -16,6 +16,7 @@ public partial class MatchStateClient : Node
 	private int _serverTick;
 	private int _localTeamId = TeamManager.NoTeam;
 	private bool _weaponsEnabled;
+	private ObjectiveState _objectiveState;
 
 	public event Action<MatchPhase> PhaseChanged;
 	public event Action<int, int> TeamScoreChanged;
@@ -34,6 +35,7 @@ public partial class MatchStateClient : Node
 	public bool IsLive => _phase == MatchPhase.Live;
 	public bool IsWarmup => _phase == MatchPhase.Warmup;
 	public bool WeaponsEnabled => _weaponsEnabled;
+	public ObjectiveState Objective => _objectiveState;
 
 	public override void _EnterTree()
 	{
@@ -67,6 +69,7 @@ public partial class MatchStateClient : Node
 		_lastServerTime = (float)Time.GetTicksMsec() / 1000f;
 		_serverTick = snapshot.ServerTick;
 		_currentModeId = snapshot.ModeId;
+		_objectiveState = snapshot.Objective;
 
 		if (oldPhase != _phase)
 		{
@@ -137,9 +140,16 @@ public struct MatchStateSnapshot
 	public string ModeId;
 	public int ServerTick;
 	public bool WeaponsEnabled;
+	public ObjectiveState Objective;
 
 	public static MatchStateSnapshot FromState(MatchState state, GameModeManager manager)
 	{
+		var objState = new ObjectiveState();
+		if (manager?.ActiveMode is IGameModeObjectiveDelegate objDelegate)
+		{
+			objState = objDelegate.GetObjectiveState();
+		}
+
 		return new MatchStateSnapshot
 		{
 			Phase = state.Phase,
@@ -150,7 +160,8 @@ public struct MatchStateSnapshot
 			TeamScores = state.GetAllTeamScores(),
 			ModeId = state.CurrentModeId,
 			ServerTick = state.ServerTick,
-			WeaponsEnabled = manager?.WeaponsEnabled ?? false
+			WeaponsEnabled = manager?.WeaponsEnabled ?? false,
+			Objective = objState
 		};
 	}
 }

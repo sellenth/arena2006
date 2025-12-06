@@ -15,7 +15,7 @@ public partial class PlantedBomb : Area3D
 	private static PlantedBomb _activeBomb;
 	public static PlantedBomb ActiveBomb => _activeBomb;
 
-	private GameModeManager _gameMode;
+	private GameModeManager _gameModeManager;
 	private float _fuseTimer;
 	private float _defuseProgress;
 	private bool _isBeingDefused;
@@ -50,7 +50,7 @@ public partial class PlantedBomb : Area3D
 
 	public override void _Ready()
 	{
-		_gameMode = GetNodeOrNull<GameModeManager>("/root/GameModeManager");
+		_gameModeManager = GetNodeOrNull<GameModeManager>("/root/GameModeManager");
 		_fuseTimer = FuseTime;
 		_activeBomb = this;
 
@@ -130,11 +130,11 @@ public partial class PlantedBomb : Area3D
 
 	private bool IsDefender(PlayerCharacter player)
 	{
-		if (_gameMode?.ActiveMode is not SearchAndDestroyMode sndMode)
-			return false;
-
-		var teamId = _gameMode.GetTeamForPlayer((int)player.OwnerPeerId);
-		return teamId == sndMode.GetDefendersTeamId();
+		if (_gameModeManager?.ActiveMode is IGameModeObjectiveDelegate objectiveMode)
+		{
+			return objectiveMode.IsDefender((int)player.OwnerPeerId);
+		}
+		return false;
 	}
 
 	private void OnBodyEntered(Node body)
@@ -182,6 +182,14 @@ public partial class PlantedBomb : Area3D
 
 	private void CompleteDefuse()
 	{
+		// Only server processes completion
+		if (!IsMultiplayerAuthority())
+		{
+			_isBeingDefused = false;
+			_defuseProgress = 0f;
+			return;
+		}
+
 		_defused = true;
 		_isBeingDefused = false;
 
@@ -191,10 +199,10 @@ public partial class PlantedBomb : Area3D
 		{
 			Type = ObjectiveEventType.BombDefused,
 			PlayerId = playerId,
-			TeamId = _gameMode?.GetTeamForPlayer(playerId) ?? -1,
+			TeamId = _gameModeManager?.GetTeamForPlayer(playerId) ?? -1,
 			Position = GlobalPosition
 		};
-		_gameMode?.NotifyObjectiveEvent(evt);
+		_gameModeManager?.NotifyObjectiveEvent(evt);
 
 		EmitSignal(SignalName.BombDefused, playerId);
 		GD.Print($"[PlantedBomb] BOMB DEFUSED by Player {playerId}!");
@@ -204,6 +212,10 @@ public partial class PlantedBomb : Area3D
 
 	private void Explode()
 	{
+		// Only server processes explosion
+		if (!IsMultiplayerAuthority())
+			return;
+
 		_exploded = true;
 
 		if (ExplosionEffect != null)
@@ -217,10 +229,10 @@ public partial class PlantedBomb : Area3D
 		{
 			Type = ObjectiveEventType.BombExploded,
 			PlayerId = PlanterId,
-			TeamId = _gameMode?.GetTeamForPlayer(PlanterId) ?? -1,
+			TeamId = _gameModeManager?.GetTeamForPlayer(PlanterId) ?? -1,
 			Position = GlobalPosition
 		};
-		_gameMode?.NotifyObjectiveEvent(evt);
+		_gameModeManager?.NotifyObjectiveEvent(evt);
 
 		EmitSignal(SignalName.BombExploded);
 		GD.Print($"[PlantedBomb] BOMB EXPLODED!");
@@ -237,4 +249,3 @@ public partial class PlantedBomb : Area3D
 		}
 	}
 }
-

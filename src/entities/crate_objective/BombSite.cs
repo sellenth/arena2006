@@ -12,7 +12,7 @@ public partial class BombSite : Area3D
 	private static readonly List<BombSite> _allSites = new();
 	public static IReadOnlyList<BombSite> AllSites => _allSites;
 
-	private GameModeManager _gameMode;
+	private GameModeManager _gameModeManager;
 	private PlayerCharacter _playerInZone;
 	private float _plantProgress;
 	private bool _isPlanting;
@@ -37,7 +37,7 @@ public partial class BombSite : Area3D
 
 	public override void _Ready()
 	{
-		_gameMode = GetNodeOrNull<GameModeManager>("/root/GameModeManager");
+		_gameModeManager = GetNodeOrNull<GameModeManager>("/root/GameModeManager");
 		_allSites.Add(this);
 
 		BodyEntered += OnBodyEntered;
@@ -54,6 +54,8 @@ public partial class BombSite : Area3D
 		if (_bombPlantedHere)
 			return;
 
+		// Client side prediction for UI progress is fine, but completion is server only.
+		
 		if (!CanPlant())
 		{
 			if (_isPlanting)
@@ -86,45 +88,32 @@ public partial class BombSite : Area3D
 
 	private bool CanPlant()
 	{
-		if (_gameMode == null)
+		if (_gameModeManager?.ActiveMode is IGameModeObjectiveDelegate objectiveMode)
 		{
-			return false;
+			if (_playerInZone != null)
+			{
+				return objectiveMode.CanPlant(_playerInZone, this);
+			}
 		}
-
-		if (_gameMode.ActiveMode is not SearchAndDestroyMode sndMode)
-		{
-			return false;
-		}
-
-		if (sndMode.CurrentRoundState != SearchAndDestroyMode.RoundState.Active)
-		{
-			return false;
-		}
-
-		if (sndMode.IsBombPlanted)
-			return false;
-
-		return true;
+		return false;
 	}
 
 	private bool IsPlayerPlanting(PlayerCharacter player)
 	{
 		if (player == null)
 			return false;
-
-		if (!IsAttacker(player))
-			return false;
-
+		
+		// Rules are checked in CanPlant. Input is checked here.
 		return player.IsInteractHeld();
 	}
 
 	private bool IsAttacker(PlayerCharacter player)
 	{
-		if (_gameMode?.ActiveMode is not SearchAndDestroyMode sndMode)
-			return false;
-
-		var teamId = _gameMode.GetTeamForPlayer((int)player.OwnerPeerId);
-		return teamId == sndMode.GetAttackersTeamId();
+		if (_gameModeManager?.ActiveMode is IGameModeObjectiveDelegate objectiveMode)
+		{
+			return objectiveMode.IsAttacker((int)player.OwnerPeerId);
+		}
+		return false;
 	}
 
 	private void OnBodyEntered(Node body)
@@ -141,7 +130,7 @@ public partial class BombSite : Area3D
 		}
 		else
 		{
-			GD.Print($"[BombSite {SiteName}] Body entered: {body.Name}, Type={body.GetType().Name}");
+			// GD.Print($"[BombSite {SiteName}] Body entered: {body.Name}");
 		}
 	}
 
@@ -177,6 +166,15 @@ public partial class BombSite : Area3D
 
 	private void CompletePlant()
 	{
+		// Critical: Only server handles completion logic and spawning
+		if (!IsMultiplayerAuthority())
+		{
+			_isPlanting = false;
+			_plantProgress = 0f;
+			// Client waits for server replication
+			return;
+		}
+
 		_isPlanting = false;
 		_bombPlantedHere = true;
 
@@ -196,10 +194,11 @@ public partial class BombSite : Area3D
 		{
 			Type = ObjectiveEventType.BombPlanted,
 			PlayerId = playerId,
-			TeamId = _gameMode?.GetTeamForPlayer(playerId) ?? -1,
+			TeamId = _gameModeManager?.GetTeamForPlayer(playerId) ?? -1,
+			ObjectiveId = _allSites.IndexOf(this),
 			Position = spawnPos
 		};
-		_gameMode?.NotifyObjectiveEvent(evt);
+		_gameModeManager?.NotifyObjectiveEvent(evt);
 
 		EmitSignal(SignalName.BombPlanted, playerId, SiteName);
 		GD.Print($"[BombSite {SiteName}] BOMB PLANTED by Player {playerId}!");
@@ -221,4 +220,3 @@ public partial class BombSite : Area3D
 		}
 	}
 }
-
