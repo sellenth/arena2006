@@ -12,7 +12,7 @@ steps:
         apt-get update -qq
         apt-get install -y -qq git-lfs
         git config --global credential.helper store
-        printf "https://oauth2:%s@gitlab.com\n" "$GITLAB_TOKEN" > ~/.git-credentials
+        printf "https://oauth2:%s@gitlab.com\n" "$$GITLAB_TOKEN" > ~/.git-credentials
         git config --global lfs.https://gitlab.com/halston1/arena2006.git/info/lfs.access basic
         git lfs install --skip-repo
         git lfs fetch origin "${BRANCH_NAME:-main}"
