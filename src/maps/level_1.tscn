@@ -109,13 +109,13 @@ transform = Transform3D(-0.41536012, 0, 0.90965706, 0, 1, 0, -0.90965706, 0, -0.
 transform = Transform3D(-0.41536012, 0, 0.90965706, 0, 1, 0, -0.90965706, 0, -0.41536012, 20.979282, 19.222132, 68.12132)
 
 [node name="UziPickup3" parent="Pickups" instance=ExtResource("4_bhhkb")]
-transform = Transform3D(0.24816574, 0, -0.9687176, 0, 1, 0, 0.9687176, 0, 0.24816574, 42.809093, 19.705198, 72.148056)
+transform = Transform3D(0.24816574, 0, -0.9687176, 0, 1, 0, 0.9687176, 0, 0.24816574, 43.471443, 19.705198, 73.40615)
 
 [node name="AKWorldmodel2" parent="Pickups" instance=ExtResource("5_ifq3f")]
-transform = Transform3D(0.92693526, 0, 0.37522143, 0, 1, 0, -0.37522143, 0, 0.92693526, 45.968838, 19.605623, 74.88431)
+transform = Transform3D(0.92693526, 0, 0.37522143, 0, 1, 0, -0.37522143, 0, 0.92693526, 44.43073, 19.605621, 75.69641)
 
 [node name="SniperPickup2" parent="Pickups" instance=ExtResource("6_b3shj")]
-transform = Transform3D(0.92693526, 0, 0.37522143, 0, 1, 0, -0.37522143, 0, 0.92693526, 49.57934, 19.222132, 62.316387)
+transform = Transform3D(0.92693526, 0, 0.37522143, 0, 1, 0, -0.37522143, 0, 0.92693526, 45.637775, 19.222132, 79.113174)
 
 [node name="UziPickup4" parent="Pickups" instance=ExtResource("4_bhhkb")]
 transform = Transform3D(-0.504196, 0, 0.8635892, 0, 1, 0, -0.8635892, 0, -0.504196, 60.669174, 0.7161608, 163.16588)
@@ -168,10 +168,10 @@ MaxVehicles = 3
 transform = Transform3D(0.65677005, 0, -0.75409085, 0, 1, 0, 0.75409085, 0, 0.65677005, 28.613968, 18.920698, 84.991394)
 
 [node name="AttackerSpawn" type="Node3D" parent="."]
-transform = Transform3D(0.65677005, 0, -0.75409085, 0, 1, 0, 0.75409085, 0, 0.65677005, 47.88054, 1.6414547, 158.10312)
+transform = Transform3D(-0.9374765, 0, -0.34804863, 0, 1, 0, 0.34804863, 0, -0.9374765, 61.184376, 1.6414547, 153.05573)
 
 [node name="DefenderSpawn" type="Node3D" parent="."]
-transform = Transform3D(0.65677005, 0, -0.75409085, 0, 1, 0, 0.75409085, 0, 0.65677005, 42.284763, 21.574278, 75.01792)
+transform = Transform3D(0.99039876, 0, 0.13823977, 0, 1, 0, -0.13823977, 0, 0.99039876, 53.44874, 21.574278, 69.4231)
 
 [node name="VehicleSpawns" type="Node3D" parent="."]
 transform = Transform3D(0.65677005, 0, -0.75409085, 0, 1, 0, 0.75409085, 0, 0.65677005, -19.183643, -6.1545067, 34.665512)

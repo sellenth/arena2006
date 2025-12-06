@@ -221,8 +221,14 @@ public partial class WeaponController : Node
 		if (def?.MuzzleFx == null || _player == null)
 			return;
 
-		var muzzle = ResolveProjectileTransform(def);
-		def.MuzzleFx.Spawn(_player, muzzle);
+		TryGetMuzzleTransform(out var muzzleTransform, out var muzzleNode);
+		if (muzzleTransform == Transform3D.Identity)
+		{
+			muzzleTransform = ResolveProjectileTransform(def);
+		}
+
+		var parent = (Node)muzzleNode ?? _player;
+		def.MuzzleFx.Spawn(parent, muzzleTransform);
 	}
 
 	private void PlayAudio(WeaponAudioSet set, Vector3 position)
@@ -267,6 +273,12 @@ public partial class WeaponController : Node
 		if (_player == null)
 			return Transform3D.Identity;
 
+		// Prefer an explicit muzzle marker on the active view if present.
+		if (TryGetMuzzleTransform(out var muzzleTransform, out _))
+		{
+			return muzzleTransform;
+		}
+
 		var viewDir = _player.GetViewDirection().Normalized();
 		if (viewDir.IsZeroApprox())
 		{
@@ -279,6 +291,30 @@ public partial class WeaponController : Node
 
 		var spawn = def.ProjectileSpawn;
 		return new Transform3D(basis, origin) * spawn;
+	}
+
+	private bool TryGetMuzzleTransform(out Transform3D transform, out Node3D muzzleNode)
+	{
+		transform = Transform3D.Identity;
+		muzzleNode = null;
+		if (_player == null)
+			return false;
+
+		var weaponView = _player.GetNodeOrNull<WeaponView>("WeaponView") ?? _player.FindChild("WeaponView", recursive: true, owned: false) as WeaponView;
+		if (weaponView == null)
+			return false;
+
+		var currentView = weaponView.CurrentView;
+		if (currentView == null)
+			return false;
+
+		muzzleNode = currentView.GetNodeOrNull<Node3D>("Muzzle")
+			?? currentView.FindChild("Muzzle", recursive: true, owned: false) as Node3D;
+		if (muzzleNode == null)
+			return false;
+
+		transform = muzzleNode.GlobalTransform;
+		return true;
 	}
 
 	private void SpawnProjectile(WeaponDefinition def, bool serverAuthority, int fireSequence, Transform3D spawnTransform, long ownerPeerId)
