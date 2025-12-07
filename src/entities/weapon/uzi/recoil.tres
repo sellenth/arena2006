@@ -1,0 +1,10 @@
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://2kv3qokpgiyp"]
+
+[ext_resource type="Script" uid="uid://d1qcg4xior0gp" path="res://src/entities/weapon/_shared/RecoilProfile.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Kick = Vector2(0.16, 0.035)
+RecoveryRate = 50.0
+MaxSpreadDegrees = 0.6
+Pattern = Array[Vector2]([Vector2(1.8, 0.1), Vector2(1.7, -0.2), Vector2(1.6, 0.15), Vector2(1.9, -0.05)])

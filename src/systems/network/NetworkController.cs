@@ -18,6 +18,7 @@ public partial class NetworkController : Node
 	private PackedScene _playerCharacterScene;
 	private PackedScene _scoreboardUiScene;
 	private HitMarkerUI _hitMarkerUi;
+	public event Action<int, int, WeaponType> KillFeedReceived;
 
 	public event Action<PlayerMode> ClientModeChanged;
 	public event Action<RaycastCar> LocalCarChanged;
@@ -80,6 +81,7 @@ public partial class NetworkController : Node
 			_clientManager.HitMarkerReceived += OnClientHitMarker;
 			_clientManager.MatchStateReceivedEvent += OnClientMatchStateReceived;
 			_clientManager.TeamAssignmentReceivedEvent += OnClientTeamAssignmentReceived;
+			_clientManager.KillFeedReceived += OnClientKillFeed;
 		}
 	}
 
@@ -202,12 +204,14 @@ public partial class NetworkController : Node
 		_clientManager?.RecordLocalPlayerPrediction(tick, transform, velocity);
 	}
 
-	public void NotifyPlayerKilled(PlayerCharacter victim, long killerPeerId)
+	public void NotifyPlayerKilled(PlayerCharacter victim, long killerPeerId, WeaponType weaponType)
 	{
 		if (!IsServer || victim == null)
 			return;
 
-		_serverManager?.NotifyPlayerKilled(victim, killerPeerId);
+		_serverManager?.NotifyPlayerKilled(victim, killerPeerId, weaponType);
+
+		KillFeedReceived?.Invoke((int)killerPeerId, (int)victim.OwnerPeerId, weaponType);
 	}
 
 	public void SendHitMarkerToPeer(int peerId, float damage, WeaponType weaponType, bool wasKill)
@@ -269,6 +273,11 @@ public partial class NetworkController : Node
 
 		_hitMarkerUi = scene.FindChild("HitMarkerUI", true, false) as HitMarkerUI;
 		return _hitMarkerUi;
+	}
+
+	private void OnClientKillFeed(int killerId, int victimId, WeaponType weaponType)
+	{
+		KillFeedReceived?.Invoke(killerId, victimId, weaponType);
 	}
 
 	private void OnClientMatchStateReceived(MatchStateSnapshot snapshot)

@@ -5,3 +5,6 @@
 [node name="AKViewmodel" type="Node3D"]
 
 [node name="ak2" parent="." instance=ExtResource("1_lydfi")]
+
+[node name="Muzzle" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05288107, -0.43501827)

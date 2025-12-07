@@ -218,7 +218,7 @@ public partial class ServerNetworkManager : GodotObject
 
 		if (info.Mode == PlayerMode.Foot)
 		{
-			NotifyPlayerKilled(player, 0);
+			NotifyPlayerKilled(player, 0, WeaponType.None);
 		}
 	}
 
@@ -240,7 +240,7 @@ public partial class ServerNetworkManager : GodotObject
 			if (occupantInfo.PlayerCharacter != null)
 			{
 				occupantInfo.PlayerCharacter.SetWorldActive(true);
-				NotifyPlayerKilled(occupantInfo.PlayerCharacter, 0);
+				NotifyPlayerKilled(occupantInfo.PlayerCharacter, 0, WeaponType.None);
 			}
 		}
 
@@ -277,7 +277,7 @@ public partial class ServerNetworkManager : GodotObject
 		return 0;
 	}
 
-	public void NotifyPlayerKilled(PlayerCharacter victim, long killerPeerId)
+	public void NotifyPlayerKilled(PlayerCharacter victim, long killerPeerId, WeaponType weaponType)
 	{
 		if (victim == null)
 			return;
@@ -305,6 +305,7 @@ public partial class ServerNetworkManager : GodotObject
 		_scoreboardManager?.NotifyKill(victimInfo, killerInfo, victim, spawn);
 		_scoreboardManager?.UpdateScoreboard(_peers.Values, BroadcastPacketToAllPeers);
 
+		BroadcastKillFeed((int)killerPeerId, victimPeerId, weaponType);
 		NotifyGameModePlayerKilled(victimPeerId, (int)killerPeerId);
 	}
 
@@ -505,6 +506,15 @@ public partial class ServerNetworkManager : GodotObject
 			return;
 
 		var packet = NetworkSerializer.SerializeScoreUpdate(teamId, teamScore, peerId, playerScore, kills, deaths);
+		BroadcastPacketToAllPeers(packet);
+	}
+
+	public void BroadcastKillFeed(int killerId, int victimId, WeaponType weaponType)
+	{
+		if (_peers.Count == 0)
+			return;
+
+		var packet = NetworkSerializer.SerializeKillFeed(killerId, victimId, weaponType);
 		BroadcastPacketToAllPeers(packet);
 	}
 

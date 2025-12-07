@@ -20,7 +20,7 @@ public partial class MuzzleFxSet : Resource
 			{
 				particles.Emitting = true;
 			}
-			flash.QueueFree();
+			QueueFreeAfter(flash, LifeTime);
 		}
 
 		if (SmokeScene != null)
@@ -33,7 +33,27 @@ public partial class MuzzleFxSet : Resource
 			{
 				smokeParticles.Emitting = true;
 			}
-			smoke.QueueFree();
+			QueueFreeAfter(smoke, LifeTime);
 		}
+	}
+
+	private void QueueFreeAfter(Node node, float lifetime)
+	{
+		if (node == null)
+			return;
+
+		var tree = node.GetTree();
+		if (tree == null)
+		{
+			node.QueueFree();
+			return;
+		}
+
+		var timer = tree.CreateTimer(Mathf.Max(lifetime, 0.01f));
+		timer.Timeout += () =>
+		{
+			if (IsInstanceValid(node))
+				node.QueueFree();
+		};
 	}
 }

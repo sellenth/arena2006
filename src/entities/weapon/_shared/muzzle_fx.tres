@@ -1,0 +1,8 @@
+[gd_resource type="Resource" load_steps=3 format=3 uid="uid://bnlj5acgvm5la"]
+
+[ext_resource type="PackedScene" uid="uid://6ue6skcyvlor" path="res://src/entities/weapon/_shared/muzzle_flash.tscn" id="1_b3ko5"]
+[ext_resource type="Script" uid="uid://fgc3tyjgp3k7" path="res://src/entities/weapon/_shared/MuzzleFxSet.cs" id="2_lq71e"]
+
+[resource]
+script = ExtResource("2_lq71e")
+MuzzleFlashScene = ExtResource("1_b3ko5")

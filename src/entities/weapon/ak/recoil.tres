@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=3 format=3 uid="uid://bw7dd7kjoexiq"]
+
+[ext_resource type="Script" uid="uid://d1qcg4xior0gp" path="res://src/entities/weapon/_shared/RecoilProfile.cs" id="1"]
+
+[sub_resource type="Curve" id="Curve_q3sxx"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 0.2996633), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[resource]
+script = ExtResource("1")
+Kick = Vector2(0.28, 0.055)
+RecoveryRate = 20.0
+SpreadCurve = SubResource("Curve_q3sxx")
+MaxSpreadDegrees = 1.0
+Pattern = Array[Vector2]([Vector2(3, 0.2), Vector2(3.2, -0.1), Vector2(2.9, 0.25), Vector2(3.1, -0.05)])

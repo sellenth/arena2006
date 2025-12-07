@@ -12,6 +12,8 @@ public partial class WeaponView : Node3D
 	private float _adsBlend = 0f;
 	private AdsConfig _adsConfig;
 
+	public Node3D CurrentView => _currentView;
+
 	public override void _Ready()
 	{
 		_inventory = GetNodeOrNull<WeaponInventory>(InventoryPath);

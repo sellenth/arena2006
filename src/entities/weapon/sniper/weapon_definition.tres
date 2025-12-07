@@ -1,14 +1,16 @@
-[gd_resource type="Resource" load_steps=9 format=3 uid="uid://dpiyh0wcm86o7"]
+[gd_resource type="Resource" load_steps=11 format=3 uid="uid://dpiyh0wcm86o7"]
 
 [ext_resource type="Resource" uid="uid://dycwwr38ee3fr" path="res://src/entities/weapon/sniper/projectile_definition.tres" id="1_gektc"]
 [ext_resource type="Resource" uid="uid://dtogr2220xryv" path="res://src/entities/weapon/sniper/ads_config.tres" id="1_ouhwg"]
 [ext_resource type="PackedScene" uid="uid://bdht61x75dbih" path="res://src/entities/weapon/sniper/sniper_projectile.tscn" id="2_4748l"]
+[ext_resource type="Resource" uid="uid://bnlj5acgvm5la" path="res://src/entities/weapon/_shared/muzzle_fx.tres" id="3_7cjc6"]
 [ext_resource type="PackedScene" uid="uid://cqto61hugwqiw" path="res://src/entities/weapon/sniper/sniper_viewmodel.tscn" id="3_gektc"]
 [ext_resource type="Script" uid="uid://640fk7o45iw2" path="res://src/entities/weapon/_shared/WeaponDefinition.cs" id="5_30cml"]
 [ext_resource type="PackedScene" uid="uid://c44ofumy11psc" path="res://src/entities/weapon/sniper/sniper_base.tscn" id="5_ouhwg"]
 [ext_resource type="Resource" uid="uid://50f085cf0e7b" path="res://src/entities/weapon/sniper/fire_audio.tres" id="6"]
+[ext_resource type="Resource" uid="uid://vcwld8xg03ec" path="res://src/entities/weapon/sniper/recoil.tres" id="7"]
 
-[sub_resource type="CSharpScript" id="CSharpScript_y6aih"]
+[sub_resource type="CSharpScript" id="CSharpScript_c0o2o"]
 
 [resource]
 resource_local_to_scene = true
@@ -28,5 +30,7 @@ Damage = 100.0
 EquipTimeSec = 0.5
 UnequipTimeSec = 0.4
 ProjectilePoolPrewarm = 10
+Recoil = ExtResource("7")
+MuzzleFx = ExtResource("3_7cjc6")
 FireAudio = ExtResource("6")
 Ads = ExtResource("1_ouhwg")

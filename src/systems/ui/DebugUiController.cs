@@ -28,6 +28,7 @@ public partial class DebugUiController : Node
 	private Label _armorLabel;
 	private Label _moveStateLabel;
 	private CanvasLayer _deathUI;
+	private DamageUI _damageUi;
 
 	public override void _Ready()
 	{
@@ -85,9 +86,15 @@ public partial class DebugUiController : Node
 		_armorLabel = canvasLayer.GetNode<Label>("BOTTOM/ArmorLabel");
 		_moveStateLabel = topContainer.GetNodeOrNull<Label>("MoveStateLabel");
 
+		_damageUi = GetNodeOrNull<DamageUI>("DamageUI");
 		_deathUI = GetNodeOrNull<CanvasLayer>("DeathUI");
 		if (_deathUI != null)
 			_deathUI.Visible = false;
+
+		if (_player != null)
+		{
+			_damageUi?.SetPlayer(_player);
+		}
 	}
 
 	public override void _ExitTree()
@@ -173,6 +180,9 @@ public partial class DebugUiController : Node
 
 		if (_player == null && _network != null)
 			_player = _network.LocalPlayer;
+
+		if (_damageUi != null && _player != null && _damageUi.CurrentPlayer != _player)
+			_damageUi.SetPlayer(_player);
 
 		var shouldShow = _player != null && _player.IsDead;
 		_deathUI.Visible = shouldShow;

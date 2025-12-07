@@ -1,8 +1,8 @@
 [gd_scene load_steps=11 format=4 uid="uid://077fwctsfy01"]
 
-[ext_resource type="Texture2D" uid="uid://d3urlx0h2exnj" path="res://src/entities/weapon/rocket_launcher/rl_skin.png" id="1_glspy"]
-[ext_resource type="Texture2D" uid="uid://cvfmbs66rt70f" path="res://src/entities/weapon/rocket_launcher/rl_glow.png" id="2_d00tt"]
-[ext_resource type="Texture2D" uid="uid://dvhr08pxx7vn4" path="res://src/entities/weapon/rocket_launcher/rl_norm.png" id="3_n3qm7"]
+[ext_resource type="Texture2D" uid="uid://dwhc523kvj7u2" path="res://src/entities/weapon/rocket_launcher/rl_skin.png" id="1_glspy"]
+[ext_resource type="Texture2D" uid="uid://dqwgppr604p2f" path="res://src/entities/weapon/rocket_launcher/rl_glow.png" id="2_d00tt"]
+[ext_resource type="Texture2D" uid="uid://qm1kvtmc0iti" path="res://src/entities/weapon/rocket_launcher/rl_norm.png" id="3_n3qm7"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m0v2e"]
 resource_name = "default.001"
@@ -142,3 +142,6 @@ surface_material_override/0 = SubResource("StandardMaterial3D_l7tsv")
 libraries = {
 &"": SubResource("AnimationLibrary_4qmli")
 }
+
+[node name="Muzzle" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.012629852, -0.24219535)
