@@ -10,6 +10,7 @@ public partial class HealthComponent : Node
 	public int Armor => _armor;
 	public bool IsDead => _isDead;
 	public long LastHitByPeerId { get; private set; }
+	public WeaponType LastHitWeapon { get; private set; } = WeaponType.None;
 
 	public event Action<int> HealthChanged;
 	public event Action<int> ArmorChanged;
@@ -32,13 +33,14 @@ public partial class HealthComponent : Node
 		ResetVitals(notify: false);
 	}
 
-	public void ApplyDamage(int amount, long instigatorPeerId = 0)
+	public void ApplyDamage(int amount, long instigatorPeerId = 0, WeaponType weaponType = WeaponType.None)
 	{
 		if (amount <= 0 || _isDead)
 			return;
 
 		if (instigatorPeerId != 0)
 			LastHitByPeerId = instigatorPeerId;
+		LastHitWeapon = weaponType;
 
 		var remaining = amount;
 		if (_armor > 0)
@@ -86,6 +88,7 @@ public partial class HealthComponent : Node
 		SetHealthInternal(MaxHealth, notify, false);
 		SetArmorInternal(MaxArmor, notify, false);
 		LastHitByPeerId = 0;
+		LastHitWeapon = WeaponType.None;
 		_isDead = false;
 		if (notify && wasDead)
 			Revived?.Invoke();

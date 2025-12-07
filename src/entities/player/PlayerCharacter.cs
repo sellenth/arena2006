@@ -890,7 +890,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		return _networkController.IsServer;
 	}
 
-	public void ApplyDamage(int amount, long instigatorPeerId = 0)
+	public void ApplyDamage(int amount, long instigatorPeerId = 0, WeaponType weaponType = WeaponType.None)
 	{
 		if (amount <= 0)
 			return;
@@ -904,7 +904,7 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		if (!ShouldProcessDamage())
 			return;
 
-		_healthComponent?.ApplyDamage(amount, instigatorPeerId);
+		_healthComponent?.ApplyDamage(amount, instigatorPeerId, weaponType);
 	}
 
 	private void HandleDeath(long instigatorPeerId)
@@ -916,9 +916,11 @@ public partial class PlayerCharacter : CharacterBody3D, IReplicatedEntity
 		_movementComponent?.Reset();
 		SetWorldActive(false);
 
+		var weaponType = _healthComponent?.LastHitWeapon ?? WeaponType.None;
+
 		if (_networkController != null && _networkController.IsServer)
 		{
-			_networkController.NotifyPlayerKilled(this, instigatorPeerId);
+			_networkController.NotifyPlayerKilled(this, instigatorPeerId, weaponType);
 		}
 		else if (AreRespawnsAllowed())
 		{

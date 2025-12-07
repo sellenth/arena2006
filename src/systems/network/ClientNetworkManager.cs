@@ -27,6 +27,7 @@ public partial class ClientNetworkManager : GodotObject
 	public event Action<float, WeaponType, bool> HitMarkerReceived;
 	public event Action<MatchStateSnapshot> MatchStateReceivedEvent;
 	public event Action<int, int> TeamAssignmentReceivedEvent;
+	public event Action<int, int, WeaponType> KillFeedReceived;
 
 	public int ClientId => _clientId;
 	public PlayerMode CurrentMode => _currentMode;
@@ -298,6 +299,12 @@ public partial class ClientNetworkManager : GodotObject
 					if (teamAssignment.HasValue)
 					{
 						TeamAssignmentReceivedEvent?.Invoke(teamAssignment.Value.PeerId, teamAssignment.Value.TeamId);
+					}
+					break;
+				case NetworkSerializer.PacketKillFeed:
+					if (NetworkSerializer.DeserializeKillFeed(packet, out var killerId, out var victimId, out var killWeapon))
+					{
+						KillFeedReceived?.Invoke(killerId, victimId, killWeapon);
 					}
 					break;
 			}

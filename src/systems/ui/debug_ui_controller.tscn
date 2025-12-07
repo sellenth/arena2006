@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3 uid="uid://cukaeucupjo2e"]
+[gd_scene load_steps=8 format=3 uid="uid://cukaeucupjo2e"]
 
 [ext_resource type="Script" uid="uid://d0vm38pjoww3p" path="res://src/systems/ui/DebugUiController.cs" id="1_b4myk"]
 [ext_resource type="Script" uid="uid://dja75o5h84r1" path="res://src/systems/ui/HitMarkerUI.cs" id="2_nqq46"]
 [ext_resource type="PackedScene" uid="uid://bhym121ga6ypg" path="res://src/systems/ui/damage_ui.tscn" id="3_wh30l"]
+[ext_resource type="PackedScene" path="res://src/systems/ui/kill_feed_ui.tscn" id="4_j8brs"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a5fxc"]
 bg_color = Color(0.853973, 1, 0.660156, 1)
@@ -58,8 +59,8 @@ anchor_right = 5.5490003
 anchor_bottom = 5.6450005
 offset_left = 6.0
 offset_top = 9.4
-offset_right = 1.0399933
-offset_bottom = -1.8000183
+offset_right = 185.04
+offset_bottom = 70.19998
 color = Color(0, 0, 0, 0.43137255)
 
 [node name="TOP" type="VBoxContainer" parent="CanvasLayer/DebugUi"]
@@ -171,6 +172,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_nqq46")
+
+[node name="KillFeedUI" parent="." instance=ExtResource("4_j8brs")]
 
 [node name="DamageUI" parent="." instance=ExtResource("3_wh30l")]
 

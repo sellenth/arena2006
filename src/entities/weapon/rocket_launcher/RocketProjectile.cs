@@ -463,7 +463,7 @@ using System.Collections.Generic;
                     scaledDamage *= SelfDamageScale;
                 }
                 var appliedDamage = Mathf.RoundToInt(scaledDamage);
-                player.ApplyDamage(appliedDamage, OwnerPeerId);
+                player.ApplyDamage(appliedDamage, OwnerPeerId, WeaponType);
                 var wasKill = player.Health <= 0 && player.Armor <= 0;
                 NotifyHitMarker(player, appliedDamage, wasKill);
                 player.ApplyExternalImpulse(knockback);

@@ -153,7 +153,7 @@ public partial class MachineGunProjectile : Node3D, IPooledProjectile
         if (collider is PlayerCharacter player && Damage > 0f)
         {
             var appliedDamage = Mathf.RoundToInt(Damage);
-            player.ApplyDamage(appliedDamage, OwnerPeerId);
+            player.ApplyDamage(appliedDamage, OwnerPeerId, WeaponType);
             var wasKill = player.Health <= 0 && player.Armor <= 0;
             NotifyHitMarker(player, appliedDamage, wasKill);
             return;

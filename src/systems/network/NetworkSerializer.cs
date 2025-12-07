@@ -14,6 +14,7 @@ public static partial class NetworkSerializer
 	public const byte PacketMatchState = 9;
 	public const byte PacketTeamAssignment = 10;
 	public const byte PacketScoreUpdate = 11;
+	public const byte PacketKillFeed = 12;
 
 	public const int CarSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 12;
 	public const int PlayerSnapshotPayloadBytes = 4 + 12 + 16 + 12 + 8;
@@ -325,6 +326,42 @@ public static partial class NetworkSerializer
 		}
 
 		return entries;
+	}
+
+	public static byte[] SerializeKillFeed(int killerId, int victimId, WeaponType weaponType)
+	{
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.PutU8(PacketKillFeed);
+		buffer.PutU32((uint)killerId);
+		buffer.PutU32((uint)victimId);
+		buffer.PutU32((uint)weaponType);
+		return buffer.DataArray;
+	}
+
+	public static bool DeserializeKillFeed(byte[] packet, out int killerId, out int victimId, out WeaponType weaponType)
+	{
+		killerId = 0;
+		victimId = 0;
+		weaponType = WeaponType.None;
+
+		var buffer = new StreamPeerBuffer();
+		buffer.BigEndian = false;
+		buffer.DataArray = packet;
+
+		if (buffer.GetAvailableBytes() < 1)
+			return false;
+
+		if (buffer.GetU8() != PacketKillFeed)
+			return false;
+
+		if (buffer.GetAvailableBytes() < 4 + 4 + 4)
+			return false;
+
+		killerId = (int)buffer.GetU32();
+		victimId = (int)buffer.GetU32();
+		weaponType = (WeaponType)buffer.GetU32();
+		return true;
 	}
 
 	public partial class EntitySnapshotData : GodotObject
