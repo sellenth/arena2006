@@ -36,4 +36,4 @@ texture = SubResource("GradientTexture2D_wm0oa")
 stretch_mode = 5
 
 [node name="Muzzle" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8224901, 0, 0)
+transform = Transform3D(-5.9604645e-08, 0, -1, 0, 1, 0, 1, 0, -5.9604645e-08, 0.83963215, 0, -5.7620433e-09)
